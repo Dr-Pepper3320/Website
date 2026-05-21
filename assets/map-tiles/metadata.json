@@ -1,0 +1,9 @@
+{
+    "source":  "assets/worldmap.jfif",
+    "width":  10000,
+    "height":  10000,
+    "tileSize":  512,
+    "columns":  20,
+    "rows":  20,
+    "extension":  "jpg"
+}

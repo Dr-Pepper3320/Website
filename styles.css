@@ -1,0 +1,329 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #111616;
+  color: #f5f7ef;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(92, 127, 114, 0.24), transparent 42%),
+    #111616;
+}
+
+.game-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #0b0f0d;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: auto;
+}
+
+.hud {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.brand,
+.monster-slots,
+.controls {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  background: rgba(10, 15, 13, 0.72);
+  border: 1px solid rgba(235, 240, 219, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(10px);
+}
+
+.brand {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 188px;
+  padding: 8px 12px;
+}
+
+.brand strong {
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.brand span,
+.controls span {
+  color: #cbd6c4;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.monster-slots {
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+}
+
+.slot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(239, 231, 177, 0.62);
+  background:
+    linear-gradient(145deg, rgba(250, 247, 215, 0.18), rgba(127, 84, 54, 0.1)),
+    rgba(5, 8, 7, 0.64);
+}
+
+.slot.caught {
+  border-color: rgba(121, 241, 185, 0.9);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.78), transparent 22%),
+    linear-gradient(145deg, rgba(109, 236, 170, 0.88), rgba(34, 110, 86, 0.86));
+  box-shadow: 0 0 18px rgba(109, 236, 170, 0.36);
+}
+
+.controls {
+  gap: 10px;
+  padding: 8px 12px;
+}
+
+.controls span {
+  display: inline-grid;
+  min-width: 56px;
+  min-height: 28px;
+  place-items: center;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f3f2de;
+  font-weight: 700;
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #101514;
+  color: #f5f7ef;
+  font-weight: 800;
+  letter-spacing: 0;
+  transition: opacity 180ms ease;
+}
+
+.loading.hidden {
+  opacity: 0;
+  display: none;
+  pointer-events: none;
+}
+
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+}
+
+.touch-stick {
+  --knob-x: 0px;
+  --knob-y: 0px;
+  position: absolute;
+  left: 18px;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: 24px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: rgba(8, 13, 12, 0.42);
+  border: 2px solid rgba(244, 237, 198, 0.35);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.touch-stick span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 30%, rgba(255, 255, 255, 0.74), transparent 18%),
+    linear-gradient(145deg, rgba(243, 232, 170, 0.92), rgba(81, 125, 102, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  transform: translate(calc(-50% + var(--knob-x)), calc(-50% + var(--knob-y)));
+  transition: transform 90ms ease;
+}
+
+.touch-stick.active span {
+  transition: none;
+}
+
+.touch-actions {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.touch-button {
+  position: absolute;
+  right: 18px;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: 32px;
+  bottom: max(32px, calc(env(safe-area-inset-bottom) + 8px));
+  width: 72px;
+  height: 72px;
+  border: 2px solid rgba(244, 237, 198, 0.34);
+  border-radius: 50%;
+  background: rgba(10, 15, 13, 0.62);
+  color: #f8f4d8;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.touch-button.whip {
+  right: 118px;
+  right: max(118px, calc(env(safe-area-inset-right) + 118px));
+  bottom: 24px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  width: 88px;
+  height: 88px;
+  background:
+    linear-gradient(145deg, rgba(153, 79, 61, 0.86), rgba(78, 37, 44, 0.9)),
+    rgba(10, 15, 13, 0.64);
+}
+
+.touch-button.sprint {
+  right: 118px;
+  right: max(118px, calc(env(safe-area-inset-right) + 118px));
+  bottom: 126px;
+  bottom: max(126px, calc(env(safe-area-inset-bottom) + 102px));
+}
+
+.touch-button.active,
+.touch-button:active {
+  transform: translateY(2px) scale(0.96);
+  border-color: rgba(255, 247, 194, 0.78);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.36);
+}
+
+@media (pointer: coarse) {
+  .touch-controls {
+    display: block;
+  }
+}
+
+@media (max-width: 760px) {
+  .hud {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    align-items: flex-start;
+  }
+
+  .brand {
+    min-width: 142px;
+  }
+
+  .monster-slots {
+    position: absolute;
+    top: 56px;
+    left: 0;
+  }
+
+  .controls {
+    display: none;
+  }
+
+  .touch-controls {
+    display: block;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .hud {
+    top: 8px;
+  }
+
+  .brand,
+  .monster-slots {
+    min-height: 42px;
+  }
+
+  .brand {
+    min-width: 174px;
+  }
+
+  .touch-stick {
+    width: 118px;
+    height: 118px;
+  }
+
+  .touch-actions {
+    inset: 0;
+  }
+
+  .touch-button {
+    width: 64px;
+    height: 64px;
+  }
+
+  .touch-button.whip {
+    width: 78px;
+    height: 78px;
+  }
+
+  .touch-button.sprint {
+    right: 108px;
+    right: max(108px, calc(env(safe-area-inset-right) + 108px));
+    bottom: 108px;
+    bottom: max(108px, calc(env(safe-area-inset-bottom) + 86px));
+  }
+
+  .touch-button.whip {
+    right: 108px;
+    right: max(108px, calc(env(safe-area-inset-right) + 108px));
+  }
+}

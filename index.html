@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Ivan Monster Hunt</title>
+    <link rel="stylesheet" href="styles.css?v=mobile-controls" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <canvas id="game" width="1280" height="720" aria-label="Ivan Monster Hunt game canvas"></canvas>
+
+      <section class="hud" aria-label="Game status">
+        <div class="brand">
+          <strong>Ivan Monster Hunt</strong>
+          <span id="caught-counter">Mattdogs caught: 0 / 20</span>
+        </div>
+
+        <div class="monster-slots" aria-label="Monster collection slots">
+          <span class="slot"></span>
+          <span class="slot"></span>
+          <span class="slot"></span>
+          <span class="slot"></span>
+          <span class="slot"></span>
+          <span class="slot"></span>
+        </div>
+
+        <div class="controls">
+          <span>WASD / Arrows</span>
+          <span>Shift</span>
+          <span>Space</span>
+        </div>
+      </section>
+
+      <section class="touch-controls" aria-label="Touch controls">
+        <div class="touch-stick" id="touch-joystick" aria-label="Move Ivan">
+          <span id="touch-knob"></span>
+        </div>
+
+        <div class="touch-actions">
+          <button class="touch-button sprint" id="touch-sprint" type="button">RUN</button>
+          <button class="touch-button whip" id="touch-whip" type="button">WHIP</button>
+        </div>
+      </section>
+
+      <div class="loading" id="loading">Loading map...</div>
+    </main>
+
+    <script src="game.js?v=mobile-controls"></script>
+  </body>
+</html>
