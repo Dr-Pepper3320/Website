@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Ivan Monster Hunt</title>
-    <link rel="stylesheet" href="styles.css?v=devmode-map-editor" />
+    <link rel="stylesheet" href="styles.css?v=shops-inventory-economy" />
   </head>
   <body>
     <main class="game-shell">
@@ -43,6 +43,7 @@
           <strong>Ivan Monster Hunt</strong>
           <span id="world-label">World: Main World</span>
           <span id="time-label">Day 1 - 6:00 AM</span>
+          <span id="money-counter">Coins: 0</span>
           <span id="caught-counter">Mattdogs caught: 0 / 20</span>
         </div>
 
@@ -57,9 +58,28 @@
 
         <div class="controls">
           <span>WASD / Arrows</span>
+          <span>E</span>
+          <span>I</span>
           <span>Shift</span>
           <span>Space</span>
+          <button id="inventory-button" type="button">Inventory</button>
           <button id="profile-menu" type="button">Profiles</button>
+        </div>
+      </section>
+
+      <section class="shop-overlay" id="shop-overlay" aria-label="Shop and inventory" hidden>
+        <div class="shop-panel">
+          <header>
+            <div>
+              <strong id="shop-title">Inventory</strong>
+              <span id="shop-money">Coins: 0</span>
+            </div>
+            <button id="shop-close" type="button">Close</button>
+          </header>
+
+          <div class="shop-tabs" id="shop-tabs"></div>
+          <div class="shop-list" id="shop-list"></div>
+          <p id="shop-message"></p>
         </div>
       </section>
 
@@ -116,15 +136,17 @@
         </div>
 
         <div class="touch-actions">
+          <button class="touch-button inventory" id="touch-inventory" type="button">BAG</button>
           <button class="touch-button sprint" id="touch-sprint" type="button">RUN</button>
           <button class="touch-button whip" id="touch-whip" type="button">WHIP</button>
         </div>
       </section>
 
       <div class="loading" id="loading">Loading map...</div>
+      <div class="game-toast" id="game-toast" hidden></div>
     </main>
 
-    <script src="assets/worlds/default-worlds.js?v=baked-town-buildings"></script>
-    <script src="game.js?v=built-in-world-export"></script>
+    <script src="assets/worlds/default-worlds.js?v=shop-system-base"></script>
+    <script src="game.js?v=shops-inventory-economy"></script>
   </body>
 </html>

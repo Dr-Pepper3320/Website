@@ -10,11 +10,22 @@ const profileDelete = document.querySelector("#profile-delete");
 const profileStatus = document.querySelector("#profile-status");
 const profileMenu = document.querySelector("#profile-menu");
 const caughtCounter = document.querySelector("#caught-counter");
+const moneyCounter = document.querySelector("#money-counter");
 const timeLabel = document.querySelector("#time-label");
 const worldLabel = document.querySelector("#world-label");
 const monsterSlots = [...document.querySelectorAll(".slot")];
+const inventoryButton = document.querySelector("#inventory-button");
+const shopOverlay = document.querySelector("#shop-overlay");
+const shopTitle = document.querySelector("#shop-title");
+const shopMoney = document.querySelector("#shop-money");
+const shopClose = document.querySelector("#shop-close");
+const shopTabs = document.querySelector("#shop-tabs");
+const shopList = document.querySelector("#shop-list");
+const shopMessage = document.querySelector("#shop-message");
+const gameToast = document.querySelector("#game-toast");
 const touchJoystick = document.querySelector("#touch-joystick");
 const touchKnob = document.querySelector("#touch-knob");
+const touchInventory = document.querySelector("#touch-inventory");
 const touchWhip = document.querySelector("#touch-whip");
 const touchSprint = document.querySelector("#touch-sprint");
 const devPanel = document.querySelector("#dev-panel");
@@ -247,6 +258,102 @@ const MATT_LABELS = {
   firematt: "Fire Matts",
 };
 
+const ITEM_DEFS = {
+  arena_ticket: {
+    id: "arena_ticket",
+    name: "Arena Battle Ticket",
+    description: "A single-use ticket Scott accepts at the arena door.",
+    price: 60,
+    sellPrice: 30,
+    stackable: true,
+  },
+  matt_snack: {
+    id: "matt_snack",
+    name: "Matt Snack",
+    description: "Ty's bait. The next wild Matt capture takes one fewer hit.",
+    price: 20,
+    sellPrice: 10,
+    stackable: true,
+  },
+  matt_charm: {
+    id: "matt_charm",
+    name: "Matt Charm",
+    description: "A little bell charm. Ty pays more for captured Matts.",
+    price: 90,
+    sellPrice: 45,
+    stackable: true,
+  },
+  iron_whip: {
+    id: "iron_whip",
+    name: "Iron Whip",
+    description: "Tom's reinforced whip head. Increases whip reach.",
+    price: 150,
+    sellPrice: 75,
+    unique: true,
+  },
+  swift_boots: {
+    id: "swift_boots",
+    name: "Swift Boots",
+    description: "Tom's fitted boots. Raises walk and sprint speed.",
+    price: 135,
+    sellPrice: 68,
+    unique: true,
+  },
+  inn_meal: {
+    id: "inn_meal",
+    name: "Hot Inn Meal",
+    description: "Brick's road meal, wrapped for later.",
+    price: 25,
+    sellPrice: 12,
+    stackable: true,
+  },
+  coffee_flask: {
+    id: "coffee_flask",
+    name: "Coffee Flask",
+    description: "Strong inn coffee for long hunting nights.",
+    price: 35,
+    sellPrice: 17,
+    stackable: true,
+  },
+  room_key: {
+    id: "room_key",
+    name: "Inn Room Key",
+    description: "A keepsake key from Brick's Inn.",
+    price: 75,
+    sellPrice: 38,
+    unique: true,
+  },
+};
+
+const SHOP_DEFS = {
+  scott: {
+    title: "Scott's Arena Desk",
+    greeting: "Tickets are required past the arena gate.",
+    buy: ["arena_ticket"],
+  },
+  ty: {
+    title: "Ty's Matt Store",
+    greeting: "Ty buys captured Matts and sells Matt-handling gear.",
+    buy: ["matt_snack", "matt_charm"],
+    buysMatts: true,
+  },
+  tom: {
+    title: "Tom's Blacksmith",
+    greeting: "Tom sells permanent field upgrades.",
+    buy: ["iron_whip", "swift_boots"],
+  },
+  brick: {
+    title: "Brick's Inn Counter",
+    greeting: "Brick keeps travelers supplied.",
+    buy: ["inn_meal", "coffee_flask", "room_key"],
+  },
+};
+
+const MATT_SELL_VALUES = {
+  dogmatt: 35,
+  firematt: 85,
+};
+
 const PARTICLES = {
   max: 260,
   ambientRate: 0.16,
@@ -261,9 +368,12 @@ const CLOCK = {
 
 const WORLD_STORAGE_KEY = "ivan-monster-hunt-worlds-v1";
 const MATT_PROGRESS_STORAGE_KEY = "ivan-monster-hunt-matt-progress-v1";
+const ECONOMY_STORAGE_KEY = "ivan-monster-hunt-economy-v1";
 const PROFILE_STORAGE_KEY = "ivan-monster-hunt-profiles-v1";
 const ACTIVE_PROFILE_STORAGE_KEY = "ivan-monster-hunt-active-profile-v1";
 const MATT_PARTY_LIMIT = 6;
+const STARTING_COINS = 120;
+const SHOP_INTERACT_RADIUS = 310;
 const WORLD_IDS = [
   "mainworld",
   "town",
@@ -415,6 +525,11 @@ const state = {
   profiles: [],
   worlds: {},
   capturedParty: [],
+  coins: STARTING_COINS,
+  inventory: {},
+  activeShopId: "",
+  shopTab: "buy",
+  toastTimer: null,
   caughtDogmatts: -1,
   ambientTimer: 0,
   particles: [],
@@ -647,6 +762,10 @@ function getWorldStorageKey() {
 
 function getMattProgressStorageKey() {
   return getProfileScopedStorageKey(MATT_PROGRESS_STORAGE_KEY);
+}
+
+function getEconomyStorageKey() {
+  return getProfileScopedStorageKey(ECONOMY_STORAGE_KEY);
 }
 
 function createProfile(name) {
@@ -1292,6 +1411,112 @@ function saveWorlds() {
   setDevStatus("All placements saved.");
 }
 
+function normalizeInventory(inventory) {
+  const normalized = {};
+
+  if (!inventory || typeof inventory !== "object") {
+    return normalized;
+  }
+
+  Object.entries(inventory).forEach(([itemId, count]) => {
+    if (!ITEM_DEFS[itemId]) {
+      return;
+    }
+
+    const amount = Math.floor(Number(count));
+    if (amount > 0) {
+      normalized[itemId] = ITEM_DEFS[itemId].unique ? 1 : amount;
+    }
+  });
+
+  return normalized;
+}
+
+function loadEconomy() {
+  try {
+    const saved = localStorage.getItem(getEconomyStorageKey()) || localStorage.getItem(ECONOMY_STORAGE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      state.coins = Math.max(0, Math.floor(Number(data.coins) || 0));
+      state.inventory = normalizeInventory(data.inventory);
+      return;
+    }
+  } catch (error) {
+    console.warn("Could not load economy.", error);
+  }
+
+  state.coins = STARTING_COINS;
+  state.inventory = {};
+}
+
+function saveEconomy() {
+  try {
+    localStorage.setItem(
+      getEconomyStorageKey(),
+      JSON.stringify({ version: 1, coins: state.coins, inventory: state.inventory }),
+    );
+  } catch (error) {
+    console.warn("Could not save economy.", error);
+  }
+}
+
+function updateEconomyHud() {
+  if (moneyCounter) {
+    moneyCounter.textContent = `Coins: ${state.coins}`;
+  }
+
+  if (shopMoney) {
+    shopMoney.textContent = `Coins: ${state.coins}`;
+  }
+}
+
+function getItemCount(itemId) {
+  return Math.max(0, Math.floor(state.inventory[itemId] || 0));
+}
+
+function hasItem(itemId) {
+  return getItemCount(itemId) > 0;
+}
+
+function addItem(itemId, amount = 1) {
+  if (!ITEM_DEFS[itemId]) {
+    return;
+  }
+
+  const nextAmount = getItemCount(itemId) + amount;
+  state.inventory[itemId] = ITEM_DEFS[itemId].unique ? Math.min(1, nextAmount) : nextAmount;
+}
+
+function removeItem(itemId, amount = 1) {
+  const nextAmount = getItemCount(itemId) - amount;
+  if (nextAmount > 0) {
+    state.inventory[itemId] = nextAmount;
+  } else {
+    delete state.inventory[itemId];
+  }
+}
+
+function getWhipAttackRange() {
+  return PLAYER.attackRange + (hasItem("iron_whip") ? 80 : 0);
+}
+
+function getPlayerWalkSpeed() {
+  return PLAYER.speed + (hasItem("swift_boots") ? 130 : 0);
+}
+
+function getPlayerSprintSpeed() {
+  return PLAYER.sprintSpeed + (hasItem("swift_boots") ? 160 : 0);
+}
+
+function getCaptureHitThreshold() {
+  return hasItem("matt_snack") ? 3 : 4;
+}
+
+function getMattSellValue(type) {
+  const baseValue = MATT_SELL_VALUES[type] || 25;
+  return hasItem("matt_charm") ? Math.round(baseValue * 1.2) : baseValue;
+}
+
 function makeCapturedPartyId(matt) {
   return matt.partyId || `${matt.sourceWorld || state.currentWorld}:${matt.originalId || matt.id}`;
 }
@@ -1546,10 +1771,309 @@ function applyWorldData(data, message) {
   setDevStatus(message);
 }
 
+function getShopDef(shopId = state.activeShopId) {
+  return SHOP_DEFS[shopId] || null;
+}
+
+function getNearbyShopNpc() {
+  let closest = null;
+  let bestDistance = Infinity;
+
+  for (const npc of state.npcs) {
+    if (!SHOP_DEFS[npc.id]) {
+      continue;
+    }
+
+    const distance = Math.hypot(npc.x - state.player.x, npc.y - state.player.y);
+    if (distance <= SHOP_INTERACT_RADIUS && distance < bestDistance) {
+      closest = npc;
+      bestDistance = distance;
+    }
+  }
+
+  return closest;
+}
+
+function openShop(shopId) {
+  const shop = getShopDef(shopId);
+  if (!shop || !shopOverlay) {
+    return false;
+  }
+
+  state.activeShopId = shopId;
+  state.shopTab = "buy";
+  shopOverlay.hidden = false;
+  renderShop(shop.greeting);
+  return true;
+}
+
+function openInventory() {
+  state.activeShopId = "";
+  state.shopTab = "inventory";
+  if (shopOverlay) {
+    shopOverlay.hidden = false;
+  }
+  renderShop("Inventory opened.");
+}
+
+function closeShop() {
+  state.activeShopId = "";
+  state.shopTab = "buy";
+  if (shopOverlay) {
+    shopOverlay.hidden = true;
+  }
+  if (shopMessage) {
+    shopMessage.textContent = "";
+  }
+}
+
+function isShopOpen() {
+  return Boolean(shopOverlay && !shopOverlay.hidden);
+}
+
+function tryOpenNearbyShop() {
+  const npc = getNearbyShopNpc();
+  return npc ? openShop(npc.id) : false;
+}
+
+function setShopTab(tab) {
+  state.shopTab = tab;
+  renderShop();
+}
+
+function getInventoryEntries() {
+  return Object.entries(state.inventory)
+    .filter(([itemId, count]) => ITEM_DEFS[itemId] && count > 0)
+    .sort(([a], [b]) => ITEM_DEFS[a].name.localeCompare(ITEM_DEFS[b].name));
+}
+
+function makeShopButton(label, action, id, disabled = false) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = label;
+  button.dataset.action = action;
+  if (id) {
+    button.dataset.id = id;
+  }
+  button.disabled = disabled;
+  return button;
+}
+
+function appendItemRow(parent, itemId, mode) {
+  const item = ITEM_DEFS[itemId];
+  if (!item) {
+    return;
+  }
+
+  const count = getItemCount(itemId);
+  const row = document.createElement("article");
+  row.className = "shop-item";
+
+  const info = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = item.name;
+  const detail = document.createElement("span");
+  detail.textContent = mode === "buy"
+    ? `${item.description} Price: ${item.price} coins${item.unique ? " each profile" : ""}.`
+    : `${item.description} You own ${count}. Sell: ${item.sellPrice} coins.`;
+  info.append(title, detail);
+
+  const owned = document.createElement("em");
+  owned.textContent = `x${count}`;
+
+  let action;
+  if (mode === "buy") {
+    action = makeShopButton(
+      "Buy",
+      "buy-item",
+      itemId,
+      state.coins < item.price || (item.unique && count > 0),
+    );
+  } else if (mode === "sell") {
+    action = makeShopButton("Sell", "sell-item", itemId, count <= 0);
+  } else {
+    action = makeShopButton("Owned", "", itemId, true);
+  }
+
+  row.append(info, owned, action);
+  parent.append(row);
+}
+
+function appendEmptyShopMessage(parent, message) {
+  const empty = document.createElement("p");
+  empty.className = "shop-empty";
+  empty.textContent = message;
+  parent.append(empty);
+}
+
+function appendCapturedMattRows(parent) {
+  if (!getShopDef()?.buysMatts) {
+    return;
+  }
+
+  const heading = document.createElement("h3");
+  heading.textContent = "Captured Matts";
+  parent.append(heading);
+
+  if (state.capturedParty.length === 0) {
+    appendEmptyShopMessage(parent, "No captured Matts to sell.");
+    return;
+  }
+
+  state.capturedParty.forEach((matt) => {
+    const value = getMattSellValue(matt.type);
+    const row = document.createElement("article");
+    row.className = "shop-item";
+
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = matt.name || MATT_LABELS[matt.type] || "Captured Matt";
+    const detail = document.createElement("span");
+    detail.textContent = `${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)} capture. Ty pays ${value} coins.`;
+    info.append(title, detail);
+
+    const owned = document.createElement("em");
+    owned.textContent = "Matt";
+    const action = makeShopButton("Sell", "sell-matt", matt.partyId);
+
+    row.append(info, owned, action);
+    parent.append(row);
+  });
+}
+
+function renderShop(message = "") {
+  const shop = getShopDef();
+  updateEconomyHud();
+
+  if (shopTitle) {
+    shopTitle.textContent = shop ? shop.title : "Inventory";
+  }
+
+  if (shopTabs) {
+    shopTabs.innerHTML = "";
+    const tabs = shop ? ["buy", "sell", "inventory"] : ["inventory"];
+    tabs.forEach((tab) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = tab[0].toUpperCase() + tab.slice(1);
+      button.classList.toggle("active", state.shopTab === tab);
+      button.dataset.tab = tab;
+      shopTabs.append(button);
+    });
+  }
+
+  if (!shopList) {
+    return;
+  }
+
+  shopList.innerHTML = "";
+
+  if (state.shopTab === "buy" && shop) {
+    shop.buy.forEach((itemId) => appendItemRow(shopList, itemId, "buy"));
+  } else if (state.shopTab === "sell" && shop) {
+    const entries = getInventoryEntries();
+    if (entries.length === 0 && !shop.buysMatts) {
+      appendEmptyShopMessage(shopList, "Nothing to sell yet.");
+    } else {
+      entries.forEach(([itemId]) => appendItemRow(shopList, itemId, "sell"));
+      appendCapturedMattRows(shopList);
+    }
+  } else {
+    const entries = getInventoryEntries();
+    if (entries.length === 0) {
+      appendEmptyShopMessage(shopList, "Your pack is empty.");
+    } else {
+      entries.forEach(([itemId]) => appendItemRow(shopList, itemId, "inventory"));
+    }
+  }
+
+  if (shopMessage) {
+    shopMessage.textContent = message || "";
+  }
+}
+
+function buyShopItem(itemId) {
+  const shop = getShopDef();
+  const item = ITEM_DEFS[itemId];
+
+  if (!shop || !item || !shop.buy.includes(itemId)) {
+    return;
+  }
+
+  if (item.unique && hasItem(itemId)) {
+    renderShop(`You already own ${item.name}.`);
+    return;
+  }
+
+  if (state.coins < item.price) {
+    renderShop(`Not enough coins for ${item.name}.`);
+    return;
+  }
+
+  state.coins -= item.price;
+  addItem(itemId);
+  saveEconomy();
+  updateEconomyHud();
+  renderShop(`Bought ${item.name}.`);
+}
+
+function sellInventoryItem(itemId) {
+  const item = ITEM_DEFS[itemId];
+  if (!item || getItemCount(itemId) <= 0) {
+    return;
+  }
+
+  removeItem(itemId);
+  state.coins += item.sellPrice;
+  saveEconomy();
+  updateEconomyHud();
+  renderShop(`Sold ${item.name} for ${item.sellPrice} coins.`);
+}
+
+function sellCapturedMatt(partyId) {
+  const shop = getShopDef();
+  if (!shop?.buysMatts) {
+    return;
+  }
+
+  const index = state.capturedParty.findIndex((matt) => matt.partyId === partyId);
+  if (index === -1) {
+    renderShop("That Matt is no longer in your party.");
+    return;
+  }
+
+  const [matt] = state.capturedParty.splice(index, 1);
+  const value = getMattSellValue(matt.type);
+  state.coins += value;
+  state.dogmatts = state.dogmatts.filter((candidate) => candidate.partyId !== partyId);
+  saveCapturedParty();
+  saveEconomy();
+  updateCaughtHud(countCaughtMatts());
+  updateEconomyHud();
+  renderShop(`Ty bought ${matt.name || "a Matt"} for ${value} coins.`);
+}
+
 function setDevStatus(message) {
   if (devStatus) {
     devStatus.textContent = message;
   }
+}
+
+function setGameMessage(message) {
+  if (shopMessage) {
+    shopMessage.textContent = message;
+  }
+
+  if (!gameToast || !message) {
+    return;
+  }
+
+  gameToast.textContent = message;
+  gameToast.hidden = false;
+  window.clearTimeout(state.toastTimer);
+  state.toastTimer = window.setTimeout(() => {
+    gameToast.hidden = true;
+  }, 2200);
 }
 
 function getWorldLabel(id) {
@@ -1608,8 +2132,10 @@ function setWorld(id, movePlayer = true) {
 
   if (state.ready) {
     saveCapturedParty();
+    saveEconomy();
   }
 
+  closeShop();
   state.currentWorld = id;
   state.lastPreloadKey = "";
   state.dev.activePathId = null;
@@ -2819,7 +3345,7 @@ function pruneTileCache() {
 function updatePlayer(dt) {
   const player = state.player;
 
-  if (state.dev.enabled) {
+  if (state.dev.enabled || isShopOpen()) {
     player.moving = false;
     setAction(player, "idle");
     advanceAnimation(player, images.ivan[player.action].length, 0.13, dt);
@@ -2843,6 +3369,8 @@ function updatePlayer(dt) {
   player.moving = moving;
 
   if (moving) {
+    player.speed = getPlayerWalkSpeed();
+    player.sprintSpeed = getPlayerSprintSpeed();
     const speed = keys.has("shift") || touchInput.sprint ? player.sprintSpeed : player.speed;
     moveWithWalls(player, moveX * speed * dt, moveY * speed * dt, 28);
     player.facingX = moveX;
@@ -3172,7 +3700,7 @@ function spawnWhipEffect() {
 
   for (let i = 0; i < 22; i += 1) {
     const arc = (i / 21 - 0.5) * 2.2;
-    const reach = randomBetween(48, PLAYER.attackRange * 0.85);
+    const reach = randomBetween(48, getWhipAttackRange() * 0.85);
     const side = Math.sin(arc) * 82;
 
     addParticle({
@@ -3388,6 +3916,7 @@ function update(dt) {
 }
 
 function hitDogmatt(dogmatt) {
+  const captureHitThreshold = getCaptureHitThreshold();
   dogmatt.hitCooldown = 0.25;
   dogmatt.hitReactionTimer = 0.55;
   dogmatt.hitCount += 1;
@@ -3396,13 +3925,20 @@ function hitDogmatt(dogmatt) {
   spawnHitEffect(dogmatt, dogmatt.hitCount);
   addScreenShake(5);
 
-  if (dogmatt.hitCount >= 4) {
+  if (dogmatt.hitCount >= captureHitThreshold) {
     if (state.capturedParty.length >= MATT_PARTY_LIMIT) {
-      dogmatt.hitCount = 3;
+      dogmatt.hitCount = captureHitThreshold - 1;
       setAction(dogmatt, dogmatt.type === "firematt" ? "hit" : cryingActionForHits(dogmatt.hitCount));
       playHitSound(dogmatt.hitCount);
       setDevStatus(`Party full: ${MATT_PARTY_LIMIT} Matts max.`);
       return;
+    }
+
+    if (hasItem("matt_snack")) {
+      removeItem("matt_snack");
+      saveEconomy();
+      updateEconomyHud();
+      setGameMessage("Matt Snack used.");
     }
 
     dogmatt.hitCount = 4;
@@ -3443,7 +3979,7 @@ function applyWhipHit() {
     const dot = (dx / distance) * forwardX + (dy / distance) * forwardY;
     const inWhipArc = distance < 92 || dot > 0.12;
 
-    if (inWhipArc && distance < PLAYER.attackRange) {
+    if (inWhipArc && distance < getWhipAttackRange()) {
       const score = distance - dot * 80;
 
       if (score < bestScore) {
@@ -3762,6 +4298,18 @@ function tryEnterNode() {
 
   if (!node) {
     return false;
+  }
+
+  if (state.currentWorld === "town_arena_entrance" && node.target === "town_arena") {
+    if (!hasItem("arena_ticket")) {
+      setGameMessage("Scott sells arena tickets. Buy one before entering.");
+      return false;
+    }
+
+    removeItem("arena_ticket");
+    saveEconomy();
+    updateEconomyHud();
+    setGameMessage("Arena ticket used.");
   }
 
   saveCapturedParty();
@@ -4142,7 +4690,7 @@ function bindTouchButton(button, onPress, onRelease) {
 }
 
 function triggerWhip() {
-  if (!state.ready || state.dev.enabled) {
+  if (!state.ready || state.dev.enabled || isShopOpen()) {
     return;
   }
 
@@ -4171,7 +4719,18 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (key === "escape" && isShopOpen()) {
+    event.preventDefault();
+    closeShop();
+    return;
+  }
+
   if (isTypingTarget(event.target)) {
+    return;
+  }
+
+  if (isShopOpen()) {
+    event.preventDefault();
     return;
   }
 
@@ -4197,10 +4756,18 @@ window.addEventListener("keydown", (event) => {
     event.preventDefault();
   }
 
+  if (key === "i" && !event.repeat) {
+    event.preventDefault();
+    openInventory();
+    return;
+  }
+
   if (key === "e" && !event.repeat) {
     event.preventDefault();
     if (!state.dev.enabled) {
-      tryEnterNode();
+      if (!tryOpenNearbyShop()) {
+        tryEnterNode();
+      }
     }
     return;
   }
@@ -4221,6 +4788,7 @@ window.addEventListener("keyup", (event) => {
 
 window.addEventListener("blur", () => {
   saveCapturedParty();
+  saveEconomy();
   keys.clear();
   touchInput.sprint = false;
   resetTouchJoystick();
@@ -4233,6 +4801,13 @@ canvas.addEventListener("pointerdown", (event) => {
   if (state.dev.enabled) {
     handleDevPointerDown(event);
     return;
+  }
+
+  if (event.pointerType !== "mouse") {
+    if (tryOpenNearbyShop() || tryEnterNode()) {
+      event.preventDefault();
+      return;
+    }
   }
 
   triggerWhip();
@@ -4260,6 +4835,40 @@ bindTouchButton(
     touchInput.sprint = false;
   },
 );
+
+inventoryButton?.addEventListener("click", () => {
+  openInventory();
+});
+
+touchInventory?.addEventListener("click", (event) => {
+  event.preventDefault();
+  openInventory();
+});
+
+shopClose?.addEventListener("click", closeShop);
+
+shopTabs?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-tab]");
+  if (button) {
+    setShopTab(button.dataset.tab);
+  }
+});
+
+shopList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action]");
+  if (!button || button.disabled) {
+    return;
+  }
+
+  const { action, id } = button.dataset;
+  if (action === "buy-item") {
+    buyShopItem(id);
+  } else if (action === "sell-item") {
+    sellInventoryItem(id);
+  } else if (action === "sell-matt") {
+    sellCapturedMatt(id);
+  }
+});
 
 window.addEventListener("contextmenu", (event) => {
   event.preventDefault();
@@ -4297,6 +4906,7 @@ async function startGameForProfile(profileId) {
   state.currentWorld = DEFAULT_WORLD_ID;
   state.worlds = loadWorlds();
   state.capturedParty = loadCapturedParty();
+  loadEconomy();
   state.caughtDogmatts = -1;
   state.clockMinutes = CLOCK.startHour * 60;
   state.lastNightState = isNightTime();
@@ -4315,6 +4925,7 @@ async function startGameForProfile(profileId) {
   seedPlayerTrail();
   initDevPanel();
   updateTimeLabel();
+  updateEconomyHud();
 
   if (new URLSearchParams(window.location.search).has("dev")) {
     setDevMode(true);
@@ -4398,6 +5009,7 @@ profileDelete?.addEventListener("click", () => {
   state.profiles = state.profiles.filter((profile) => profile.id !== state.profileId);
   localStorage.removeItem(getWorldStorageKey());
   localStorage.removeItem(getMattProgressStorageKey());
+  localStorage.removeItem(getEconomyStorageKey());
   saveProfiles();
   setActiveProfile(state.profiles[0].id);
   updateProfileList();
@@ -4407,6 +5019,7 @@ profileDelete?.addEventListener("click", () => {
 profileMenu?.addEventListener("click", () => {
   if (state.ready) {
     saveCapturedParty();
+    saveEconomy();
     saveWorlds();
   }
 
