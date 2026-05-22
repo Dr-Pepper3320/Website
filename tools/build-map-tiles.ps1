@@ -89,7 +89,32 @@ try {
     extension = "jpg"
   } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $outputPath "metadata.json") -Encoding ASCII
 
+  $overviewPath = Join-Path $workspace "assets/worldmap-overview.jpg"
+  $overviewSize = 1600
+  $overview = [System.Drawing.Bitmap]::new(
+    $overviewSize,
+    $overviewSize,
+    [System.Drawing.Imaging.PixelFormat]::Format24bppRgb
+  )
+  $overviewGraphics = [System.Drawing.Graphics]::FromImage($overview)
+
+  try {
+    $overviewGraphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+    $overviewGraphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+    $overviewGraphics.DrawImage(
+      $sourceImage,
+      [System.Drawing.Rectangle]::new(0, 0, $overviewSize, $overviewSize),
+      [System.Drawing.Rectangle]::new(0, 0, $sourceImage.Width, $sourceImage.Height),
+      [System.Drawing.GraphicsUnit]::Pixel
+    )
+    $overview.Save($overviewPath, $jpgCodec, $encoderParams)
+  } finally {
+    $overviewGraphics.Dispose()
+    $overview.Dispose()
+  }
+
   Write-Host "Generated $($columns * $rows) map tiles in $outputPath"
+  Write-Host "Generated overview map at $overviewPath"
 } finally {
   $sourceImage.Dispose()
 }

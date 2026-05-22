@@ -46,6 +46,140 @@ canvas {
   image-rendering: auto;
 }
 
+.launcher {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    linear-gradient(180deg, rgba(8, 13, 12, 0.88), rgba(8, 13, 12, 0.74)),
+    rgba(8, 13, 12, 0.92);
+}
+
+.launcher[hidden] {
+  display: none;
+}
+
+.launcher-panel {
+  width: min(430px, calc(100vw - 32px));
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  background: rgba(10, 15, 13, 0.92);
+  border: 1px solid rgba(235, 240, 219, 0.24);
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(14px);
+}
+
+.launcher-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.launcher-panel header div {
+  display: grid;
+  gap: 2px;
+}
+
+.launcher-panel strong {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.launcher-panel span,
+#profile-status {
+  color: #cbd6c4;
+  font-size: 13px;
+}
+
+.profile-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(44vh, 330px);
+  overflow: auto;
+}
+
+.profile-option {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(235, 240, 219, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #f5f7ef;
+  font: inherit;
+  text-align: left;
+}
+
+.profile-option.active {
+  border-color: rgba(121, 241, 185, 0.84);
+  background: rgba(65, 151, 111, 0.28);
+}
+
+.profile-option strong {
+  font-size: 15px;
+}
+
+.profile-option span {
+  font-size: 12px;
+}
+
+.profile-form,
+.profile-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.profile-form input,
+.profile-form button,
+.profile-actions button,
+#profile-menu {
+  font: inherit;
+}
+
+.profile-form input {
+  min-width: 0;
+  flex: 1;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(235, 240, 219, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f7ef;
+}
+
+.profile-form button,
+.profile-actions button,
+#profile-menu {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(235, 240, 219, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #f5f7ef;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.profile-actions button:first-child {
+  flex: 1;
+  border-color: rgba(121, 241, 185, 0.68);
+  background: rgba(65, 151, 111, 0.34);
+}
+
+#profile-status {
+  min-height: 18px;
+  margin: 0;
+  line-height: 1.35;
+}
+
 .hud {
   position: absolute;
   top: 16px;
@@ -75,7 +209,7 @@ canvas {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  min-width: 188px;
+  min-width: 204px;
   padding: 8px 12px;
 }
 
@@ -118,6 +252,7 @@ canvas {
 .controls {
   gap: 10px;
   padding: 8px 12px;
+  pointer-events: auto;
 }
 
 .controls span {
@@ -130,6 +265,12 @@ canvas {
   background: rgba(255, 255, 255, 0.08);
   color: #f3f2de;
   font-weight: 700;
+}
+
+#profile-menu {
+  min-width: 68px;
+  min-height: 28px;
+  padding: 0 8px;
 }
 
 .loading {
@@ -148,6 +289,106 @@ canvas {
   opacity: 0;
   display: none;
   pointer-events: none;
+}
+
+.dev-panel {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 5;
+  width: min(360px, calc(100vw - 32px));
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(8, 13, 12, 0.86);
+  border: 1px solid rgba(235, 240, 219, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(12px);
+}
+
+.dev-panel[hidden] {
+  display: none;
+}
+
+.dev-panel header,
+.dev-actions,
+.dev-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dev-panel header {
+  justify-content: space-between;
+}
+
+.dev-panel strong {
+  font-size: 14px;
+}
+
+.dev-panel label {
+  display: grid;
+  gap: 4px;
+  color: #cbd6c4;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dev-panel select,
+.dev-panel textarea,
+.dev-panel button {
+  font: inherit;
+}
+
+.dev-panel select,
+.dev-panel textarea {
+  width: 100%;
+  border: 1px solid rgba(235, 240, 219, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f7ef;
+}
+
+.dev-panel select {
+  min-height: 32px;
+  padding: 0 8px;
+}
+
+.dev-panel textarea {
+  min-height: 96px;
+  resize: vertical;
+  padding: 8px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+}
+
+.dev-panel button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(235, 240, 219, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f7ef;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.dev-panel button.active {
+  border-color: rgba(255, 238, 143, 0.76);
+  background: rgba(224, 184, 84, 0.26);
+}
+
+.dev-tools,
+.dev-actions {
+  flex-wrap: wrap;
+}
+
+#dev-status {
+  margin: 0;
+  color: #cbd6c4;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .touch-controls {
@@ -275,6 +516,15 @@ canvas {
 
   .controls {
     display: none;
+  }
+
+  .dev-panel {
+    left: 10px;
+    right: 10px;
+    bottom: 164px;
+    width: auto;
+    max-height: calc(100dvh - 188px);
+    overflow: auto;
   }
 
   .touch-controls {
