@@ -27,6 +27,7 @@ const devSave = document.querySelector("#dev-save");
 const devNewLine = document.querySelector("#dev-new-line");
 const devRespawn = document.querySelector("#dev-respawn");
 const devExport = document.querySelector("#dev-export");
+const devExportBuiltIn = document.querySelector("#dev-export-built-in");
 const devImport = document.querySelector("#dev-import");
 const devLoadBuiltIn = document.querySelector("#dev-load-built-in");
 const devClear = document.querySelector("#dev-clear");
@@ -1489,6 +1490,20 @@ function exportWorlds() {
   setDevStatus("All placements exported.");
 }
 
+function exportBuiltInWorlds() {
+  if (!devData) {
+    return;
+  }
+
+  devData.value = `window.DEFAULT_WORLD_DATA = ${JSON.stringify(
+    { version: 1, currentWorld: state.currentWorld, worlds: state.worlds },
+    null,
+    2,
+  )};\n`;
+  devData.select();
+  setDevStatus("Built-in world JS exported for assets/worlds/default-worlds.js.");
+}
+
 function importWorlds() {
   if (!devData || !devData.value.trim()) {
     setDevStatus("Paste exported world data first.");
@@ -1938,6 +1953,7 @@ function initDevPanel() {
   devNewLine?.addEventListener("click", startNewEditorLine);
   devRespawn?.addEventListener("click", respawnWorldEnemies);
   devExport?.addEventListener("click", exportWorlds);
+  devExportBuiltIn?.addEventListener("click", exportBuiltInWorlds);
   devImport?.addEventListener("click", importWorlds);
   devLoadBuiltIn?.addEventListener("click", loadBuiltInWorlds);
   devClear?.addEventListener("click", clearCurrentWorld);
