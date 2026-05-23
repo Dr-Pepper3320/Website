@@ -446,6 +446,70 @@ canvas {
   display: none;
 }
 
+.arena-battle-ui {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 9;
+  width: min(760px, calc(100vw - 28px));
+  transform: translateX(-50%);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 238, 143, 0.34);
+  border-radius: 8px;
+  background: rgba(8, 13, 12, 0.78);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+}
+
+.arena-battle-ui[hidden] {
+  display: none;
+}
+
+.arena-battle-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.arena-battle-head strong {
+  font-size: 16px;
+}
+
+.arena-battle-head span,
+#arena-battle-log {
+  color: #d5decf;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.arena-battle-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.arena-battle-actions button {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 238, 143, 0.5);
+  border-radius: 6px;
+  background: rgba(178, 135, 45, 0.28);
+  color: #fff8cc;
+  font-weight: 800;
+}
+
+.arena-battle-actions button:disabled {
+  opacity: 0.52;
+}
+
+#arena-battle-log {
+  min-height: 18px;
+  margin: 0;
+}
+
 .loading {
   position: absolute;
   inset: 0;
@@ -711,6 +775,20 @@ canvas {
   .shop-item button {
     grid-column: 1 / -1;
     width: 100%;
+  }
+
+  .arena-battle-ui {
+    bottom: 12px;
+    width: calc(100vw - 20px);
+  }
+
+  .arena-battle-head {
+    display: grid;
+    gap: 3px;
+  }
+
+  .arena-battle-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .dev-panel {

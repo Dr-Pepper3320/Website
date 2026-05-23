@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Ivan Monster Hunt</title>
-    <link rel="stylesheet" href="styles.css?v=mobile-zoom-lock" />
+    <link rel="stylesheet" href="styles.css?v=real-arena-battle-ui" />
   </head>
   <body>
     <main class="game-shell">
@@ -85,6 +85,15 @@
         </div>
       </section>
 
+      <section class="arena-battle-ui" id="arena-battle-ui" aria-label="Arena battle" hidden>
+        <div class="arena-battle-head">
+          <strong id="arena-battle-title">Arena Battle</strong>
+          <span id="arena-battle-stats"></span>
+        </div>
+        <div class="arena-battle-actions" id="arena-battle-actions"></div>
+        <p id="arena-battle-log"></p>
+      </section>
+
       <section class="dev-panel" id="dev-panel" aria-label="Developer tools" hidden>
         <header>
           <strong>Dev Mode</strong>
@@ -149,6 +158,6 @@
     </main>
 
     <script src="assets/worlds/default-worlds.js?v=grass-water-node-placements"></script>
-    <script src="game.js?v=mobile-camera-zoom-out"></script>
+    <script src="game.js?v=real-arena-battle"></script>
   </body>
 </html>

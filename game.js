@@ -24,6 +24,11 @@ const shopClose = document.querySelector("#shop-close");
 const shopTabs = document.querySelector("#shop-tabs");
 const shopList = document.querySelector("#shop-list");
 const shopMessage = document.querySelector("#shop-message");
+const arenaBattleUi = document.querySelector("#arena-battle-ui");
+const arenaBattleTitle = document.querySelector("#arena-battle-title");
+const arenaBattleStats = document.querySelector("#arena-battle-stats");
+const arenaBattleActions = document.querySelector("#arena-battle-actions");
+const arenaBattleLog = document.querySelector("#arena-battle-log");
 const gameToast = document.querySelector("#game-toast");
 const touchJoystick = document.querySelector("#touch-joystick");
 const touchKnob = document.querySelector("#touch-knob");
@@ -716,6 +721,7 @@ const state = {
     playerMaxHp: 0,
     opponentMaxHp: 0,
     log: [],
+    turnLocked: false,
   },
   toastTimer: null,
   caughtDogmatts: -1,
@@ -2135,6 +2141,10 @@ function openShop(shopId) {
 }
 
 function openInventory() {
+  if (state.arena.active && state.arena.phase !== "idle") {
+    return;
+  }
+
   state.activeShopId = "";
   state.shopTab = "inventory";
   if (shopOverlay) {
@@ -2335,11 +2345,13 @@ function createArenaState() {
     playerMaxHp: 0,
     opponentMaxHp: 0,
     log: [],
+    turnLocked: false,
   };
 }
 
 function resetArenaBattle(clearActors = false) {
   state.arena = createArenaState();
+  hideArenaBattleUi();
 
   if (clearActors && state.currentWorld === "town_arena") {
     state.npcs = [];
@@ -2424,6 +2436,7 @@ function renderArenaSelect(message = "Choose your Matt for the arena.") {
   state.shopTab = "arena";
   state.arena.active = true;
   state.arena.phase = "select";
+  document.body.classList.add("arena-active");
 
   if (shopOverlay) {
     shopOverlay.hidden = false;
@@ -2467,32 +2480,47 @@ function renderArenaSelect(message = "Choose your Matt for the arena.") {
   }
 }
 
-function spawnArenaBattleActors(opponent) {
-  if (state.currentWorld !== "town_arena") {
-    return;
+function hideArenaBattleUi() {
+  if (arenaBattleUi) {
+    arenaBattleUi.hidden = true;
   }
+  document.body.classList.remove("arena-active");
+}
 
-  const npcX = clamp(state.player.x + 260, 0, getMapWidth());
-  const npcY = clamp(state.player.y - 130, 0, getMapHeight());
-  const mattX = clamp(state.player.x + 110, 0, getMapWidth());
-  const mattY = clamp(state.player.y - 70, 0, getMapHeight());
-  const npc = createNpc(opponent.id, npcX, npcY);
-  npc.direction = "left";
+function getArenaBattleCenter() {
+  return {
+    x: getMapWidth("town_arena") / 2,
+    y: getMapHeight("town_arena") / 2,
+  };
+}
 
-  const config = getMattConfig(opponent.mattType);
-  const arenaMatt = {
-    id: `arena-${opponent.id}-${opponent.mattType}`,
-    type: opponent.mattType,
-    x: mattX,
-    y: mattY,
+function createArenaMattActor(matt, x, y, side, caught = false) {
+  const type = matt.mattType || matt.type;
+  const config = getMattConfig(type);
+  return {
+    id: side === "opponent" ? `arena-${matt.id}-${type}` : `arena-player-${matt.partyId || matt.id}`,
+    originalId: matt.originalId || matt.id,
+    partyId: matt.partyId || "",
+    sourceWorld: matt.sourceWorld || state.currentWorld,
+    type,
+    x,
+    y,
+    baseX: x,
+    baseY: y,
     width: config.width,
     height: config.height,
     action: "idle",
     frameTimer: 0,
     frameIndex: 0,
-    direction: "left",
-    caught: false,
-    arenaOpponent: true,
+    direction: side === "player" ? "right" : "left",
+    caught,
+    arenaBattler: true,
+    arenaSide: side,
+    arenaLungeTimer: 0,
+    arenaHitTimer: 0,
+    level: matt.level || 1,
+    xp: matt.xp || 0,
+    friendship: matt.friendship || 0,
     hitCount: 0,
     hitCooldown: 0,
     hitReactionTimer: 0,
@@ -2506,12 +2534,84 @@ function spawnArenaBattleActors(opponent) {
     idleSpecialTimer: FIREMATT.specialIdleMin,
     lastSpecialIdleAction: "",
   };
+}
 
+function spawnArenaBattleActors(opponent, playerMatt = null) {
+  if (state.currentWorld !== "town_arena") {
+    return;
+  }
+
+  const center = getArenaBattleCenter();
+  state.player.x = center.x - 380;
+  state.player.y = center.y + 250;
+  state.player.direction = "right";
+  state.player.facingX = 1;
+  state.player.facingY = 0;
+  seedPlayerTrail();
+  syncCamera();
+
+  const npcX = clamp(center.x + 390, 0, getMapWidth());
+  const npcY = clamp(center.y - 120, 0, getMapHeight());
+  const opponentMattX = clamp(center.x + 220, 0, getMapWidth());
+  const opponentMattY = clamp(center.y + 70, 0, getMapHeight());
+  const playerMattX = clamp(center.x - 230, 0, getMapWidth());
+  const playerMattY = clamp(center.y + 70, 0, getMapHeight());
+  const npc = createNpc(opponent.id, npcX, npcY);
+  npc.direction = "left";
+
+  const arenaMatt = createArenaMattActor(opponent, opponentMattX, opponentMattY, "opponent", false);
+  const selectedMatt = playerMatt
+    ? createArenaMattActor(playerMatt, playerMattX, playerMattY, "player", true)
+    : null;
   state.npcs = [npc];
-  state.dogmatts = [
-    ...state.dogmatts.filter((matt) => matt.caught),
-    arenaMatt,
-  ];
+  state.dogmatts = selectedMatt ? [selectedMatt, arenaMatt] : [arenaMatt];
+}
+
+function getArenaActor(side) {
+  return state.dogmatts.find((matt) => matt.arenaBattler && matt.arenaSide === side);
+}
+
+function getArenaPowerColor(type) {
+  return {
+    dogmatt: "#ffe8a6",
+    firematt: "#ff714d",
+    grassmatt: "#8df26d",
+    watermatt: "#61d7ff",
+  }[type] || "#fff0a8";
+}
+
+function playArenaAttackEffect(side, ability) {
+  const attacker = getArenaActor(side);
+  const defender = getArenaActor(side === "player" ? "opponent" : "player");
+  if (!attacker || !defender) {
+    return;
+  }
+
+  attacker.arenaLungeTimer = 0.42;
+  defender.arenaHitTimer = 0.34;
+  const color = getArenaPowerColor(attacker.type);
+  const dx = defender.x - attacker.x;
+  const dy = defender.y - attacker.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  const moveX = dx / distance;
+  const moveY = dy / distance;
+
+  for (let i = 0; i < 30; i += 1) {
+    const progress = i / 29;
+    addParticle({
+      type: i % 4 === 0 ? "ring" : "spark",
+      x: attacker.x + dx * progress + randomBetween(-26, 26),
+      y: attacker.y - 55 + dy * progress + randomBetween(-22, 22),
+      vx: moveX * randomBetween(70, 190) + randomBetween(-44, 44),
+      vy: moveY * randomBetween(40, 140) + randomBetween(-88, 18),
+      gravity: 220,
+      life: randomBetween(0.28, 0.72),
+      size: ability.heal ? randomBetween(5, 12) : randomBetween(4, 9),
+      color,
+    });
+  }
+
+  spawnHitEffect(defender, 2);
 }
 
 function startArenaBattle(partyId) {
@@ -2539,9 +2639,11 @@ function startArenaBattle(partyId) {
     playerMaxHp,
     opponentMaxHp,
     log: [`${opponent.name} enters with a Lv ${opponent.level} ${MATT_LABELS[opponent.mattType] || "Matt"}.`],
+    turnLocked: false,
   };
 
-  spawnArenaBattleActors(opponent);
+  closeShop();
+  spawnArenaBattleActors(opponent, playerMatt);
   renderArenaBattle("Pick an ability.");
 }
 
@@ -2604,14 +2706,34 @@ function awardArenaXp() {
 
 function finishArenaBattle(won) {
   state.arena.phase = won ? "won" : "lost";
+  state.arena.turnLocked = false;
   const result = won ? awardArenaXp() : `${getArenaMattName(state.arena.playerMatt)} needs a rest.`;
   state.arena.log.unshift(won ? `Arena win. ${result}` : `Arena loss. ${result}`);
   renderArenaBattle(won ? "You won the arena battle." : "You lost the arena battle.");
 }
 
+function appendArenaHpMeter(parent, label, hp, maxHp, side) {
+  const meter = document.createElement("div");
+  meter.className = `arena-hp-meter ${side}`;
+
+  const name = document.createElement("span");
+  name.textContent = label;
+
+  const track = document.createElement("i");
+  const fill = document.createElement("b");
+  fill.style.width = `${clamp((hp / Math.max(1, maxHp)) * 100, 0, 100)}%`;
+  track.append(fill);
+
+  const value = document.createElement("em");
+  value.textContent = `${hp}/${maxHp}`;
+
+  meter.append(name, track, value);
+  parent.append(meter);
+}
+
 function arenaUseAbility(index) {
   const arena = state.arena;
-  if (!arena.active || arena.phase !== "battle") {
+  if (!arena.active || arena.phase !== "battle" || arena.turnLocked) {
     return;
   }
 
@@ -2621,108 +2743,127 @@ function arenaUseAbility(index) {
     return;
   }
 
-  const playerResult = resolveArenaAbility(
-    getArenaMattName(arena.playerMatt),
-    playerAbility,
-    arena.opponentHp,
-    arena.opponentMaxHp,
-    arena.playerHp,
-    arena.playerMaxHp,
-    getArenaMattPowerBonus(arena.playerMatt),
-  );
-  arena.opponentHp = playerResult.defenderHp;
-  arena.playerHp = playerResult.attackerHp;
-  arena.log.unshift(playerResult.text);
+  arena.turnLocked = true;
+  playArenaAttackEffect("player", playerAbility);
+  renderArenaBattle(`${getArenaMattName(arena.playerMatt)} uses ${playerAbility.name}.`);
 
-  if (arena.opponentHp <= 0) {
-    finishArenaBattle(true);
-    return;
-  }
+  window.setTimeout(() => {
+    if (!state.arena.active || state.arena.phase !== "battle") {
+      return;
+    }
 
-  const dodged = playerAbility.dodge && Math.random() < playerAbility.dodge;
-  if (dodged) {
-    arena.log.unshift(`${getArenaMattName(arena.playerMatt)} dodges the counterattack.`);
-    renderArenaBattle("Nice dodge. Pick another ability.");
-    return;
-  }
+    const playerResult = resolveArenaAbility(
+      getArenaMattName(arena.playerMatt),
+      playerAbility,
+      arena.opponentHp,
+      arena.opponentMaxHp,
+      arena.playerHp,
+      arena.playerMaxHp,
+      getArenaMattPowerBonus(arena.playerMatt),
+    );
+    arena.opponentHp = playerResult.defenderHp;
+    arena.playerHp = playerResult.attackerHp;
+    arena.log.unshift(playerResult.text);
 
-  const opponentAbilities = getArenaAbilities(arena.opponent.mattType);
-  const opponentAbility = opponentAbilities[Math.floor(Math.random() * opponentAbilities.length)];
-  const opponentPower = Math.max(
-    0,
-    getArenaMattPowerBonus({ level: arena.opponent.level, friendship: arena.opponent.friendship }, 4) -
-      (playerAbility.weaken || 0),
-  );
-  const opponentResult = resolveArenaAbility(
-    `${arena.opponent.name}'s Matt`,
-    opponentAbility,
-    arena.playerHp,
-    arena.playerMaxHp,
-    arena.opponentHp,
-    arena.opponentMaxHp,
-    opponentPower,
-  );
-  arena.playerHp = opponentResult.defenderHp;
-  arena.opponentHp = opponentResult.attackerHp;
-  arena.log.unshift(opponentResult.text);
+    if (arena.opponentHp <= 0) {
+      arena.turnLocked = false;
+      finishArenaBattle(true);
+      return;
+    }
 
-  if (arena.playerHp <= 0) {
-    finishArenaBattle(false);
-    return;
-  }
+    const dodged = playerAbility.dodge && Math.random() < playerAbility.dodge;
+    if (dodged) {
+      arena.turnLocked = false;
+      arena.log.unshift(`${getArenaMattName(arena.playerMatt)} dodges the counterattack.`);
+      renderArenaBattle("Nice dodge. Pick another ability.");
+      return;
+    }
 
-  renderArenaBattle("Pick another ability.");
+    const opponentAbilities = getArenaAbilities(arena.opponent.mattType);
+    const opponentAbility = opponentAbilities[Math.floor(Math.random() * opponentAbilities.length)];
+    playArenaAttackEffect("opponent", opponentAbility);
+    renderArenaBattle(`${arena.opponent.name}'s Matt uses ${opponentAbility.name}.`);
+
+    window.setTimeout(() => {
+      if (!state.arena.active || state.arena.phase !== "battle") {
+        return;
+      }
+
+      const opponentPower = Math.max(
+        0,
+        getArenaMattPowerBonus({ level: arena.opponent.level, friendship: arena.opponent.friendship }, 4) -
+          (playerAbility.weaken || 0),
+      );
+      const opponentResult = resolveArenaAbility(
+        `${arena.opponent.name}'s Matt`,
+        opponentAbility,
+        arena.playerHp,
+        arena.playerMaxHp,
+        arena.opponentHp,
+        arena.opponentMaxHp,
+        opponentPower,
+      );
+      arena.playerHp = opponentResult.defenderHp;
+      arena.opponentHp = opponentResult.attackerHp;
+      arena.log.unshift(opponentResult.text);
+      arena.turnLocked = false;
+
+      if (arena.playerHp <= 0) {
+        finishArenaBattle(false);
+        return;
+      }
+
+      renderArenaBattle(arena.log[0] || "Pick another ability.");
+    }, 520);
+  }, 440);
 }
 
 function renderArenaBattle(message = "") {
   const arena = state.arena;
-  if (shopOverlay) {
-    shopOverlay.hidden = false;
-  }
-  if (shopTitle) {
-    shopTitle.textContent = arena.opponent
-      ? `${arena.opponent.name} - ${arena.opponent.title}`
-      : "Arena Battle";
-  }
-  if (shopTabs) {
-    shopTabs.innerHTML = "";
-  }
-  if (!shopList) {
+  if (!arenaBattleUi) {
     return;
   }
 
-  shopList.innerHTML = "";
-  appendArenaStatus(shopList);
-
-  if (arena.phase === "battle") {
-    getArenaAbilities(arena.playerMatt.type).forEach((ability, index) => {
-      const row = document.createElement("article");
-      row.className = "shop-item";
-
-      const info = document.createElement("div");
-      const title = document.createElement("strong");
-      title.textContent = ability.name;
-      const detail = document.createElement("span");
-      const extras = [
-        ability.heal ? `heal ${ability.heal}` : "",
-        ability.burn ? `extra ${ability.burn}` : "",
-        ability.dodge ? `${Math.round(ability.dodge * 100)}% dodge` : "",
-        ability.weaken ? `weaken ${ability.weaken}` : "",
-      ].filter(Boolean);
-      detail.textContent = `${ability.text}. Power ${ability.power}${extras.length ? `, ${extras.join(", ")}` : ""}.`;
-      info.append(title, detail);
-
-      row.append(info, document.createElement("em"), makeShopButton("Use", "arena-ability", String(index)));
-      shopList.append(row);
-    });
-  } else {
-    shopList.append(makeShopButton("Leave Arena", "arena-leave"));
+  document.body.classList.add("arena-active");
+  arenaBattleUi.hidden = false;
+  if (arenaBattleTitle) {
+    arenaBattleTitle.textContent = arena.opponent
+      ? `${arena.opponent.name} - ${arena.opponent.title}`
+      : "Arena Battle";
+  }
+  if (arenaBattleStats) {
+    const playerName = getArenaMattName(arena.playerMatt);
+    const opponentName = arena.opponent
+      ? `${arena.opponent.name}'s ${MATT_LABELS[arena.opponent.mattType] || "Matt"}`
+      : "Opponent";
+    arenaBattleStats.textContent =
+      `${playerName} HP ${arena.playerHp}/${arena.playerMaxHp} | ${opponentName} HP ${arena.opponentHp}/${arena.opponentMaxHp}`;
+  }
+  if (arenaBattleLog) {
+    arenaBattleLog.textContent = message || arena.log[0] || "";
+  }
+  if (!arenaBattleActions) {
+    return;
   }
 
-  appendArenaLog(shopList);
-
-  if (shopMessage) {
-    shopMessage.textContent = message;
+  arenaBattleActions.innerHTML = "";
+  if (arena.phase === "battle") {
+    getArenaAbilities(arena.playerMatt.type).forEach((ability, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = ability.name;
+      button.title = `${ability.text}. Power ${ability.power}.`;
+      button.dataset.action = "arena-ability";
+      button.dataset.id = String(index);
+      button.disabled = arena.turnLocked;
+      arenaBattleActions.append(button);
+    });
+  } else {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Leave Arena";
+    button.dataset.action = "arena-leave";
+    arenaBattleActions.append(button);
   }
 }
 
@@ -4203,7 +4344,7 @@ function updatePlayer(dt) {
   player.stamina = clamp(player.stamina ?? maxStamina, 0, maxStamina);
   player.damageCooldown = Math.max(0, (player.damageCooldown || 0) - dt);
 
-  if (state.dev.enabled || isShopOpen()) {
+  if (state.dev.enabled || isShopOpen() || (state.arena.active && state.arena.phase !== "idle")) {
     player.moving = false;
     player.stamina = Math.min(maxStamina, player.stamina + PLAYER.staminaRegen * dt);
     setAction(player, "idle");
@@ -4583,12 +4724,33 @@ function advanceMattAnimation(matt, dt) {
   advanceAnimation(matt, frames.length, frameDuration, dt);
 }
 
+function updateArenaBattler(matt, dt) {
+  matt.arenaLungeTimer = Math.max(0, (matt.arenaLungeTimer || 0) - dt);
+  matt.arenaHitTimer = Math.max(0, (matt.arenaHitTimer || 0) - dt);
+
+  const lungeProgress = matt.arenaLungeTimer > 0
+    ? Math.sin((1 - matt.arenaLungeTimer / 0.42) * Math.PI)
+    : 0;
+  const hitShake = matt.arenaHitTimer > 0 ? Math.sin(matt.arenaHitTimer * 80) * 6 : 0;
+  const side = matt.arenaSide === "player" ? 1 : -1;
+  matt.x = matt.baseX + side * lungeProgress * 86 + hitShake;
+  matt.y = matt.baseY;
+
+  if (matt.arenaLungeTimer > 0 && getMattFrames({ ...matt, action: "attack" })?.length) {
+    setAction(matt, "attack");
+  } else if (matt.arenaHitTimer > 0 && getMattFrames({ ...matt, action: "hit" })?.length) {
+    setAction(matt, "hit");
+  } else {
+    setAction(matt, matt.caught ? "caught" : "idle");
+  }
+}
+
 function updateDogmatts(dt) {
   let caughtIndex = 0;
 
   for (const dogmatt of state.dogmatts) {
-    if (dogmatt.arenaOpponent) {
-      setAction(dogmatt, "idle");
+    if (dogmatt.arenaBattler || dogmatt.arenaOpponent) {
+      updateArenaBattler(dogmatt, dt);
     } else if (dogmatt.caught) {
       updateCaughtDogmatt(dogmatt, dt, caughtIndex);
       caughtIndex += 1;
@@ -5675,7 +5837,7 @@ function bindTouchButton(button, onPress, onRelease) {
 }
 
 function triggerWhip() {
-  if (!state.ready || state.dev.enabled || isShopOpen()) {
+  if (!state.ready || state.dev.enabled || isShopOpen() || (state.arena.active && state.arena.phase !== "idle")) {
     return;
   }
 
@@ -5721,11 +5883,22 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (key === "escape" && state.arena.active) {
+    event.preventDefault();
+    leaveArena();
+    return;
+  }
+
   if (isTypingTarget(event.target)) {
     return;
   }
 
   if (isShopOpen()) {
+    event.preventDefault();
+    return;
+  }
+
+  if (state.arena.active && state.arena.phase !== "idle") {
     event.preventDefault();
     return;
   }
@@ -5874,6 +6047,20 @@ shopList?.addEventListener("click", (event) => {
   } else if (action === "arena-select-matt") {
     startArenaBattle(id);
   } else if (action === "arena-ability") {
+    arenaUseAbility(Number(id));
+  } else if (action === "arena-leave") {
+    leaveArena();
+  }
+});
+
+arenaBattleActions?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action]");
+  if (!button || button.disabled) {
+    return;
+  }
+
+  const { action, id } = button.dataset;
+  if (action === "arena-ability") {
     arenaUseAbility(Number(id));
   } else if (action === "arena-leave") {
     leaveArena();
