@@ -348,6 +348,39 @@ const ITEM_DEFS = {
     sellPrice: 45,
     stackable: true,
   },
+  capture_net: {
+    id: "capture_net",
+    name: "Capture Net",
+    description: "A field net that helps secure the next wild Matt capture.",
+    price: 34,
+    sellPrice: 17,
+    stackable: true,
+  },
+  calming_flute: {
+    id: "calming_flute",
+    name: "Calming Flute",
+    description: "A reed flute tuned to Matt calls. Wild Matts take fewer hits to calm.",
+    price: 160,
+    sellPrice: 80,
+    unique: true,
+  },
+  matt_treat: {
+    id: "matt_treat",
+    name: "Matt Treat",
+    description: "Raises friendship for every Matt in your party.",
+    price: 42,
+    sellPrice: 21,
+    stackable: true,
+    use: { friendship: 8 },
+  },
+  trade_ledger: {
+    id: "trade_ledger",
+    name: "Ty's Trade Ledger",
+    description: "Ty's price notes. Captured Matts sell for even more.",
+    price: 210,
+    sellPrice: 105,
+    unique: true,
+  },
   grass_matt_adoption: {
     id: "grass_matt_adoption",
     name: "Grass Matt Adoption",
@@ -391,6 +424,42 @@ const ITEM_DEFS = {
     stackable: true,
     use: { stamina: 55 },
   },
+  ember_salve: {
+    id: "ember_salve",
+    name: "Ember Salve",
+    description: "Tom's burn salve. Restores a strong burst of health.",
+    price: 44,
+    sellPrice: 22,
+    stackable: true,
+    use: { health: 58 },
+  },
+  river_tea: {
+    id: "river_tea",
+    name: "River Tea",
+    description: "Brick's cooling tea. Restores health and stamina.",
+    price: 38,
+    sellPrice: 19,
+    stackable: true,
+    use: { health: 22, stamina: 42 },
+  },
+  hearty_stew: {
+    id: "hearty_stew",
+    name: "Hearty Stew",
+    description: "A heavy inn stew for dangerous roads.",
+    price: 52,
+    sellPrice: 26,
+    stackable: true,
+    use: { health: 48, stamina: 34 },
+  },
+  inn_elixir: {
+    id: "inn_elixir",
+    name: "Inn Elixir",
+    description: "A rare bottle Brick keeps for emergencies.",
+    price: 95,
+    sellPrice: 48,
+    stackable: true,
+    use: { health: 95, stamina: 80 },
+  },
   guard_armor: {
     id: "guard_armor",
     name: "Guard Armor",
@@ -409,6 +478,15 @@ const ITEM_DEFS = {
     unique: true,
     armor: 0.34,
   },
+  tempered_plate: {
+    id: "tempered_plate",
+    name: "Tempered Plate",
+    description: "Tom's best plate. It greatly cuts wild Matt damage.",
+    price: 360,
+    sellPrice: 180,
+    unique: true,
+    armor: 0.46,
+  },
   iron_whip: {
     id: "iron_whip",
     name: "Iron Whip",
@@ -417,12 +495,36 @@ const ITEM_DEFS = {
     sellPrice: 75,
     unique: true,
   },
+  whetstone: {
+    id: "whetstone",
+    name: "Spark Whetstone",
+    description: "A forge stone that adds more reach to Ivan's whip.",
+    price: 125,
+    sellPrice: 62,
+    unique: true,
+  },
   swift_boots: {
     id: "swift_boots",
     name: "Swift Boots",
     description: "Tom's fitted boots. Raises walk and sprint speed.",
     price: 135,
     sellPrice: 68,
+    unique: true,
+  },
+  trail_map: {
+    id: "trail_map",
+    name: "Old Trail Map",
+    description: "Brick's marked roads. Ivan moves faster across the field.",
+    price: 145,
+    sellPrice: 72,
+    unique: true,
+  },
+  arena_handbook: {
+    id: "arena_handbook",
+    name: "Arena Handbook",
+    description: "Scott's notes on Matt battles. Arena wins grant more XP.",
+    price: 180,
+    sellPrice: 90,
     unique: true,
   },
   inn_meal: {
@@ -457,23 +559,187 @@ const SHOP_DEFS = {
   scott: {
     title: "Scott's Arena Desk",
     greeting: "Tickets are required past the arena gate.",
-    buy: ["arena_ticket", "health_potion", "stamina_tonic"],
+    buy: ["arena_ticket", "arena_handbook", "health_potion", "greater_health_potion", "stamina_tonic", "matt_treat"],
   },
   ty: {
     title: "Ty's Matt Store",
     greeting: "Ty buys captured Matts and sells Matt-handling gear.",
-    buy: ["matt_snack", "matt_charm", "grass_matt_adoption", "water_matt_adoption", "health_potion", "stamina_tonic"],
+    buy: ["matt_snack", "capture_net", "calming_flute", "matt_treat", "matt_charm", "trade_ledger", "grass_matt_adoption", "water_matt_adoption", "health_potion", "stamina_tonic"],
     buysMatts: true,
   },
   tom: {
     title: "Tom's Blacksmith",
     greeting: "Tom sells permanent field upgrades.",
-    buy: ["iron_whip", "swift_boots", "guard_armor", "steel_armor", "greater_health_potion"],
+    buy: ["iron_whip", "whetstone", "swift_boots", "guard_armor", "steel_armor", "tempered_plate", "ember_salve", "greater_health_potion"],
   },
   brick: {
     title: "Brick's Inn Counter",
     greeting: "Brick keeps travelers supplied.",
-    buy: ["inn_meal", "coffee_flask", "room_key", "health_potion", "stamina_tonic"],
+    buy: ["inn_meal", "hearty_stew", "coffee_flask", "river_tea", "inn_elixir", "trail_map", "room_key", "health_potion", "stamina_tonic"],
+  },
+};
+
+const NPC_DIALOGUE = {
+  scott: {
+    intro:
+      "Scott keeps one boot on the arena gate and one eye on the old roads. He says the arena was built to teach Matts restraint before the worlds split apart.",
+    topics: [
+      {
+        id: "arena",
+        label: "The Arena",
+        text:
+          "The arena is not just for showing off. When a Matt learns to fight without hurting the bond, it remembers who it is. The old trainers called that the first rule.",
+      },
+      {
+        id: "tickets",
+        label: "Tickets",
+        text:
+          "A ticket buys a clean match, a witness, and a gate seal. If anyone skips the seal, the arena starts listening to the wrong side of the world.",
+      },
+      {
+        id: "worlds",
+        label: "The Split",
+        text:
+          "Fire, water, roots, stone. Those doors used to be roads. Now they behave like moods. Bring back strong Matts and maybe the roads will remember us.",
+      },
+    ],
+  },
+  ty: {
+    intro:
+      "Ty smells faintly of grain, rainwater, and ink. Every Matt he buys or sells gets marked in a careful ledger full of little paw prints.",
+    topics: [
+      {
+        id: "matts",
+        label: "Matt Care",
+        text:
+          "Do not think of Matts as loot. Feed them, travel with them, let them win sometimes. Friendship changes how they stand in the arena.",
+      },
+      {
+        id: "store",
+        label: "The Store",
+        text:
+          "I sell gear because careless captures make mean Matts. A snack, a net, a calm song. Those are cheaper than regret.",
+      },
+      {
+        id: "lore",
+        label: "Old Matt Names",
+        text:
+          "The oldest notes do not say monster. They say Matt, like it was a family name. I think someone forgot they were kin and called them wild.",
+      },
+    ],
+  },
+  tom: {
+    intro:
+      "Tom's blacksmith shop sounds like a heartbeat. Every tool on his wall has a notch from some traveler who came back changed.",
+    topics: [
+      {
+        id: "forge",
+        label: "The Forge",
+        text:
+          "Fire Matts keep a forge honest. Too much heat and steel gets proud. Too little and it lies. Same with people, if you ask me.",
+      },
+      {
+        id: "gear",
+        label: "Gear",
+        text:
+          "Armor buys time, not courage. Boots buy distance, not direction. The whip is for calming Matts, not punishing them. Remember that.",
+      },
+      {
+        id: "ruins",
+        label: "The Ruins",
+        text:
+          "The temple stones are older than the town. Some nights they ring like anvils under the dirt. Something down there still knows our names.",
+      },
+    ],
+  },
+  brick: {
+    intro:
+      "Brick runs the inn like a lighthouse. His counter is covered in cups, maps, and rumors from people who swear the worlds move when nobody is looking.",
+    topics: [
+      {
+        id: "inn",
+        label: "The Inn",
+        text:
+          "Travelers need three things: food, a locked door, and somebody who believes them when they say the road changed behind them.",
+      },
+      {
+        id: "rumors",
+        label: "Rumors",
+        text:
+          "Water Matts hum near moonlit doors. Grass Matts sleep facing old roots. If both get restless on the same night, stay indoors.",
+      },
+      {
+        id: "home",
+        label: "Home",
+        text:
+          "Home is not the safest map. It is the place you can find again. That is why I keep maps even when they disagree with each other.",
+      },
+    ],
+  },
+};
+
+const NPC_MISSIONS = {
+  scott: {
+    id: "scott-fire-trial",
+    title: "Arena Fire Trial",
+    briefing:
+      "Scott wants proof you can handle heat before he trusts you with tougher brackets. Capture a Fire Matt and show it at the arena desk.",
+    requirements: [{ type: "firematt", count: 1 }],
+    rewardCoins: 120,
+    rewardItems: [{ id: "arena_handbook", count: 1 }],
+    completeText:
+      "Scott taps the arena rail twice. Good. Fire listens to you without eating the leash. Take my handbook.",
+  },
+  ty: {
+    id: "ty-new-ledger",
+    title: "Ty's New Ledger",
+    briefing:
+      "Ty is rebuilding the old Matt records. Capture one Grass Matt and one Water Matt so he can compare how their markings changed after the split.",
+    requirements: [
+      { type: "grassmatt", count: 1 },
+      { type: "watermatt", count: 1 },
+    ],
+    rewardCoins: 150,
+    rewardItems: [
+      { id: "trade_ledger", count: 1 },
+      { id: "matt_treat", count: 2 },
+    ],
+    completeText:
+      "Ty writes for a long time before smiling. The water lines and root lines still match. They came from the same first family.",
+  },
+  tom: {
+    id: "tom-forge-proof",
+    title: "Forge Proof",
+    briefing:
+      "Tom needs a loyal Mattdog and a Fire Matt's heat signature to temper a safer whip edge.",
+    requirements: [
+      { type: "dogmatt", count: 1 },
+      { type: "firematt", count: 1 },
+    ],
+    rewardCoins: 110,
+    rewardItems: [
+      { id: "whetstone", count: 1 },
+      { id: "ember_salve", count: 2 },
+    ],
+    completeText:
+      "Tom cools the steel and nods. This edge should calm without cutting deeper than it has to.",
+  },
+  brick: {
+    id: "brick-road-rumors",
+    title: "Road Rumors",
+    briefing:
+      "Brick wants a Water Matt and a Grass Matt in town long enough to see which old roads they react to.",
+    requirements: [
+      { type: "watermatt", count: 1 },
+      { type: "grassmatt", count: 1 },
+    ],
+    rewardCoins: 95,
+    rewardItems: [
+      { id: "trail_map", count: 1 },
+      { id: "inn_elixir", count: 1 },
+    ],
+    completeText:
+      "Brick marks two roads on your map. If both Matts watched the same hill, then the hill is not done moving.",
   },
 };
 
@@ -516,7 +782,9 @@ const ARENA_ABILITIES = {
 
 const ARENA_WIN_XP = 34;
 
-const MUSIC_TRACKS = [
+const MUSIC_TRACKS = Array.isArray(window.GAME_MUSIC_TRACKS) && window.GAME_MUSIC_TRACKS.length > 0
+  ? window.GAME_MUSIC_TRACKS
+  : [
   "assets/music/Campfire Spell.mp3",
   "assets/music/Lantern Ruins.mp3",
   "assets/music/Riverstone Lullaby.mp3",
@@ -708,8 +976,10 @@ const state = {
   capturedParty: [],
   coins: STARTING_COINS,
   inventory: {},
+  missions: {},
   activeShopId: "",
   shopTab: "buy",
+  activeDialogueTopic: "",
   arena: {
     active: false,
     phase: "idle",
@@ -811,6 +1081,7 @@ const audio = {
   ambientStarted: false,
   musicElement: null,
   musicStarted: false,
+  currentTrack: "",
 };
 
 function loadImage(src) {
@@ -1190,17 +1461,38 @@ function startMusic() {
   }
 
   audio.musicStarted = true;
-  const track = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
+  playNextMusicTrack();
+}
+
+function chooseNextMusicTrack() {
+  if (MUSIC_TRACKS.length <= 1) {
+    return MUSIC_TRACKS[0] || "";
+  }
+
+  const choices = MUSIC_TRACKS.filter((track) => track !== audio.currentTrack);
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+
+function playNextMusicTrack() {
+  const track = chooseNextMusicTrack();
+  if (!track) {
+    audio.musicStarted = false;
+    return;
+  }
+
+  audio.currentTrack = track;
   const music = new Audio(track);
-  music.loop = true;
+  music.loop = false;
   music.volume = 0.34;
   music.preload = "auto";
+  music.addEventListener("ended", playNextMusicTrack, { once: true });
   audio.musicElement = music;
 
   const playResult = music.play();
   if (playResult && typeof playResult.catch === "function") {
     playResult.catch((error) => {
       audio.musicStarted = false;
+      audio.currentTrack = "";
       console.warn("Could not start music.", error);
     });
   }
@@ -1723,6 +2015,22 @@ function normalizeInventory(inventory) {
   return normalized;
 }
 
+function normalizeMissions(missions) {
+  const normalized = {};
+
+  if (!missions || typeof missions !== "object") {
+    return normalized;
+  }
+
+  Object.values(NPC_MISSIONS).forEach((mission) => {
+    if (missions[mission.id]?.completed) {
+      normalized[mission.id] = { completed: true };
+    }
+  });
+
+  return normalized;
+}
+
 function loadEconomy() {
   try {
     const saved = localStorage.getItem(getEconomyStorageKey()) || localStorage.getItem(ECONOMY_STORAGE_KEY);
@@ -1730,6 +2038,7 @@ function loadEconomy() {
       const data = JSON.parse(saved);
       state.coins = Math.max(0, Math.floor(Number(data.coins) || 0));
       state.inventory = normalizeInventory(data.inventory);
+      state.missions = normalizeMissions(data.missions);
       return;
     }
   } catch (error) {
@@ -1738,13 +2047,14 @@ function loadEconomy() {
 
   state.coins = STARTING_COINS;
   state.inventory = {};
+  state.missions = {};
 }
 
 function saveEconomy() {
   try {
     localStorage.setItem(
       getEconomyStorageKey(),
-      JSON.stringify({ version: 1, coins: state.coins, inventory: state.inventory }),
+      JSON.stringify({ version: 2, coins: state.coins, inventory: state.inventory, missions: state.missions }),
     );
   } catch (error) {
     console.warn("Could not save economy.", error);
@@ -1762,11 +2072,14 @@ function updateEconomyHud() {
 }
 
 function getPlayerMaxHealth() {
-  return PLAYER.maxHealth + (hasItem("guard_armor") ? 15 : 0) + (hasItem("steel_armor") ? 30 : 0);
+  return PLAYER.maxHealth +
+    (hasItem("guard_armor") ? 15 : 0) +
+    (hasItem("steel_armor") ? 30 : 0) +
+    (hasItem("tempered_plate") ? 45 : 0);
 }
 
 function getPlayerMaxStamina() {
-  return PLAYER.maxStamina + (hasItem("swift_boots") ? 20 : 0);
+  return PLAYER.maxStamina + (hasItem("swift_boots") ? 20 : 0) + (hasItem("trail_map") ? 12 : 0);
 }
 
 function updatePlayerStatusHud() {
@@ -1811,31 +2124,43 @@ function removeItem(itemId, amount = 1) {
 }
 
 function getWhipAttackRange() {
-  return PLAYER.attackRange + (hasItem("iron_whip") ? 80 : 0);
+  return PLAYER.attackRange + (hasItem("iron_whip") ? 80 : 0) + (hasItem("whetstone") ? 35 : 0);
 }
 
 function getPlayerWalkSpeed() {
-  return PLAYER.speed + (hasItem("swift_boots") ? 130 : 0);
+  return PLAYER.speed + (hasItem("swift_boots") ? 130 : 0) + (hasItem("trail_map") ? 55 : 0);
 }
 
 function getPlayerSprintSpeed() {
-  return PLAYER.sprintSpeed + (hasItem("swift_boots") ? 160 : 0);
+  return PLAYER.sprintSpeed + (hasItem("swift_boots") ? 160 : 0) + (hasItem("trail_map") ? 70 : 0);
 }
 
 function getArmorDamageReduction() {
-  const reductions = ["guard_armor", "steel_armor"]
+  const reductions = ["guard_armor", "steel_armor", "tempered_plate"]
     .filter(hasItem)
     .map((itemId) => ITEM_DEFS[itemId].armor || 0);
   return reductions.length > 0 ? Math.max(...reductions) : 0;
 }
 
 function getCaptureHitThreshold() {
-  return hasItem("matt_snack") ? 3 : 4;
+  let threshold = 4;
+  if (hasItem("matt_snack")) {
+    threshold -= 1;
+  }
+  if (hasItem("capture_net")) {
+    threshold -= 1;
+  }
+  if (hasItem("calming_flute")) {
+    threshold -= 1;
+  }
+  return Math.max(2, threshold);
 }
 
 function getMattSellValue(type) {
   const baseValue = MATT_SELL_VALUES[type] || 25;
-  return hasItem("matt_charm") ? Math.round(baseValue * 1.2) : baseValue;
+  const charmBonus = hasItem("matt_charm") ? 0.2 : 0;
+  const ledgerBonus = hasItem("trade_ledger") ? 0.15 : 0;
+  return Math.round(baseValue * (1 + charmBonus + ledgerBonus));
 }
 
 function makeCapturedPartyId(matt) {
@@ -2134,7 +2459,8 @@ function openShop(shopId) {
   }
 
   state.activeShopId = shopId;
-  state.shopTab = "buy";
+  state.shopTab = "talk";
+  state.activeDialogueTopic = "";
   shopOverlay.hidden = false;
   renderShop(shop.greeting);
   return true;
@@ -2147,6 +2473,7 @@ function openInventory() {
 
   state.activeShopId = "";
   state.shopTab = "inventory";
+  state.activeDialogueTopic = "";
   if (shopOverlay) {
     shopOverlay.hidden = false;
   }
@@ -2156,6 +2483,7 @@ function openInventory() {
 function closeShop() {
   state.activeShopId = "";
   state.shopTab = "buy";
+  state.activeDialogueTopic = "";
   if (shopOverlay) {
     shopOverlay.hidden = true;
   }
@@ -2175,6 +2503,7 @@ function tryOpenNearbyShop() {
 
 function setShopTab(tab) {
   state.shopTab = tab;
+  state.activeDialogueTopic = "";
   renderShop();
 }
 
@@ -2247,6 +2576,139 @@ function appendEmptyShopMessage(parent, message) {
   parent.append(empty);
 }
 
+function appendShopTextCard(parent, titleText, detailText, action = null) {
+  const row = document.createElement("article");
+  row.className = "shop-item";
+
+  const info = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = titleText;
+  const detail = document.createElement("span");
+  detail.textContent = detailText;
+  info.append(title, detail);
+
+  row.append(info);
+  if (action) {
+    row.append(document.createElement("em"), action);
+  }
+  parent.append(row);
+}
+
+function getShopTabLabel(tab) {
+  return {
+    talk: "Talk",
+    mission: "Mission",
+    buy: "Buy",
+    sell: "Sell",
+    inventory: "Bag",
+  }[tab] || tab;
+}
+
+function renderTalk(parent, shopId) {
+  const dialogue = NPC_DIALOGUE[shopId];
+  if (!dialogue) {
+    appendEmptyShopMessage(parent, "They do not have much to say right now.");
+    return;
+  }
+
+  const topic = dialogue.topics.find((candidate) => candidate.id === state.activeDialogueTopic);
+  if (topic) {
+    appendShopTextCard(parent, topic.label, topic.text, makeShopButton("Back", "talk-back"));
+    appendShopTextCard(parent, "Work", "Ask what they need from the wild roads.", makeShopButton("Mission", "shop-tab", "mission"));
+    appendShopTextCard(parent, "Trade", "Open their goods and services.", makeShopButton("Buy", "shop-tab", "buy"));
+    return;
+  }
+
+  appendShopTextCard(parent, shopTitle?.textContent || "Talk", dialogue.intro);
+  dialogue.topics.forEach((candidate) => {
+    appendShopTextCard(
+      parent,
+      candidate.label,
+      "Ask about this.",
+      makeShopButton("Ask", "talk-topic", candidate.id),
+    );
+  });
+}
+
+function getMissionDef(shopId = state.activeShopId) {
+  return NPC_MISSIONS[shopId] || null;
+}
+
+function isMissionComplete(mission) {
+  return Boolean(mission && state.missions[mission.id]?.completed);
+}
+
+function getCapturedMattTypeCount(type) {
+  return state.capturedParty.filter((matt) => matt.type === type).length;
+}
+
+function canCompleteMission(mission) {
+  return Boolean(
+    mission &&
+      !isMissionComplete(mission) &&
+      mission.requirements.every((requirement) => getCapturedMattTypeCount(requirement.type) >= requirement.count),
+  );
+}
+
+function getMissionRewardText(mission) {
+  const rewards = [];
+  if (mission.rewardCoins) {
+    rewards.push(`${mission.rewardCoins} coins`);
+  }
+  mission.rewardItems.forEach((reward) => {
+    const item = ITEM_DEFS[reward.id];
+    if (item) {
+      rewards.push(`${item.name}${reward.count > 1 ? ` x${reward.count}` : ""}`);
+    }
+  });
+  return rewards.join(", ");
+}
+
+function renderMission(parent, shopId) {
+  const mission = getMissionDef(shopId);
+  if (!mission) {
+    appendEmptyShopMessage(parent, "No work available right now.");
+    return;
+  }
+
+  if (isMissionComplete(mission)) {
+    appendShopTextCard(parent, mission.title, mission.completeText);
+    return;
+  }
+
+  appendShopTextCard(parent, mission.title, mission.briefing);
+  mission.requirements.forEach((requirement) => {
+    const count = getCapturedMattTypeCount(requirement.type);
+    appendShopTextCard(
+      parent,
+      MATT_LABELS[requirement.type] || "Matt",
+      `${Math.min(count, requirement.count)} / ${requirement.count} captured in your party.`,
+    );
+  });
+  appendShopTextCard(
+    parent,
+    "Reward",
+    getMissionRewardText(mission),
+    makeShopButton("Turn In", "complete-mission", mission.id, !canCompleteMission(mission)),
+  );
+}
+
+function completeMission(missionId) {
+  const mission = Object.values(NPC_MISSIONS).find((candidate) => candidate.id === missionId);
+  if (!canCompleteMission(mission)) {
+    renderShop("You still need the requested Matts in your party.");
+    return;
+  }
+
+  state.missions[mission.id] = { completed: true };
+  state.coins += mission.rewardCoins || 0;
+  mission.rewardItems.forEach((reward) => addItem(reward.id, reward.count || 1));
+  saveEconomy();
+  updateEconomyHud();
+  updatePlayerStatusHud();
+  renderShop(mission.completeText);
+}
+
 function appendCapturedMattRows(parent) {
   if (!getShopDef()?.buysMatts) {
     return;
@@ -2292,11 +2754,11 @@ function renderShop(message = "") {
 
   if (shopTabs) {
     shopTabs.innerHTML = "";
-    const tabs = shop ? ["buy", "sell", "inventory"] : ["inventory"];
+    const tabs = shop ? ["talk", "mission", "buy", "sell", "inventory"] : ["inventory"];
     tabs.forEach((tab) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = tab[0].toUpperCase() + tab.slice(1);
+      button.textContent = getShopTabLabel(tab);
       button.classList.toggle("active", state.shopTab === tab);
       button.dataset.tab = tab;
       shopTabs.append(button);
@@ -2309,7 +2771,11 @@ function renderShop(message = "") {
 
   shopList.innerHTML = "";
 
-  if (state.shopTab === "buy" && shop) {
+  if (state.shopTab === "talk" && shop) {
+    renderTalk(shopList, state.activeShopId);
+  } else if (state.shopTab === "mission" && shop) {
+    renderMission(shopList, state.activeShopId);
+  } else if (state.shopTab === "buy" && shop) {
     shop.buy.forEach((itemId) => appendItemRow(shopList, itemId, "buy"));
   } else if (state.shopTab === "sell" && shop) {
     const entries = getInventoryEntries();
@@ -2378,7 +2844,8 @@ function getArenaMattMaxHp(matt, opponentBoost = 0) {
 }
 
 function getArenaMattPowerBonus(matt, opponentBoost = 0) {
-  return getMattLevel(matt) * 3 + Math.floor((Number(matt?.friendship) || 0) / 12) + opponentBoost;
+  const handbookBonus = hasItem("arena_handbook") ? 4 : 0;
+  return getMattLevel(matt) * 3 + Math.floor((Number(matt?.friendship) || 0) / 12) + opponentBoost + handbookBonus;
 }
 
 function chooseArenaOpponent(playerMatt, waitingOpponent = null) {
@@ -2614,6 +3081,25 @@ function playArenaAttackEffect(side, ability) {
   spawnHitEffect(defender, 2);
 }
 
+function spawnFloatingBattleText(target, text, color = "#fff0a8") {
+  if (!target) {
+    return;
+  }
+
+  addParticle({
+    type: "text",
+    text,
+    x: target.x,
+    y: target.y - getMattConfig(target.type).height - 18,
+    vx: randomBetween(-8, 8),
+    vy: -48,
+    gravity: 18,
+    life: 0.95,
+    size: 18,
+    color,
+  });
+}
+
 function startArenaBattle(partyId) {
   const playerMatt = state.capturedParty.find((matt) => matt.partyId === partyId);
   if (!playerMatt) {
@@ -2672,7 +3158,8 @@ function awardArenaXp() {
   }
 
   const matt = state.capturedParty[partyIndex];
-  const gained = ARENA_WIN_XP + arena.opponent.level * 4;
+  const baseGained = ARENA_WIN_XP + arena.opponent.level * 4;
+  const gained = Math.round(baseGained * (hasItem("arena_handbook") ? 1.25 : 1));
   let level = getMattLevel(matt);
   let xp = (matt.xp || 0) + gained;
   let leveled = false;
@@ -2764,6 +3251,10 @@ function arenaUseAbility(index) {
     arena.opponentHp = playerResult.defenderHp;
     arena.playerHp = playerResult.attackerHp;
     arena.log.unshift(playerResult.text);
+    spawnFloatingBattleText(getArenaActor("opponent"), `-${playerResult.damage}`, "#ff9b77");
+    if (playerAbility.heal) {
+      spawnFloatingBattleText(getArenaActor("player"), `+${playerAbility.heal}`, "#8ff3c5");
+    }
 
     if (arena.opponentHp <= 0) {
       arena.turnLocked = false;
@@ -2806,6 +3297,10 @@ function arenaUseAbility(index) {
       arena.playerHp = opponentResult.defenderHp;
       arena.opponentHp = opponentResult.attackerHp;
       arena.log.unshift(opponentResult.text);
+      spawnFloatingBattleText(getArenaActor("player"), `-${opponentResult.damage}`, "#ff9b77");
+      if (opponentAbility.heal) {
+        spawnFloatingBattleText(getArenaActor("opponent"), `+${opponentAbility.heal}`, "#8ff3c5");
+      }
       arena.turnLocked = false;
 
       if (arena.playerHp <= 0) {
@@ -2836,8 +3331,9 @@ function renderArenaBattle(message = "") {
     const opponentName = arena.opponent
       ? `${arena.opponent.name}'s ${MATT_LABELS[arena.opponent.mattType] || "Matt"}`
       : "Opponent";
-    arenaBattleStats.textContent =
-      `${playerName} HP ${arena.playerHp}/${arena.playerMaxHp} | ${opponentName} HP ${arena.opponentHp}/${arena.opponentMaxHp}`;
+    arenaBattleStats.innerHTML = "";
+    appendArenaHpMeter(arenaBattleStats, playerName, arena.playerHp, arena.playerMaxHp, "player");
+    appendArenaHpMeter(arenaBattleStats, opponentName, arena.opponentHp, arena.opponentMaxHp, "opponent");
   }
   if (arenaBattleLog) {
     arenaBattleLog.textContent = message || arena.log[0] || "";
@@ -2851,7 +3347,7 @@ function renderArenaBattle(message = "") {
     getArenaAbilities(arena.playerMatt.type).forEach((ability, index) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = ability.name;
+      button.textContent = `${ability.name} ${ability.power}`;
       button.title = `${ability.text}. Power ${ability.power}.`;
       button.dataset.action = "arena-ability";
       button.dataset.id = String(index);
@@ -2991,6 +3487,20 @@ function useInventoryItem(itemId) {
 
   if (item.use.stamina && state.player.stamina < maxStamina) {
     state.player.stamina = clamp(state.player.stamina + item.use.stamina, 0, maxStamina);
+    used = true;
+  }
+
+  if (item.use.friendship && state.capturedParty.length > 0) {
+    state.capturedParty = state.capturedParty.map((matt) => ({
+      ...matt,
+      friendship: clamp((matt.friendship || 0) + item.use.friendship, 0, 100),
+    }));
+    state.dogmatts.forEach((matt) => {
+      if (matt.caught) {
+        matt.friendship = clamp((matt.friendship || 0) + item.use.friendship, 0, 100);
+      }
+    });
+    saveCapturedParty();
     used = true;
   }
 
@@ -5071,11 +5581,16 @@ function hitDogmatt(dogmatt) {
 
     if (hasItem("matt_snack")) {
       removeItem("matt_snack");
-      saveEconomy();
-      updateEconomyHud();
       setGameMessage("Matt Snack used.");
     }
 
+    if (hasItem("capture_net")) {
+      removeItem("capture_net");
+      setGameMessage("Capture Net used.");
+    }
+
+    saveEconomy();
+    updateEconomyHud();
     dogmatt.hitCount = 4;
     dogmatt.caught = true;
     dogmatt.sourceWorld = state.currentWorld;
@@ -5344,6 +5859,64 @@ function drawNpc(npc) {
   ctx.restore();
 }
 
+function drawArenaNameplate(actor, label, hp, maxHp, color) {
+  if (!actor) {
+    return;
+  }
+
+  const config = getMattConfig(actor.type);
+  const x = Math.round(actor.x - state.camera.x);
+  const y = Math.round(actor.y - state.camera.y - config.height - 34);
+  const width = 190;
+  const hpRatio = clamp(hp / Math.max(1, maxHp), 0, 1);
+
+  ctx.save();
+  ctx.translate(x - width / 2, y);
+  ctx.fillStyle = "rgba(8, 13, 12, 0.72)";
+  ctx.strokeStyle = "rgba(255, 238, 143, 0.32)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(0, 0, width, 34, 7);
+  } else {
+    ctx.rect(0, 0, width, 34);
+  }
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#fff8cc";
+  ctx.font = "800 12px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(label, width / 2, 13);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.fillRect(12, 21, width - 24, 6);
+  ctx.fillStyle = color;
+  ctx.fillRect(12, 21, (width - 24) * hpRatio, 6);
+  ctx.restore();
+}
+
+function drawArenaBattleLabels() {
+  if (!state.arena.active || !["battle", "won", "lost"].includes(state.arena.phase)) {
+    return;
+  }
+
+  drawArenaNameplate(
+    getArenaActor("player"),
+    `${getArenaMattName(state.arena.playerMatt)} Lv ${getMattLevel(state.arena.playerMatt)}`,
+    state.arena.playerHp,
+    state.arena.playerMaxHp,
+    "#79f1b9",
+  );
+  drawArenaNameplate(
+    getArenaActor("opponent"),
+    `${state.arena.opponent.name}'s Matt Lv ${state.arena.opponent.level}`,
+    state.arena.opponentHp,
+    state.arena.opponentMaxHp,
+    "#ff9b77",
+  );
+}
+
 function drawOverviewActors() {
   ctx.save();
   ctx.fillStyle = "rgba(255, 238, 143, 0.96)";
@@ -5416,6 +5989,17 @@ function drawParticles() {
       ctx.beginPath();
       ctx.arc(particle.x, particle.y, particle.size + progress * 26, 0, Math.PI * 2);
       ctx.stroke();
+      continue;
+    }
+
+    if (particle.type === "text") {
+      ctx.font = `900 ${particle.size}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "rgba(8, 13, 12, 0.84)";
+      ctx.fillStyle = particle.color;
+      ctx.strokeText(particle.text, particle.x, particle.y);
+      ctx.fillText(particle.text, particle.x, particle.y);
       continue;
     }
 
@@ -5721,6 +6305,7 @@ function draw() {
   drawFutureMonsterMarkers();
   drawWorldNodes();
   drawActors();
+  drawArenaBattleLabels();
   drawParticles();
   drawDevLayer();
   ctx.restore();
@@ -6044,6 +6629,16 @@ shopList?.addEventListener("click", (event) => {
     useInventoryItem(id);
   } else if (action === "sell-matt") {
     sellCapturedMatt(id);
+  } else if (action === "talk-topic") {
+    state.activeDialogueTopic = id;
+    renderShop();
+  } else if (action === "talk-back") {
+    state.activeDialogueTopic = "";
+    renderShop();
+  } else if (action === "shop-tab") {
+    setShopTab(id);
+  } else if (action === "complete-mission") {
+    completeMission(id);
   } else if (action === "arena-select-matt") {
     startArenaBattle(id);
   } else if (action === "arena-ability") {

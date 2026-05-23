@@ -404,6 +404,10 @@ canvas {
   min-width: 0;
 }
 
+.shop-item > div:only-child {
+  grid-column: 1 / -1;
+}
+
 .shop-item strong {
   font-size: 14px;
 }
@@ -415,6 +419,16 @@ canvas {
   font-style: normal;
   font-size: 12px;
   font-weight: 900;
+}
+
+.shop-list > button {
+  min-height: 38px;
+  border: 1px solid rgba(255, 238, 143, 0.52);
+  border-radius: 6px;
+  background: rgba(178, 135, 45, 0.26);
+  color: #fff8cc;
+  font: inherit;
+  font-weight: 800;
 }
 
 #shop-message {
@@ -474,15 +488,68 @@ canvas {
   gap: 12px;
 }
 
+.arena-active .touch-stick,
+.arena-active .touch-button {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .arena-battle-head strong {
   font-size: 16px;
 }
 
-.arena-battle-head span,
+#arena-battle-stats,
 #arena-battle-log {
   color: #d5decf;
   font-size: 12px;
   line-height: 1.35;
+}
+
+#arena-battle-stats {
+  min-width: min(420px, 54vw);
+  display: grid;
+  gap: 5px;
+}
+
+.arena-hp-meter {
+  display: grid;
+  grid-template-columns: minmax(96px, 1fr) minmax(96px, 160px) 48px;
+  align-items: center;
+  gap: 8px;
+}
+
+.arena-hp-meter span,
+.arena-hp-meter em {
+  overflow: hidden;
+  color: #f8f4d8;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arena-hp-meter em {
+  text-align: right;
+}
+
+.arena-hp-meter i {
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(244, 237, 198, 0.26);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.arena-hp-meter b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #79f1b9, #fff0a8);
+}
+
+.arena-hp-meter.opponent b {
+  background: linear-gradient(90deg, #ff7a5c, #ffd36d);
 }
 
 .arena-battle-actions {
@@ -785,6 +852,14 @@ canvas {
   .arena-battle-head {
     display: grid;
     gap: 3px;
+  }
+
+  #arena-battle-stats {
+    min-width: 0;
+  }
+
+  .arena-hp-meter {
+    grid-template-columns: minmax(82px, 1fr) minmax(82px, 1fr) 44px;
   }
 
   .arena-battle-actions {
