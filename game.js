@@ -373,6 +373,42 @@ const ITEM_DEFS = {
     stackable: true,
     use: { friendship: 8 },
   },
+  camp_brush: {
+    id: "camp_brush",
+    name: "Camp Brush",
+    description: "A soft brush for one Matt. Builds a stronger bond from the Bond tab.",
+    price: 36,
+    sellPrice: 18,
+    stackable: true,
+    bondOnly: true,
+    use: { friendship: 5 },
+  },
+  focus_mint: {
+    id: "focus_mint",
+    name: "Focus Mint",
+    description: "A sharp mint Matts love. Adds friendship and a little training XP.",
+    price: 48,
+    sellPrice: 24,
+    stackable: true,
+    bondOnly: true,
+    use: { friendship: 6 },
+  },
+  bond_ribbon: {
+    id: "bond_ribbon",
+    name: "Bond Ribbon",
+    description: "A ribbon braided with arena knots. Friendship gains are stronger.",
+    price: 170,
+    sellPrice: 85,
+    unique: true,
+  },
+  memory_locket: {
+    id: "memory_locket",
+    name: "Memory Locket",
+    description: "A tiny locket for Matt keepsakes. Bonded Matts start arena battles with more energy.",
+    price: 220,
+    sellPrice: 110,
+    unique: true,
+  },
   trade_ledger: {
     id: "trade_ledger",
     name: "Ty's Trade Ledger",
@@ -527,6 +563,14 @@ const ITEM_DEFS = {
     sellPrice: 90,
     unique: true,
   },
+  sparring_gloves: {
+    id: "sparring_gloves",
+    name: "Sparring Gloves",
+    description: "Soft arena wraps. Losses still teach your Matt a little.",
+    price: 155,
+    sellPrice: 78,
+    unique: true,
+  },
   inn_meal: {
     id: "inn_meal",
     name: "Hot Inn Meal",
@@ -559,12 +603,12 @@ const SHOP_DEFS = {
   scott: {
     title: "Scott's Arena Desk",
     greeting: "Tickets are required past the arena gate.",
-    buy: ["arena_ticket", "arena_handbook", "health_potion", "greater_health_potion", "stamina_tonic", "matt_treat"],
+    buy: ["arena_ticket", "arena_handbook", "sparring_gloves", "bond_ribbon", "memory_locket", "focus_mint", "health_potion", "greater_health_potion", "stamina_tonic", "matt_treat"],
   },
   ty: {
     title: "Ty's Matt Store",
     greeting: "Ty buys captured Matts and sells Matt-handling gear.",
-    buy: ["matt_snack", "capture_net", "calming_flute", "matt_treat", "matt_charm", "trade_ledger", "grass_matt_adoption", "water_matt_adoption", "health_potion", "stamina_tonic"],
+    buy: ["matt_snack", "capture_net", "calming_flute", "matt_treat", "camp_brush", "focus_mint", "bond_ribbon", "memory_locket", "matt_charm", "trade_ledger", "grass_matt_adoption", "water_matt_adoption", "health_potion", "stamina_tonic"],
     buysMatts: true,
   },
   tom: {
@@ -575,7 +619,7 @@ const SHOP_DEFS = {
   brick: {
     title: "Brick's Inn Counter",
     greeting: "Brick keeps travelers supplied.",
-    buy: ["inn_meal", "hearty_stew", "coffee_flask", "river_tea", "inn_elixir", "trail_map", "room_key", "health_potion", "stamina_tonic"],
+    buy: ["inn_meal", "hearty_stew", "coffee_flask", "river_tea", "inn_elixir", "camp_brush", "focus_mint", "trail_map", "room_key", "health_potion", "stamina_tonic"],
   },
 };
 
@@ -751,36 +795,358 @@ const MATT_SELL_VALUES = {
 };
 
 const ARENA_OPPONENTS = [
-  { id: "scott", name: "Scott", mattType: "firematt", title: "Arena Captain" },
-  { id: "ty", name: "Ty", mattType: "grassmatt", title: "Matt Handler" },
-  { id: "tom", name: "Tom", mattType: "firematt", title: "Forge Brawler" },
-  { id: "brick", name: "Brick", mattType: "watermatt", title: "Inn Bruiser" },
+  { id: "scott", name: "Scott", mattType: "firematt", title: "Arena Captain", strategy: "pressure" },
+  { id: "ty", name: "Ty", mattType: "grassmatt", title: "Matt Handler", strategy: "control" },
+  { id: "tom", name: "Tom", mattType: "firematt", title: "Forge Brawler", strategy: "guard" },
+  { id: "brick", name: "Brick", mattType: "watermatt", title: "Inn Bruiser", strategy: "tempo" },
 ];
+
+const FRIENDSHIP_RANKS = [
+  { min: 0, name: "Wary", hp: 0, power: 0, energy: 0, crit: 0.04, xp: 1 },
+  { min: 18, name: "Friendly", hp: 6, power: 2, energy: 4, crit: 0.06, xp: 1.05 },
+  { min: 38, name: "Loyal", hp: 12, power: 4, energy: 8, crit: 0.08, xp: 1.1 },
+  { min: 62, name: "Bonded", hp: 20, power: 7, energy: 12, crit: 0.11, xp: 1.18 },
+  { min: 86, name: "Heartbound", hp: 30, power: 11, energy: 18, crit: 0.15, xp: 1.3 },
+];
+
+const ARENA_STATUS_LABELS = {
+  burn: "Burn",
+  regen: "Regen",
+  weaken: "Weaken",
+  guard: "Guard",
+  focus: "Focus",
+  mist: "Mist",
+  snare: "Snare",
+  soaked: "Soaked",
+  thorns: "Thorns",
+};
 
 const ARENA_ABILITIES = {
   dogmatt: [
-    { name: "Scrappy Bite", power: 18, text: "lunges in with a quick bite" },
-    { name: "Pack Howl", power: 12, heal: 10, text: "howls and rallies back" },
-    { name: "Tail Feint", power: 14, dodge: 0.2, text: "feints through the strike" },
+    {
+      id: "scrappy_bite",
+      name: "Scrappy Bite",
+      power: 18,
+      cost: 14,
+      cooldown: 0,
+      element: "body",
+      text: "lunges in with a quick bite",
+      detail: "Fast damage with a small crit bonus.",
+      crit: 0.04,
+    },
+    {
+      id: "pack_howl",
+      name: "Pack Howl",
+      power: 10,
+      heal: 12,
+      shield: 8,
+      cost: 22,
+      cooldown: 1,
+      element: "heart",
+      text: "howls and rallies back",
+      detail: "Deals light damage, heals, and adds a shield.",
+      selfStatus: [{ id: "focus", turns: 2, amount: 4 }],
+    },
+    {
+      id: "tail_feint",
+      name: "Tail Feint",
+      power: 14,
+      cost: 18,
+      cooldown: 1,
+      element: "body",
+      text: "feints through the strike",
+      detail: "Adds Mist, making the next counter easier to dodge.",
+      selfStatus: [{ id: "mist", turns: 1, amount: 28 }],
+    },
+    {
+      id: "loyal_rush",
+      name: "Loyal Rush",
+      power: 28,
+      cost: 34,
+      cooldown: 2,
+      element: "heart",
+      friendship: 35,
+      text: "charges because it trusts you",
+      detail: "A bond-locked heavy hit with bonus crit.",
+      crit: 0.12,
+    },
+    {
+      id: "guardian_snap",
+      name: "Guardian Snap",
+      power: 20,
+      shield: 18,
+      cost: 28,
+      cooldown: 2,
+      element: "body",
+      level: 5,
+      friendship: 55,
+      text: "guards you with a sharp snap",
+      detail: "Good damage plus a strong shield.",
+      selfStatus: [{ id: "guard", turns: 2, amount: 5 }],
+    },
+    {
+      id: "heartpack_breaker",
+      name: "Heartpack Breaker",
+      power: 38,
+      heal: 10,
+      cost: 48,
+      cooldown: 3,
+      element: "heart",
+      level: 8,
+      friendship: 78,
+      text: "breaks through with full pack spirit",
+      detail: "A high-bond finisher that also heals.",
+      crit: 0.16,
+      pierce: 10,
+    },
   ],
   firematt: [
-    { name: "Coal Burst", power: 22, text: "erupts in hot sparks" },
-    { name: "Hammer Flare", power: 18, burn: 7, text: "slams a burning arc" },
-    { name: "Forge Guard", power: 10, heal: 12, text: "hardens behind heat shimmer" },
+    {
+      id: "coal_burst",
+      name: "Coal Burst",
+      power: 22,
+      cost: 18,
+      cooldown: 0,
+      element: "fire",
+      text: "erupts in hot sparks",
+      detail: "Reliable fire damage.",
+    },
+    {
+      id: "hammer_flare",
+      name: "Hammer Flare",
+      power: 18,
+      cost: 24,
+      cooldown: 1,
+      element: "fire",
+      text: "slams a burning arc",
+      detail: "Applies Burn for damage over time.",
+      targetStatus: [{ id: "burn", turns: 2, amount: 7 }],
+    },
+    {
+      id: "forge_guard",
+      name: "Forge Guard",
+      power: 10,
+      heal: 12,
+      shield: 16,
+      cost: 24,
+      cooldown: 1,
+      element: "metal",
+      text: "hardens behind heat shimmer",
+      detail: "Heals and raises a shield.",
+      selfStatus: [{ id: "guard", turns: 2, amount: 6 }],
+    },
+    {
+      id: "cinder_mark",
+      name: "Cinder Mark",
+      power: 24,
+      cost: 31,
+      cooldown: 2,
+      element: "fire",
+      friendship: 30,
+      text: "marks the target with ember light",
+      detail: "Burns and weakens the enemy's next blows.",
+      targetStatus: [
+        { id: "burn", turns: 2, amount: 5 },
+        { id: "weaken", turns: 2, amount: 5 },
+      ],
+    },
+    {
+      id: "anvil_comet",
+      name: "Anvil Comet",
+      power: 36,
+      cost: 44,
+      cooldown: 3,
+      element: "metal",
+      level: 6,
+      friendship: 52,
+      text: "drops like a forged star",
+      detail: "Heavy piercing damage through shields.",
+      pierce: 18,
+      crit: 0.08,
+    },
+    {
+      id: "phoenix_heat",
+      name: "Phoenix Heat",
+      power: 16,
+      heal: 26,
+      cost: 46,
+      cooldown: 3,
+      element: "fire",
+      level: 9,
+      friendship: 76,
+      text: "stands back up in bright heat",
+      detail: "Damage, healing, and regeneration.",
+      selfStatus: [{ id: "regen", turns: 3, amount: 8 }],
+      targetStatus: [{ id: "burn", turns: 2, amount: 6 }],
+    },
   ],
   grassmatt: [
-    { name: "Vine Lash", power: 19, text: "snaps a vine across the arena" },
-    { name: "Root Snare", power: 15, weaken: 4, text: "snags the enemy in roots" },
-    { name: "Bloom Mend", power: 10, heal: 18, text: "blooms and recovers" },
+    {
+      id: "vine_lash",
+      name: "Vine Lash",
+      power: 19,
+      cost: 16,
+      cooldown: 0,
+      element: "grass",
+      text: "snaps a vine across the arena",
+      detail: "Efficient grass damage.",
+    },
+    {
+      id: "root_snare",
+      name: "Root Snare",
+      power: 15,
+      cost: 22,
+      cooldown: 1,
+      element: "grass",
+      text: "snags the enemy in roots",
+      detail: "Weakens and slows enemy energy recovery.",
+      targetStatus: [
+        { id: "weaken", turns: 2, amount: 5 },
+        { id: "snare", turns: 2, amount: 6 },
+      ],
+    },
+    {
+      id: "bloom_mend",
+      name: "Bloom Mend",
+      power: 8,
+      heal: 20,
+      cost: 25,
+      cooldown: 1,
+      element: "grass",
+      text: "blooms and recovers",
+      detail: "A strong heal with gentle regeneration.",
+      selfStatus: [{ id: "regen", turns: 2, amount: 6 }],
+    },
+    {
+      id: "thorn_wall",
+      name: "Thorn Wall",
+      power: 12,
+      shield: 22,
+      cost: 30,
+      cooldown: 2,
+      element: "grass",
+      friendship: 28,
+      text: "raises a bristling wall",
+      detail: "Shields and punishes attackers.",
+      selfStatus: [
+        { id: "guard", turns: 2, amount: 4 },
+        { id: "thorns", turns: 2, amount: 5 },
+      ],
+    },
+    {
+      id: "sunroot_surge",
+      name: "Sunroot Surge",
+      power: 32,
+      heal: 10,
+      cost: 41,
+      cooldown: 3,
+      element: "grass",
+      level: 6,
+      friendship: 55,
+      text: "pulls old sunlight from the floor",
+      detail: "Heavy damage that also restores health.",
+      targetStatus: [{ id: "snare", turns: 2, amount: 8 }],
+    },
+    {
+      id: "ancient_grove",
+      name: "Ancient Grove",
+      power: 24,
+      heal: 24,
+      shield: 16,
+      cost: 50,
+      cooldown: 3,
+      element: "grass",
+      level: 9,
+      friendship: 80,
+      text: "turns the arena quiet and green",
+      detail: "A high-bond sustain move with damage, heal, and shield.",
+      selfStatus: [{ id: "regen", turns: 3, amount: 7 }],
+    },
   ],
   watermatt: [
-    { name: "Tide Crash", power: 20, text: "crashes forward with a wave" },
-    { name: "Mist Veil", power: 12, dodge: 0.32, text: "vanishes into cool mist" },
-    { name: "Bubble Barrage", power: 16, burn: 5, text: "pelts the enemy with bubbles" },
+    {
+      id: "tide_crash",
+      name: "Tide Crash",
+      power: 20,
+      cost: 17,
+      cooldown: 0,
+      element: "water",
+      text: "crashes forward with a wave",
+      detail: "Reliable water damage.",
+    },
+    {
+      id: "mist_veil",
+      name: "Mist Veil",
+      power: 12,
+      cost: 22,
+      cooldown: 1,
+      element: "water",
+      text: "vanishes into cool mist",
+      detail: "Adds a strong dodge chance.",
+      selfStatus: [{ id: "mist", turns: 2, amount: 34 }],
+    },
+    {
+      id: "bubble_barrage",
+      name: "Bubble Barrage",
+      power: 16,
+      cost: 21,
+      cooldown: 1,
+      element: "water",
+      text: "pelts the enemy with bubbles",
+      detail: "Soaks the enemy, making follow-up hits stronger.",
+      targetStatus: [{ id: "soaked", turns: 2, amount: 5 }],
+    },
+    {
+      id: "riptide_pull",
+      name: "Riptide Pull",
+      power: 26,
+      cost: 33,
+      cooldown: 2,
+      element: "water",
+      friendship: 32,
+      text: "drags the tempo sideways",
+      detail: "Damage plus Snare and Weaken.",
+      targetStatus: [
+        { id: "snare", turns: 2, amount: 8 },
+        { id: "weaken", turns: 1, amount: 7 },
+      ],
+    },
+    {
+      id: "moonwell",
+      name: "Moonwell",
+      power: 10,
+      heal: 30,
+      cost: 42,
+      cooldown: 3,
+      element: "water",
+      level: 6,
+      friendship: 54,
+      text: "opens a cool moonlit well",
+      detail: "Big heal, cleanse, and Mist.",
+      cleanse: true,
+      selfStatus: [{ id: "mist", turns: 1, amount: 24 }],
+    },
+    {
+      id: "leviathan_ring",
+      name: "Leviathan Ring",
+      power: 36,
+      cost: 50,
+      cooldown: 3,
+      element: "water",
+      level: 9,
+      friendship: 78,
+      text: "rings the arena with deep water",
+      detail: "A high-bond finisher that pierces shields.",
+      targetStatus: [{ id: "soaked", turns: 3, amount: 7 }],
+      pierce: 12,
+      crit: 0.1,
+    },
   ],
 };
 
-const ARENA_WIN_XP = 34;
+const ARENA_WIN_XP = 38;
+const ARENA_MAX_ENERGY = 100;
+const FRIENDSHIP_WALK_SECONDS = 45;
 
 const MUSIC_TRACKS = Array.isArray(window.GAME_MUSIC_TRACKS) && window.GAME_MUSIC_TRACKS.length > 0
   ? window.GAME_MUSIC_TRACKS
@@ -977,6 +1343,9 @@ const state = {
   coins: STARTING_COINS,
   inventory: {},
   missions: {},
+  arenaStats: { wins: 0, losses: 0, streak: 0, bestStreak: 0, rankPoints: 0 },
+  friendshipCare: {},
+  friendshipWalkTimer: 0,
   activeShopId: "",
   shopTab: "buy",
   activeDialogueTopic: "",
@@ -990,6 +1359,15 @@ const state = {
     opponentHp: 0,
     playerMaxHp: 0,
     opponentMaxHp: 0,
+    playerEnergy: 0,
+    opponentEnergy: 0,
+    playerShield: 0,
+    opponentShield: 0,
+    playerStatuses: {},
+    opponentStatuses: {},
+    playerCooldowns: {},
+    opponentCooldowns: {},
+    turn: 1,
     log: [],
     turnLocked: false,
   },
@@ -2031,6 +2409,33 @@ function normalizeMissions(missions) {
   return normalized;
 }
 
+function normalizeArenaStats(stats) {
+  return {
+    wins: Math.max(0, Math.floor(Number(stats?.wins) || 0)),
+    losses: Math.max(0, Math.floor(Number(stats?.losses) || 0)),
+    streak: Math.max(0, Math.floor(Number(stats?.streak) || 0)),
+    bestStreak: Math.max(0, Math.floor(Number(stats?.bestStreak) || 0)),
+    rankPoints: Math.max(0, Math.floor(Number(stats?.rankPoints) || 0)),
+  };
+}
+
+function normalizeFriendshipCare(care) {
+  const normalized = {};
+
+  if (!care || typeof care !== "object") {
+    return normalized;
+  }
+
+  Object.entries(care).forEach(([partyId, day]) => {
+    const cleanDay = Math.max(0, Math.floor(Number(day) || 0));
+    if (partyId && cleanDay > 0) {
+      normalized[partyId] = cleanDay;
+    }
+  });
+
+  return normalized;
+}
+
 function loadEconomy() {
   try {
     const saved = localStorage.getItem(getEconomyStorageKey()) || localStorage.getItem(ECONOMY_STORAGE_KEY);
@@ -2039,6 +2444,8 @@ function loadEconomy() {
       state.coins = Math.max(0, Math.floor(Number(data.coins) || 0));
       state.inventory = normalizeInventory(data.inventory);
       state.missions = normalizeMissions(data.missions);
+      state.arenaStats = normalizeArenaStats(data.arenaStats);
+      state.friendshipCare = normalizeFriendshipCare(data.friendshipCare);
       return;
     }
   } catch (error) {
@@ -2048,13 +2455,22 @@ function loadEconomy() {
   state.coins = STARTING_COINS;
   state.inventory = {};
   state.missions = {};
+  state.arenaStats = normalizeArenaStats();
+  state.friendshipCare = {};
 }
 
 function saveEconomy() {
   try {
     localStorage.setItem(
       getEconomyStorageKey(),
-      JSON.stringify({ version: 2, coins: state.coins, inventory: state.inventory, missions: state.missions }),
+      JSON.stringify({
+        version: 3,
+        coins: state.coins,
+        inventory: state.inventory,
+        missions: state.missions,
+        arenaStats: state.arenaStats,
+        friendshipCare: state.friendshipCare,
+      }),
     );
   } catch (error) {
     console.warn("Could not save economy.", error);
@@ -2559,6 +2975,8 @@ function appendItemRow(parent, itemId, mode) {
     );
   } else if (mode === "sell") {
     action = makeShopButton("Sell", "sell-item", itemId, count <= 0);
+  } else if (item.bondOnly) {
+    action = makeShopButton("Bond", "shop-tab", "bond", count <= 0 || state.capturedParty.length === 0);
   } else if (item.use) {
     action = makeShopButton("Use", "use-item", itemId, count <= 0);
   } else {
@@ -2601,6 +3019,7 @@ function getShopTabLabel(tab) {
     buy: "Buy",
     sell: "Sell",
     inventory: "Bag",
+    bond: "Bond",
   }[tab] || tab;
 }
 
@@ -2709,6 +3128,185 @@ function completeMission(missionId) {
   renderShop(mission.completeText);
 }
 
+function getFriendshipRank(friendship = 0) {
+  const value = clamp(Math.floor(Number(friendship) || 0), 0, 100);
+  let rank = FRIENDSHIP_RANKS[0];
+
+  FRIENDSHIP_RANKS.forEach((candidate) => {
+    if (value >= candidate.min) {
+      rank = candidate;
+    }
+  });
+
+  return rank;
+}
+
+function getFriendshipGain(amount) {
+  const base = Math.max(0, Math.floor(Number(amount) || 0));
+  if (base <= 0) {
+    return 0;
+  }
+
+  return base + (hasItem("bond_ribbon") ? Math.max(1, Math.ceil(base * 0.25)) : 0);
+}
+
+function getFriendshipLine(matt) {
+  const friendship = clamp(Math.floor(Number(matt?.friendship) || 0), 0, 100);
+  const rank = getFriendshipRank(friendship);
+  return `${rank.name} bond ${friendship}/100`;
+}
+
+function getFriendshipBonusLine(matt) {
+  const rank = getFriendshipRank(matt?.friendship || 0);
+  return `Bond bonuses: +${rank.hp} HP, +${rank.power} power, +${rank.energy} energy, ${Math.round(rank.crit * 100)}% crit.`;
+}
+
+function syncCapturedMattProgress(updated) {
+  state.dogmatts.forEach((candidate) => {
+    if (candidate.partyId === updated.partyId) {
+      candidate.level = updated.level;
+      candidate.xp = updated.xp;
+      candidate.friendship = updated.friendship;
+    }
+  });
+
+  if (state.arena.playerMattId === updated.partyId) {
+    state.arena.playerMatt = updated;
+  }
+}
+
+function applyCapturedMattProgress(partyId, { friendship = 0, xp = 0 } = {}) {
+  const partyIndex = state.capturedParty.findIndex((matt) => matt.partyId === partyId);
+  if (partyIndex === -1) {
+    return null;
+  }
+
+  const matt = state.capturedParty[partyIndex];
+  const friendshipGain = getFriendshipGain(friendship);
+  const xpGain = Math.max(0, Math.floor(Number(xp) || 0));
+  let level = getMattLevel(matt);
+  let nextXp = Math.max(0, Math.floor(Number(matt.xp) || 0)) + xpGain;
+  let leveled = false;
+
+  while (level < 50 && nextXp >= getMattXpToNext(level)) {
+    nextXp -= getMattXpToNext(level);
+    level += 1;
+    leveled = true;
+  }
+
+  const updated = {
+    ...matt,
+    level,
+    xp: nextXp,
+    friendship: clamp((matt.friendship || 0) + friendshipGain, 0, 100),
+  };
+
+  state.capturedParty[partyIndex] = updated;
+  syncCapturedMattProgress(updated);
+  saveCapturedParty();
+  updateCaughtHud(countCaughtMatts());
+  return { matt: updated, friendshipGain, xpGain, leveled };
+}
+
+function getCareDay() {
+  return getClockParts().day;
+}
+
+function canCareForMatt(matt) {
+  return Boolean(matt && state.friendshipCare[matt.partyId] !== getCareDay() && (matt.friendship || 0) < 100);
+}
+
+function careForMatt(partyId) {
+  const matt = state.capturedParty.find((candidate) => candidate.partyId === partyId);
+  if (!canCareForMatt(matt)) {
+    renderShop("That Matt has already had focused care today.");
+    return;
+  }
+
+  state.friendshipCare[partyId] = getCareDay();
+  const result = applyCapturedMattProgress(partyId, { friendship: 4 });
+  saveEconomy();
+  renderShop(`${getArenaMattName(result?.matt || matt)} settles in. Friendship +${result?.friendshipGain || 0}.`);
+}
+
+function useBondItemOnMatt(partyId, itemId, friendship, xp = 0) {
+  const item = ITEM_DEFS[itemId];
+  if (!item || getItemCount(itemId) <= 0) {
+    renderShop("You do not have that bond item.");
+    return;
+  }
+
+  const result = applyCapturedMattProgress(partyId, { friendship, xp });
+  if (!result) {
+    renderShop("That Matt is no longer in your party.");
+    return;
+  }
+
+  removeItem(itemId);
+  saveEconomy();
+  updateEconomyHud();
+  renderShop(
+    `${getArenaMattName(result.matt)} enjoyed ${item.name}. Friendship +${result.friendshipGain}${xp ? `, XP +${result.xpGain}` : ""}.`,
+  );
+}
+
+function sparWithMatt(partyId) {
+  const staminaCost = 25;
+  if (state.player.stamina < staminaCost) {
+    renderShop("Ivan is too tired to spar right now.");
+    return;
+  }
+
+  const result = applyCapturedMattProgress(partyId, { friendship: 3, xp: 16 });
+  if (!result) {
+    renderShop("That Matt is no longer in your party.");
+    return;
+  }
+
+  state.player.stamina = Math.max(0, state.player.stamina - staminaCost);
+  updatePlayerStatusHud();
+  renderShop(
+    result.leveled
+      ? `${getArenaMattName(result.matt)} sparred hard and reached Lv ${result.matt.level}.`
+      : `${getArenaMattName(result.matt)} sparred with Ivan. XP +${result.xpGain}, friendship +${result.friendshipGain}.`,
+  );
+}
+
+function renderBond(parent) {
+  if (state.capturedParty.length === 0) {
+    appendEmptyShopMessage(parent, "Capture or adopt a Matt before working on friendship.");
+    return;
+  }
+
+  appendShopTextCard(
+    parent,
+    "Friendship",
+    "Care is once per Matt each day. Treats, brushes, mints, walking together, and arena battles deepen bonds.",
+  );
+
+  state.capturedParty.forEach((matt) => {
+    const row = document.createElement("article");
+    row.className = "shop-item bond-item";
+
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = matt.name || MATT_LABELS[matt.type] || "Captured Matt";
+    const detail = document.createElement("span");
+    detail.textContent = `Lv ${getMattLevel(matt)} | XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | ${getFriendshipLine(matt)}. ${getFriendshipBonusLine(matt)}`;
+    info.append(title, detail);
+
+    row.append(
+      info,
+      makeShopButton("Care", "bond-care", matt.partyId, !canCareForMatt(matt)),
+      makeShopButton("Treat", "bond-treat", matt.partyId, getItemCount("matt_treat") <= 0 || (matt.friendship || 0) >= 100),
+      makeShopButton("Brush", "bond-brush", matt.partyId, getItemCount("camp_brush") <= 0 || (matt.friendship || 0) >= 100),
+      makeShopButton("Mint", "bond-mint", matt.partyId, getItemCount("focus_mint") <= 0 || (matt.friendship || 0) >= 100),
+      makeShopButton("Spar", "bond-spar", matt.partyId, state.player.stamina < 25),
+    );
+    parent.append(row);
+  });
+}
+
 function appendCapturedMattRows(parent) {
   if (!getShopDef()?.buysMatts) {
     return;
@@ -2732,7 +3330,7 @@ function appendCapturedMattRows(parent) {
     const title = document.createElement("strong");
     title.textContent = matt.name || MATT_LABELS[matt.type] || "Captured Matt";
     const detail = document.createElement("span");
-    detail.textContent = `Lv ${getMattLevel(matt)} friend ${matt.friendship || 0}. ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)} capture. Ty pays ${value} coins.`;
+    detail.textContent = `Lv ${getMattLevel(matt)} | ${getFriendshipLine(matt)}. ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)} capture. Ty pays ${value} coins.`;
     info.append(title, detail);
 
     const owned = document.createElement("em");
@@ -2754,7 +3352,7 @@ function renderShop(message = "") {
 
   if (shopTabs) {
     shopTabs.innerHTML = "";
-    const tabs = shop ? ["talk", "mission", "buy", "sell", "inventory"] : ["inventory"];
+    const tabs = shop ? ["talk", "mission", "buy", "sell", "inventory", "bond"] : ["inventory", "bond"];
     tabs.forEach((tab) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -2785,6 +3383,8 @@ function renderShop(message = "") {
       entries.forEach(([itemId]) => appendItemRow(shopList, itemId, "sell"));
       appendCapturedMattRows(shopList);
     }
+  } else if (state.shopTab === "bond") {
+    renderBond(shopList);
   } else {
     const entries = getInventoryEntries();
     if (entries.length === 0) {
@@ -2810,6 +3410,15 @@ function createArenaState() {
     opponentHp: 0,
     playerMaxHp: 0,
     opponentMaxHp: 0,
+    playerEnergy: 0,
+    opponentEnergy: 0,
+    playerShield: 0,
+    opponentShield: 0,
+    playerStatuses: {},
+    opponentStatuses: {},
+    playerCooldowns: {},
+    opponentCooldowns: {},
+    turn: 1,
     log: [],
     turnLocked: false,
   };
@@ -2837,26 +3446,90 @@ function getArenaAbilities(type) {
   return ARENA_ABILITIES[type] || ARENA_ABILITIES.dogmatt;
 }
 
+function getArenaAbilityId(ability) {
+  return ability.id || ability.name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+}
+
+function isArenaAbilityUnlocked(ability, matt, side = "player") {
+  if (side === "opponent") {
+    return true;
+  }
+
+  const level = getMattLevel(matt);
+  const friendship = Math.floor(Number(matt?.friendship) || 0);
+  return level >= (ability.level || 1) && friendship >= (ability.friendship || 0);
+}
+
+function getArenaAbilityLockReason(ability, matt, side = "player") {
+  if (isArenaAbilityUnlocked(ability, matt, side)) {
+    return "";
+  }
+
+  const needs = [];
+  if (ability.level && getMattLevel(matt) < ability.level) {
+    needs.push(`Lv ${ability.level}`);
+  }
+  if (ability.friendship && (matt?.friendship || 0) < ability.friendship) {
+    needs.push(`${ability.friendship} bond`);
+  }
+  return `Needs ${needs.join(" and ")}`;
+}
+
 function getArenaMattMaxHp(matt, opponentBoost = 0) {
   const level = getMattLevel(matt);
-  const friendship = Math.floor((Number(matt?.friendship) || 0) / 4);
-  return 70 + level * 12 + friendship + opponentBoost;
+  const rank = getFriendshipRank(matt?.friendship || 0);
+  const friendship = Math.floor((Number(matt?.friendship) || 0) / 5);
+  return 70 + level * 12 + friendship + rank.hp + opponentBoost;
 }
 
 function getArenaMattPowerBonus(matt, opponentBoost = 0) {
   const handbookBonus = hasItem("arena_handbook") ? 4 : 0;
-  return getMattLevel(matt) * 3 + Math.floor((Number(matt?.friendship) || 0) / 12) + opponentBoost + handbookBonus;
+  const rank = getFriendshipRank(matt?.friendship || 0);
+  return getMattLevel(matt) * 3 + Math.floor((Number(matt?.friendship) || 0) / 12) + rank.power + opponentBoost + handbookBonus;
+}
+
+function getArenaMattCritChance(matt, ability = {}) {
+  const rank = getFriendshipRank(matt?.friendship || 0);
+  return clamp(rank.crit + (ability.crit || 0), 0.02, 0.45);
+}
+
+function getArenaInitialEnergy(matt, opponentBoost = 0, includePlayerItems = true) {
+  const rank = getFriendshipRank(matt?.friendship || 0);
+  const locketBonus = includePlayerItems && hasItem("memory_locket") ? 6 : 0;
+  return clamp(62 + rank.energy + Math.floor(getMattLevel(matt) / 3) + opponentBoost + locketBonus, 0, ARENA_MAX_ENERGY);
+}
+
+function getArenaRankTitle(points = state.arenaStats.rankPoints) {
+  if (points >= 160) {
+    return "Crown Circuit";
+  }
+  if (points >= 90) {
+    return "Gold Circuit";
+  }
+  if (points >= 42) {
+    return "Silver Circuit";
+  }
+  if (points >= 14) {
+    return "Bronze Circuit";
+  }
+  return "Open Circuit";
+}
+
+function getArenaRecordText() {
+  const stats = normalizeArenaStats(state.arenaStats);
+  return `${getArenaRankTitle(stats.rankPoints)} | ${stats.wins}W-${stats.losses}L | streak ${stats.streak} | best ${stats.bestStreak}`;
 }
 
 function chooseArenaOpponent(playerMatt, waitingOpponent = null) {
   const base = waitingOpponent?.id
     ? ARENA_OPPONENTS.find((opponent) => opponent.id === waitingOpponent.id) || waitingOpponent
     : ARENA_OPPONENTS[Math.floor(Math.random() * ARENA_OPPONENTS.length)];
-  const level = clamp(getMattLevel(playerMatt) + Math.floor(randomBetween(0, 4)), 1, 50);
+  const streakBoost = Math.min(5, Math.floor((state.arenaStats.streak || 0) / 2));
+  const level = clamp(getMattLevel(playerMatt) + Math.floor(randomBetween(0, 4)) + streakBoost, 1, 50);
   return {
     ...base,
     level,
-    friendship: 35 + Math.floor(randomBetween(0, 35)),
+    friendship: clamp(38 + Math.floor(randomBetween(0, 40)) + streakBoost * 3, 0, 100),
   };
 }
 
@@ -2921,6 +3594,7 @@ function renderArenaSelect(message = "Choose your Matt for the arena.") {
   }
 
   shopList.innerHTML = "";
+  appendShopTextCard(shopList, "Arena Record", getArenaRecordText());
 
   if (state.capturedParty.length === 0) {
     appendEmptyShopMessage(shopList, "You need at least one captured Matt before you can battle.");
@@ -2934,10 +3608,11 @@ function renderArenaSelect(message = "Choose your Matt for the arena.") {
       const title = document.createElement("strong");
       title.textContent = matt.name || MATT_LABELS[matt.type] || "Captured Matt";
       const detail = document.createElement("span");
-      detail.textContent = `Lv ${getMattLevel(matt)} | XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | Friend ${matt.friendship || 0}`;
+      const unlocked = getArenaAbilities(matt.type).filter((ability) => isArenaAbilityUnlocked(ability, matt)).length;
+      detail.textContent = `Lv ${getMattLevel(matt)} | XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | ${getFriendshipLine(matt)} | ${unlocked}/${getArenaAbilities(matt.type).length} abilities. ${getFriendshipBonusLine(matt)}`;
       info.append(title, detail);
 
-      row.append(info, document.createElement("em"), makeShopButton("Choose", "arena-select-matt", matt.partyId));
+      row.append(info, document.createElement("em"), makeShopButton("Battle", "arena-select-matt", matt.partyId));
       shopList.append(row);
     });
   }
@@ -3100,6 +3775,378 @@ function spawnFloatingBattleText(target, text, color = "#fff0a8") {
   });
 }
 
+function getArenaRecoverAbility() {
+  return {
+    id: "catch_breath",
+    name: "Catch Breath",
+    power: 0,
+    cost: 0,
+    cooldown: 0,
+    energyGain: 34,
+    shield: 6,
+    element: "heart",
+    text: "catches its breath",
+    detail: "Restore energy and gain a small shield.",
+  };
+}
+
+function getArenaDisplayedAbilities(matt, side = "player") {
+  return [...getArenaAbilities(matt?.type || matt?.mattType), getArenaRecoverAbility()].filter((ability) =>
+    side === "opponent" || isArenaAbilityUnlocked(ability, matt, side) || side === "player",
+  );
+}
+
+function getArenaSideKeys(side) {
+  return side === "player"
+    ? {
+        hp: "playerHp",
+        maxHp: "playerMaxHp",
+        energy: "playerEnergy",
+        shield: "playerShield",
+        statuses: "playerStatuses",
+        cooldowns: "playerCooldowns",
+      }
+    : {
+        hp: "opponentHp",
+        maxHp: "opponentMaxHp",
+        energy: "opponentEnergy",
+        shield: "opponentShield",
+        statuses: "opponentStatuses",
+        cooldowns: "opponentCooldowns",
+      };
+}
+
+function getArenaSideMatt(side) {
+  const arena = state.arena;
+  if (side === "player") {
+    return arena.playerMatt;
+  }
+
+  return arena.opponent
+    ? {
+        type: arena.opponent.mattType,
+        level: arena.opponent.level,
+        friendship: arena.opponent.friendship,
+      }
+    : null;
+}
+
+function getArenaSideName(side) {
+  const arena = state.arena;
+  if (side === "player") {
+    return getArenaMattName(arena.playerMatt);
+  }
+  return arena.opponent ? `${arena.opponent.name}'s Matt` : "Opponent";
+}
+
+function getArenaStatusAmount(side, statusId) {
+  const keys = getArenaSideKeys(side);
+  return Math.max(0, Math.floor(Number(state.arena[keys.statuses]?.[statusId]?.amount) || 0));
+}
+
+function formatArenaStatuses(side) {
+  const statuses = state.arena[getArenaSideKeys(side).statuses] || {};
+  const entries = Object.entries(statuses).filter(([, status]) => status.turns > 0);
+  if (!entries.length) {
+    return "steady";
+  }
+
+  return entries
+    .map(([id, status]) => `${ARENA_STATUS_LABELS[id] || id} ${status.turns}`)
+    .join(", ");
+}
+
+function applyArenaStatus(side, status) {
+  if (!status?.id) {
+    return;
+  }
+
+  const keys = getArenaSideKeys(side);
+  const statuses = state.arena[keys.statuses];
+  const current = statuses[status.id] || { turns: 0, amount: 0 };
+  statuses[status.id] = {
+    turns: Math.max(current.turns || 0, Math.max(1, status.turns || 1)),
+    amount: Math.max(current.amount || 0, Math.max(0, status.amount || 0)),
+  };
+}
+
+function cleanseArenaStatuses(side) {
+  const statuses = state.arena[getArenaSideKeys(side).statuses];
+  ["burn", "weaken", "snare", "soaked"].forEach((statusId) => {
+    delete statuses[statusId];
+  });
+}
+
+function getArenaAbilityUseState(side, ability) {
+  const arena = state.arena;
+  const matt = getArenaSideMatt(side);
+  const keys = getArenaSideKeys(side);
+  const cooldown = Math.max(0, Math.floor(Number(arena[keys.cooldowns][getArenaAbilityId(ability)]) || 0));
+  const cost = Math.max(0, Math.floor(Number(ability.cost) || 0));
+  const energy = Math.max(0, Math.floor(Number(arena[keys.energy]) || 0));
+  const lockReason = getArenaAbilityLockReason(ability, matt, side);
+
+  if (lockReason) {
+    return { disabled: true, reason: lockReason, cost, cooldown, energy };
+  }
+  if (cooldown > 0) {
+    return { disabled: true, reason: `Cooldown ${cooldown}`, cost, cooldown, energy };
+  }
+  if (energy < cost) {
+    return { disabled: true, reason: `Needs ${cost} energy`, cost, cooldown, energy };
+  }
+
+  return { disabled: false, reason: "", cost, cooldown, energy };
+}
+
+function payArenaAbilityCost(side, ability) {
+  const arena = state.arena;
+  const keys = getArenaSideKeys(side);
+  arena[keys.energy] = clamp((arena[keys.energy] || 0) - (ability.cost || 0), 0, ARENA_MAX_ENERGY);
+  if (ability.cooldown) {
+    arena[keys.cooldowns][getArenaAbilityId(ability)] = ability.cooldown + 1;
+  }
+}
+
+function tickArenaCooldowns(side) {
+  const cooldowns = state.arena[getArenaSideKeys(side).cooldowns];
+  Object.keys(cooldowns).forEach((abilityId) => {
+    cooldowns[abilityId] = Math.max(0, cooldowns[abilityId] - 1);
+    if (cooldowns[abilityId] <= 0) {
+      delete cooldowns[abilityId];
+    }
+  });
+}
+
+function applyArenaSupportEffects(side, ability) {
+  const arena = state.arena;
+  const keys = getArenaSideKeys(side);
+  const matt = getArenaSideMatt(side);
+  const rank = getFriendshipRank(matt?.friendship || 0);
+  const result = { heal: 0, shield: 0, energy: 0, textParts: [] };
+
+  if (ability.cleanse) {
+    cleanseArenaStatuses(side);
+    result.textParts.push("cleanses bad effects");
+  }
+
+  if (ability.heal) {
+    result.heal = Math.round(ability.heal + rank.power);
+    arena[keys.hp] = clamp(arena[keys.hp] + result.heal, 0, arena[keys.maxHp]);
+    result.textParts.push(`recovers ${result.heal}`);
+  }
+
+  if (ability.shield) {
+    result.shield = Math.round(ability.shield + Math.floor(rank.hp / 4));
+    arena[keys.shield] = clamp((arena[keys.shield] || 0) + result.shield, 0, 80);
+    result.textParts.push(`gains ${result.shield} shield`);
+  }
+
+  if (ability.energyGain) {
+    result.energy = Math.round(ability.energyGain + Math.floor(rank.energy / 2));
+    arena[keys.energy] = clamp((arena[keys.energy] || 0) + result.energy, 0, ARENA_MAX_ENERGY);
+    result.textParts.push(`restores ${result.energy} energy`);
+  }
+
+  (ability.selfStatus || []).forEach((status) => applyArenaStatus(side, status));
+  if (ability.selfStatus?.length) {
+    result.textParts.push(
+      ability.selfStatus.map((status) => ARENA_STATUS_LABELS[status.id] || status.id).join(", "),
+    );
+  }
+
+  return result;
+}
+
+function resolveArenaAbility(side, ability) {
+  const arena = state.arena;
+  const defenderSide = side === "player" ? "opponent" : "player";
+  const attackerKeys = getArenaSideKeys(side);
+  const defenderKeys = getArenaSideKeys(defenderSide);
+  const attacker = getArenaSideMatt(side);
+  const defender = getArenaSideMatt(defenderSide);
+  const attackerName = getArenaSideName(side);
+  const defenderName = getArenaSideName(defenderSide);
+  const support = applyArenaSupportEffects(side, ability);
+  const dodgeChance = ability.power > 0 ? clamp(getArenaStatusAmount(defenderSide, "mist") / 100, 0, 0.48) : 0;
+
+  if (dodgeChance > 0 && Math.random() < dodgeChance) {
+    return {
+      damage: 0,
+      blocked: 0,
+      heal: support.heal,
+      shield: support.shield,
+      energy: support.energy,
+      dodged: true,
+      text: `${defenderName} slips through ${ability.name}. ${support.textParts.join(". ")}`.trim(),
+    };
+  }
+
+  let damage = 0;
+  let crit = false;
+  if (ability.power > 0) {
+    const variance = Math.floor(randomBetween(0, 10));
+    damage = Math.round(ability.power + getArenaMattPowerBonus(attacker, side === "opponent" ? 5 : 0) + variance);
+    damage += getArenaStatusAmount(side, "focus");
+    damage += getArenaStatusAmount(defenderSide, "soaked");
+    damage -= getArenaStatusAmount(side, "weaken");
+    damage -= getArenaStatusAmount(defenderSide, "guard");
+
+    if (Math.random() < getArenaMattCritChance(attacker, ability)) {
+      crit = true;
+      damage = Math.round(damage * 1.45);
+    }
+
+    damage = Math.max(4, damage);
+  }
+
+  let blocked = 0;
+  if (damage > 0) {
+    const pierce = Math.min(arena[defenderKeys.shield] || 0, ability.pierce || 0);
+    arena[defenderKeys.shield] = Math.max(0, (arena[defenderKeys.shield] || 0) - pierce);
+    blocked = Math.min(arena[defenderKeys.shield] || 0, damage);
+    arena[defenderKeys.shield] = Math.max(0, (arena[defenderKeys.shield] || 0) - blocked);
+    damage -= blocked;
+    arena[defenderKeys.hp] = clamp(arena[defenderKeys.hp] - damage, 0, arena[defenderKeys.maxHp]);
+  }
+
+  (ability.targetStatus || []).forEach((status) => applyArenaStatus(defenderSide, status));
+
+  let thornDamage = 0;
+  if (damage > 0 && getArenaStatusAmount(defenderSide, "thorns") > 0) {
+    thornDamage = getArenaStatusAmount(defenderSide, "thorns");
+    arena[attackerKeys.hp] = clamp(arena[attackerKeys.hp] - thornDamage, 0, arena[attackerKeys.maxHp]);
+  }
+
+  const effectText = [];
+  if (crit) {
+    effectText.push("critical");
+  }
+  if (blocked) {
+    effectText.push(`${blocked} blocked`);
+  }
+  if (ability.targetStatus?.length) {
+    effectText.push(
+      ability.targetStatus.map((status) => ARENA_STATUS_LABELS[status.id] || status.id).join(", "),
+    );
+  }
+  if (thornDamage) {
+    effectText.push(`${thornDamage} thorn recoil`);
+  }
+  effectText.push(...support.textParts);
+
+  return {
+    damage,
+    blocked,
+    heal: support.heal,
+    shield: support.shield,
+    energy: support.energy,
+    crit,
+    thornDamage,
+    dodged: false,
+    text: `${attackerName} uses ${ability.name} and ${ability.text}${ability.power > 0 ? ` for ${damage}` : ""}.${effectText.length ? ` ${effectText.join(". ")}.` : ""}`,
+  };
+}
+
+function tickArenaStatuses(side) {
+  const arena = state.arena;
+  const keys = getArenaSideKeys(side);
+  const statuses = arena[keys.statuses];
+  const name = getArenaSideName(side);
+  const logs = [];
+
+  if (statuses.burn?.turns > 0) {
+    const damage = statuses.burn.amount || 5;
+    arena[keys.hp] = clamp(arena[keys.hp] - damage, 0, arena[keys.maxHp]);
+    logs.push(`${name} takes ${damage} burn damage.`);
+    spawnFloatingBattleText(getArenaActor(side), `-${damage}`, "#ff7b55");
+  }
+
+  if (statuses.regen?.turns > 0) {
+    const heal = statuses.regen.amount || 5;
+    arena[keys.hp] = clamp(arena[keys.hp] + heal, 0, arena[keys.maxHp]);
+    logs.push(`${name} regenerates ${heal}.`);
+    spawnFloatingBattleText(getArenaActor(side), `+${heal}`, "#8ff3c5");
+  }
+
+  Object.keys(statuses).forEach((statusId) => {
+    statuses[statusId].turns -= 1;
+    if (statuses[statusId].turns <= 0) {
+      delete statuses[statusId];
+    }
+  });
+
+  return logs;
+}
+
+function regenerateArenaEnergy(side) {
+  const arena = state.arena;
+  const keys = getArenaSideKeys(side);
+  const matt = getArenaSideMatt(side);
+  const rank = getFriendshipRank(matt?.friendship || 0);
+  const snarePenalty = getArenaStatusAmount(side, "snare");
+  const amount = Math.max(10, 18 + Math.floor(rank.energy / 2) - snarePenalty);
+  arena[keys.energy] = clamp((arena[keys.energy] || 0) + amount, 0, ARENA_MAX_ENERGY);
+}
+
+function advanceArenaRound() {
+  const arena = state.arena;
+  const logs = [...tickArenaStatuses("player"), ...tickArenaStatuses("opponent")];
+
+  logs.reverse().forEach((line) => arena.log.unshift(line));
+  if (arena.opponentHp <= 0) {
+    finishArenaBattle(true);
+    return false;
+  }
+  if (arena.playerHp <= 0) {
+    finishArenaBattle(false);
+    return false;
+  }
+
+  regenerateArenaEnergy("player");
+  regenerateArenaEnergy("opponent");
+  tickArenaCooldowns("player");
+  tickArenaCooldowns("opponent");
+  arena.turn += 1;
+  arena.turnLocked = false;
+  return true;
+}
+
+function chooseOpponentArenaAbility() {
+  const arena = state.arena;
+  const opponentMatt = getArenaSideMatt("opponent");
+  const abilities = getArenaDisplayedAbilities(opponentMatt, "opponent");
+  const usable = abilities.filter((ability) => !getArenaAbilityUseState("opponent", ability).disabled);
+  const pool = usable.length ? usable : [getArenaRecoverAbility()];
+  const hpRatio = arena.opponentHp / Math.max(1, arena.opponentMaxHp);
+  const playerShield = arena.playerShield || 0;
+
+  return pool
+    .map((ability) => {
+      let score = (ability.power || 0) + randomBetween(0, 12);
+      if (hpRatio < 0.45 && ability.heal) {
+        score += ability.heal * 1.2;
+      }
+      if (playerShield > 18 && ability.pierce) {
+        score += ability.pierce;
+      }
+      if (arena.opponentEnergy < 18 && ability.energyGain) {
+        score += 40;
+      }
+      if (arena.opponent?.strategy === "control" && ability.targetStatus?.length) {
+        score += 12;
+      }
+      if (arena.opponent?.strategy === "guard" && (ability.shield || ability.selfStatus?.some((status) => status.id === "guard"))) {
+        score += 10;
+      }
+      if (arena.opponent?.strategy === "pressure" && ability.power >= 26) {
+        score += 10;
+      }
+      return { ability, score };
+    })
+    .sort((a, b) => b.score - a.score)[0].ability;
+}
+
 function startArenaBattle(partyId) {
   const playerMatt = state.capturedParty.find((matt) => matt.partyId === partyId);
   if (!playerMatt) {
@@ -3124,7 +4171,19 @@ function startArenaBattle(partyId) {
     opponentHp: opponentMaxHp,
     playerMaxHp,
     opponentMaxHp,
-    log: [`${opponent.name} enters with a Lv ${opponent.level} ${MATT_LABELS[opponent.mattType] || "Matt"}.`],
+    playerEnergy: getArenaInitialEnergy(playerMatt),
+    opponentEnergy: getArenaInitialEnergy({ level: opponent.level, friendship: opponent.friendship }, 8, false),
+    playerShield: 0,
+    opponentShield: 0,
+    playerStatuses: {},
+    opponentStatuses: {},
+    playerCooldowns: {},
+    opponentCooldowns: {},
+    turn: 1,
+    log: [
+      `${opponent.name} enters with a Lv ${opponent.level} ${MATT_LABELS[opponent.mattType] || "Matt"} and a ${getFriendshipRank(opponent.friendship).name} arena bond.`,
+      `${getArenaMattName(playerMatt)} enters with ${getFriendshipLine(playerMatt)}.`,
+    ],
     turnLocked: false,
   };
 
@@ -3133,69 +4192,65 @@ function startArenaBattle(partyId) {
   renderArenaBattle("Pick an ability.");
 }
 
-function resolveArenaAbility(attacker, ability, defenderHp, defenderMaxHp, attackerHp, attackerMaxHp, powerBoost = 0) {
-  const variance = Math.floor(randomBetween(0, 9));
-  const damage = Math.max(4, Math.round(ability.power + powerBoost + variance));
-  const nextDefenderHp = clamp(defenderHp - damage - (ability.burn || 0), 0, defenderMaxHp);
-  const nextAttackerHp = ability.heal
-    ? clamp(attackerHp + ability.heal, 0, attackerMaxHp)
-    : attackerHp;
-  const extra = ability.burn ? ` Extra ${ability.burn} effect damage.` : "";
-  const heal = ability.heal ? ` ${attacker} recovers ${ability.heal}.` : "";
-  return {
-    defenderHp: nextDefenderHp,
-    attackerHp: nextAttackerHp,
-    damage,
-    text: `${attacker} uses ${ability.name} and ${ability.text} for ${damage}.${extra}${heal}`,
-  };
-}
-
-function awardArenaXp() {
+function awardArenaXp(won = true) {
   const arena = state.arena;
-  const partyIndex = state.capturedParty.findIndex((matt) => matt.partyId === arena.playerMattId);
-  if (partyIndex === -1) {
+  const matt = state.capturedParty.find((candidate) => candidate.partyId === arena.playerMattId);
+  if (!matt) {
     return "";
   }
 
-  const matt = state.capturedParty[partyIndex];
-  const baseGained = ARENA_WIN_XP + arena.opponent.level * 4;
-  const gained = Math.round(baseGained * (hasItem("arena_handbook") ? 1.25 : 1));
-  let level = getMattLevel(matt);
-  let xp = (matt.xp || 0) + gained;
-  let leveled = false;
+  const rank = getFriendshipRank(matt.friendship || 0);
+  const handbook = hasItem("arena_handbook") ? 1.25 : 1;
+  const baseGained = won
+    ? ARENA_WIN_XP + arena.opponent.level * 4 + Math.min(18, (state.arenaStats.streak || 0) * 3)
+    : hasItem("sparring_gloves")
+      ? Math.max(8, Math.round((ARENA_WIN_XP + arena.opponent.level * 2) * 0.35))
+      : 0;
+  const gained = Math.round(baseGained * handbook * rank.xp);
+  const friendship = won ? 8 + Math.min(4, Math.floor((state.arenaStats.streak || 0) / 2)) : hasItem("sparring_gloves") ? 3 : 2;
+  const result = applyCapturedMattProgress(arena.playerMattId, { xp: gained, friendship });
 
-  while (level < 50 && xp >= getMattXpToNext(level)) {
-    xp -= getMattXpToNext(level);
-    level += 1;
-    leveled = true;
+  if (!result) {
+    return "";
   }
 
-  const friendship = clamp((matt.friendship || 0) + 6, 0, 100);
-  const updated = { ...matt, level, xp, friendship };
-  state.capturedParty[partyIndex] = updated;
-  state.arena.playerMatt = updated;
-
-  state.dogmatts.forEach((candidate) => {
-    if (candidate.partyId === updated.partyId) {
-      candidate.level = level;
-      candidate.xp = xp;
-      candidate.friendship = friendship;
-    }
-  });
-
-  saveCapturedParty();
-  updateCaughtHud(countCaughtMatts());
-
-  return leveled
-    ? `${getArenaMattName(updated)} gained ${gained} XP and reached Lv ${level}.`
-    : `${getArenaMattName(updated)} gained ${gained} XP.`;
+  const pieces = [`${getArenaMattName(result.matt)} gained ${result.xpGain} XP`, `friendship +${result.friendshipGain}`];
+  if (result.leveled) {
+    pieces.push(`reached Lv ${result.matt.level}`);
+  }
+  return `${pieces.join(" and ")}.`;
 }
 
 function finishArenaBattle(won) {
-  state.arena.phase = won ? "won" : "lost";
-  state.arena.turnLocked = false;
-  const result = won ? awardArenaXp() : `${getArenaMattName(state.arena.playerMatt)} needs a rest.`;
-  state.arena.log.unshift(won ? `Arena win. ${result}` : `Arena loss. ${result}`);
+  const arena = state.arena;
+  arena.phase = won ? "won" : "lost";
+  arena.turnLocked = false;
+
+  const stats = normalizeArenaStats(state.arenaStats);
+  if (won) {
+    stats.wins += 1;
+    stats.streak += 1;
+    stats.bestStreak = Math.max(stats.bestStreak, stats.streak);
+    stats.rankPoints += 5 + Math.min(8, Math.floor(stats.streak / 2));
+  } else {
+    stats.losses += 1;
+    stats.streak = 0;
+    stats.rankPoints += hasItem("sparring_gloves") ? 1 : 0;
+  }
+  state.arenaStats = stats;
+
+  const progress = awardArenaXp(won);
+  const coinReward = won
+    ? 42 + arena.opponent.level * 5 + Math.min(60, stats.streak * 6)
+    : hasItem("sparring_gloves")
+      ? 8
+      : 0;
+  state.coins += coinReward;
+  saveEconomy();
+  updateEconomyHud();
+
+  const result = coinReward > 0 ? `${progress} Coins +${coinReward}.` : progress;
+  arena.log.unshift(won ? `Arena win. ${result}` : `Arena loss. ${result}`);
   renderArenaBattle(won ? "You won the arena battle." : "You lost the arena battle.");
 }
 
@@ -3212,7 +4267,10 @@ function appendArenaHpMeter(parent, label, hp, maxHp, side) {
   track.append(fill);
 
   const value = document.createElement("em");
-  value.textContent = `${hp}/${maxHp}`;
+  const keys = getArenaSideKeys(side);
+  const energy = state.arena[keys.energy] || 0;
+  const shield = state.arena[keys.shield] || 0;
+  value.textContent = `${hp}/${maxHp} | E ${energy} | Sh ${shield} | ${formatArenaStatuses(side)}`;
 
   meter.append(name, track, value);
   parent.append(meter);
@@ -3224,14 +4282,23 @@ function arenaUseAbility(index) {
     return;
   }
 
-  const playerAbilities = getArenaAbilities(arena.playerMatt.type);
+  const playerAbilities = getArenaDisplayedAbilities(arena.playerMatt, "player");
   const playerAbility = playerAbilities[index];
   if (!playerAbility) {
     return;
   }
 
+  const useState = getArenaAbilityUseState("player", playerAbility);
+  if (useState.disabled) {
+    renderArenaBattle(useState.reason);
+    return;
+  }
+
   arena.turnLocked = true;
-  playArenaAttackEffect("player", playerAbility);
+  payArenaAbilityCost("player", playerAbility);
+  if (playerAbility.power > 0) {
+    playArenaAttackEffect("player", playerAbility);
+  }
   renderArenaBattle(`${getArenaMattName(arena.playerMatt)} uses ${playerAbility.name}.`);
 
   window.setTimeout(() => {
@@ -3239,40 +4306,37 @@ function arenaUseAbility(index) {
       return;
     }
 
-    const playerResult = resolveArenaAbility(
-      getArenaMattName(arena.playerMatt),
-      playerAbility,
-      arena.opponentHp,
-      arena.opponentMaxHp,
-      arena.playerHp,
-      arena.playerMaxHp,
-      getArenaMattPowerBonus(arena.playerMatt),
-    );
-    arena.opponentHp = playerResult.defenderHp;
-    arena.playerHp = playerResult.attackerHp;
+    const playerResult = resolveArenaAbility("player", playerAbility);
     arena.log.unshift(playerResult.text);
-    spawnFloatingBattleText(getArenaActor("opponent"), `-${playerResult.damage}`, "#ff9b77");
-    if (playerAbility.heal) {
-      spawnFloatingBattleText(getArenaActor("player"), `+${playerAbility.heal}`, "#8ff3c5");
+    if (playerResult.dodged) {
+      spawnFloatingBattleText(getArenaActor("opponent"), "Dodge", "#d9f7ff");
+    } else if (playerResult.damage > 0) {
+      spawnFloatingBattleText(getArenaActor("opponent"), `-${playerResult.damage}`, playerResult.crit ? "#ffd166" : "#ff9b77");
+    }
+    if (playerResult.heal) {
+      spawnFloatingBattleText(getArenaActor("player"), `+${playerResult.heal}`, "#8ff3c5");
+    }
+    if (playerResult.energy) {
+      spawnFloatingBattleText(getArenaActor("player"), `+${playerResult.energy}E`, "#8bd3ff");
+    }
+    if (playerResult.shield) {
+      spawnFloatingBattleText(getArenaActor("player"), `+${playerResult.shield}Sh`, "#c8f7a1");
     }
 
     if (arena.opponentHp <= 0) {
-      arena.turnLocked = false;
       finishArenaBattle(true);
       return;
     }
-
-    const dodged = playerAbility.dodge && Math.random() < playerAbility.dodge;
-    if (dodged) {
-      arena.turnLocked = false;
-      arena.log.unshift(`${getArenaMattName(arena.playerMatt)} dodges the counterattack.`);
-      renderArenaBattle("Nice dodge. Pick another ability.");
+    if (arena.playerHp <= 0) {
+      finishArenaBattle(false);
       return;
     }
 
-    const opponentAbilities = getArenaAbilities(arena.opponent.mattType);
-    const opponentAbility = opponentAbilities[Math.floor(Math.random() * opponentAbilities.length)];
-    playArenaAttackEffect("opponent", opponentAbility);
+    const opponentAbility = chooseOpponentArenaAbility();
+    payArenaAbilityCost("opponent", opponentAbility);
+    if (opponentAbility.power > 0) {
+      playArenaAttackEffect("opponent", opponentAbility);
+    }
     renderArenaBattle(`${arena.opponent.name}'s Matt uses ${opponentAbility.name}.`);
 
     window.setTimeout(() => {
@@ -3280,35 +4344,31 @@ function arenaUseAbility(index) {
         return;
       }
 
-      const opponentPower = Math.max(
-        0,
-        getArenaMattPowerBonus({ level: arena.opponent.level, friendship: arena.opponent.friendship }, 4) -
-          (playerAbility.weaken || 0),
-      );
-      const opponentResult = resolveArenaAbility(
-        `${arena.opponent.name}'s Matt`,
-        opponentAbility,
-        arena.playerHp,
-        arena.playerMaxHp,
-        arena.opponentHp,
-        arena.opponentMaxHp,
-        opponentPower,
-      );
-      arena.playerHp = opponentResult.defenderHp;
-      arena.opponentHp = opponentResult.attackerHp;
+      const opponentResult = resolveArenaAbility("opponent", opponentAbility);
       arena.log.unshift(opponentResult.text);
-      spawnFloatingBattleText(getArenaActor("player"), `-${opponentResult.damage}`, "#ff9b77");
-      if (opponentAbility.heal) {
-        spawnFloatingBattleText(getArenaActor("opponent"), `+${opponentAbility.heal}`, "#8ff3c5");
+      if (opponentResult.dodged) {
+        spawnFloatingBattleText(getArenaActor("player"), "Dodge", "#d9f7ff");
+      } else if (opponentResult.damage > 0) {
+        spawnFloatingBattleText(getArenaActor("player"), `-${opponentResult.damage}`, opponentResult.crit ? "#ffd166" : "#ff9b77");
       }
-      arena.turnLocked = false;
+      if (opponentResult.heal) {
+        spawnFloatingBattleText(getArenaActor("opponent"), `+${opponentResult.heal}`, "#8ff3c5");
+      }
+      if (opponentResult.energy) {
+        spawnFloatingBattleText(getArenaActor("opponent"), `+${opponentResult.energy}E`, "#8bd3ff");
+      }
+      if (opponentResult.shield) {
+        spawnFloatingBattleText(getArenaActor("opponent"), `+${opponentResult.shield}Sh`, "#c8f7a1");
+      }
 
       if (arena.playerHp <= 0) {
         finishArenaBattle(false);
         return;
       }
 
-      renderArenaBattle(arena.log[0] || "Pick another ability.");
+      if (advanceArenaRound()) {
+        renderArenaBattle(arena.log[0] || "Pick another ability.");
+      }
     }, 520);
   }, 440);
 }
@@ -3323,7 +4383,7 @@ function renderArenaBattle(message = "") {
   arenaBattleUi.hidden = false;
   if (arenaBattleTitle) {
     arenaBattleTitle.textContent = arena.opponent
-      ? `${arena.opponent.name} - ${arena.opponent.title}`
+      ? `${arena.opponent.name} - ${arena.opponent.title} | Turn ${arena.turn}`
       : "Arena Battle";
   }
   if (arenaBattleStats) {
@@ -3344,14 +4404,20 @@ function renderArenaBattle(message = "") {
 
   arenaBattleActions.innerHTML = "";
   if (arena.phase === "battle") {
-    getArenaAbilities(arena.playerMatt.type).forEach((ability, index) => {
+    getArenaDisplayedAbilities(arena.playerMatt, "player").forEach((ability, index) => {
+      const useState = getArenaAbilityUseState("player", ability);
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = `${ability.name} ${ability.power}`;
-      button.title = `${ability.text}. Power ${ability.power}.`;
       button.dataset.action = "arena-ability";
       button.dataset.id = String(index);
-      button.disabled = arena.turnLocked;
+      button.disabled = arena.turnLocked || useState.disabled;
+      button.title = useState.reason || `${ability.detail || ability.text} Cost ${useState.cost}.`;
+
+      const label = document.createElement("strong");
+      label.textContent = ability.name;
+      const detail = document.createElement("span");
+      detail.textContent = useState.reason || `Pow ${ability.power || 0} | Cost ${useState.cost} | CD ${ability.cooldown || 0}`;
+      button.append(label, detail);
       arenaBattleActions.append(button);
     });
   } else {
@@ -3406,6 +4472,7 @@ function addPurchasedMattToParty(type) {
       x: state.player.x,
       y: state.player.y,
       direction: state.player.direction === "left" ? "left" : "right",
+      friendship: 24,
     },
     state.capturedParty.length,
   );
@@ -3476,6 +4543,12 @@ function useInventoryItem(itemId) {
     return;
   }
 
+  if (item.bondOnly) {
+    state.shopTab = "bond";
+    renderShop(`${item.name} works best when used with a specific Matt.`);
+    return;
+  }
+
   const maxHealth = getPlayerMaxHealth();
   const maxStamina = getPlayerMaxStamina();
   let used = false;
@@ -3491,13 +4564,14 @@ function useInventoryItem(itemId) {
   }
 
   if (item.use.friendship && state.capturedParty.length > 0) {
+    const friendshipGain = getFriendshipGain(item.use.friendship);
     state.capturedParty = state.capturedParty.map((matt) => ({
       ...matt,
-      friendship: clamp((matt.friendship || 0) + item.use.friendship, 0, 100),
+      friendship: clamp((matt.friendship || 0) + friendshipGain, 0, 100),
     }));
     state.dogmatts.forEach((matt) => {
       if (matt.caught) {
-        matt.friendship = clamp((matt.friendship || 0) + item.use.friendship, 0, 100);
+        matt.friendship = clamp((matt.friendship || 0) + friendshipGain, 0, 100);
       }
     });
     saveCapturedParty();
@@ -5549,12 +6623,37 @@ function updateNpcs(dt) {
   }
 }
 
+function updateFriendshipWalking(dt) {
+  if (!state.player.moving || state.capturedParty.length === 0 || state.arena.active || isShopOpen()) {
+    return;
+  }
+
+  state.friendshipWalkTimer += dt;
+  if (state.friendshipWalkTimer < FRIENDSHIP_WALK_SECONDS) {
+    return;
+  }
+
+  state.friendshipWalkTimer %= FRIENDSHIP_WALK_SECONDS;
+  const gain = getFriendshipGain(1);
+  state.capturedParty = state.capturedParty.map((matt) => ({
+    ...matt,
+    friendship: clamp((matt.friendship || 0) + gain, 0, 100),
+  }));
+  state.dogmatts.forEach((matt) => {
+    if (matt.caught) {
+      matt.friendship = clamp((matt.friendship || 0) + gain, 0, 100);
+    }
+  });
+  saveCapturedParty();
+}
+
 function update(dt) {
   state.time += dt;
   updateClock(dt);
   updatePlayer(dt);
   updateNpcs(dt);
   updateDogmatts(dt);
+  updateFriendshipWalking(dt);
   updateParticles(dt);
   syncCamera();
   preloadNearbyTilesIfNeeded(2);
@@ -5579,12 +6678,16 @@ function hitDogmatt(dogmatt) {
       return;
     }
 
-    if (hasItem("matt_snack")) {
+    const snackUsed = hasItem("matt_snack");
+    const netUsed = hasItem("capture_net");
+    const fluteBonus = hasItem("calming_flute") ? 6 : 0;
+
+    if (snackUsed) {
       removeItem("matt_snack");
       setGameMessage("Matt Snack used.");
     }
 
-    if (hasItem("capture_net")) {
+    if (netUsed) {
       removeItem("capture_net");
       setGameMessage("Capture Net used.");
     }
@@ -5596,6 +6699,7 @@ function hitDogmatt(dogmatt) {
     dogmatt.sourceWorld = state.currentWorld;
     dogmatt.originalId = dogmatt.originalId || dogmatt.id;
     dogmatt.partyId = makeCapturedPartyId(dogmatt);
+    dogmatt.friendship = Math.max(dogmatt.friendship || 0, 14 + (snackUsed ? 4 : 0) + (netUsed ? 2 : 0) + fluteBonus);
     setAction(dogmatt, "caught");
     state.capturedParty.push(serializeCapturedMatt(dogmatt));
     state.capturedParty = state.capturedParty.slice(0, MATT_PARTY_LIMIT);
@@ -6639,6 +7743,16 @@ shopList?.addEventListener("click", (event) => {
     setShopTab(id);
   } else if (action === "complete-mission") {
     completeMission(id);
+  } else if (action === "bond-care") {
+    careForMatt(id);
+  } else if (action === "bond-treat") {
+    useBondItemOnMatt(id, "matt_treat", 12);
+  } else if (action === "bond-brush") {
+    useBondItemOnMatt(id, "camp_brush", 16, 5);
+  } else if (action === "bond-mint") {
+    useBondItemOnMatt(id, "focus_mint", 8, 18);
+  } else if (action === "bond-spar") {
+    sparWithMatt(id);
   } else if (action === "arena-select-matt") {
     startArenaBattle(id);
   } else if (action === "arena-ability") {

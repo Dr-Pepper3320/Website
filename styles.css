@@ -398,6 +398,10 @@ canvas {
   background: rgba(255, 255, 255, 0.065);
 }
 
+.shop-item.bond-item {
+  grid-template-columns: minmax(0, 1fr) repeat(5, auto);
+}
+
 .shop-item div {
   display: grid;
   gap: 3px;
@@ -513,7 +517,7 @@ canvas {
 
 .arena-hp-meter {
   display: grid;
-  grid-template-columns: minmax(96px, 1fr) minmax(96px, 160px) 48px;
+  grid-template-columns: minmax(96px, 0.8fr) minmax(96px, 150px) minmax(152px, 1.2fr);
   align-items: center;
   gap: 8px;
 }
@@ -554,22 +558,37 @@ canvas {
 
 .arena-battle-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
   gap: 8px;
 }
 
 .arena-battle-actions button {
-  min-height: 40px;
-  padding: 0 10px;
+  min-height: 48px;
+  padding: 7px 10px;
   border: 1px solid rgba(255, 238, 143, 0.5);
   border-radius: 6px;
   background: rgba(178, 135, 45, 0.28);
   color: #fff8cc;
+  display: grid;
+  align-content: center;
+  gap: 2px;
   font-weight: 800;
+  text-align: left;
 }
 
 .arena-battle-actions button:disabled {
   opacity: 0.52;
+}
+
+.arena-battle-actions button strong {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.arena-battle-actions button span {
+  color: #d5decf;
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 #arena-battle-log {
@@ -839,6 +858,10 @@ canvas {
     grid-template-columns: 1fr auto;
   }
 
+  .shop-item.bond-item {
+    grid-template-columns: 1fr;
+  }
+
   .shop-item button {
     grid-column: 1 / -1;
     width: 100%;
@@ -859,7 +882,7 @@ canvas {
   }
 
   .arena-hp-meter {
-    grid-template-columns: minmax(82px, 1fr) minmax(82px, 1fr) 44px;
+    grid-template-columns: minmax(82px, 0.8fr) minmax(82px, 1fr) minmax(128px, 1.2fr);
   }
 
   .arena-battle-actions {
