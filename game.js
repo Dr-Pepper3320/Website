@@ -479,11 +479,44 @@ const MATT_SELL_VALUES = {
   watermatt: 75,
 };
 
+const ARENA_OPPONENTS = [
+  { id: "scott", name: "Scott", mattType: "firematt", title: "Arena Captain" },
+  { id: "ty", name: "Ty", mattType: "grassmatt", title: "Matt Handler" },
+  { id: "tom", name: "Tom", mattType: "firematt", title: "Forge Brawler" },
+  { id: "brick", name: "Brick", mattType: "watermatt", title: "Inn Bruiser" },
+];
+
+const ARENA_ABILITIES = {
+  dogmatt: [
+    { name: "Scrappy Bite", power: 18, text: "lunges in with a quick bite" },
+    { name: "Pack Howl", power: 12, heal: 10, text: "howls and rallies back" },
+    { name: "Tail Feint", power: 14, dodge: 0.2, text: "feints through the strike" },
+  ],
+  firematt: [
+    { name: "Coal Burst", power: 22, text: "erupts in hot sparks" },
+    { name: "Hammer Flare", power: 18, burn: 7, text: "slams a burning arc" },
+    { name: "Forge Guard", power: 10, heal: 12, text: "hardens behind heat shimmer" },
+  ],
+  grassmatt: [
+    { name: "Vine Lash", power: 19, text: "snaps a vine across the arena" },
+    { name: "Root Snare", power: 15, weaken: 4, text: "snags the enemy in roots" },
+    { name: "Bloom Mend", power: 10, heal: 18, text: "blooms and recovers" },
+  ],
+  watermatt: [
+    { name: "Tide Crash", power: 20, text: "crashes forward with a wave" },
+    { name: "Mist Veil", power: 12, dodge: 0.32, text: "vanishes into cool mist" },
+    { name: "Bubble Barrage", power: 16, burn: 5, text: "pelts the enemy with bubbles" },
+  ],
+};
+
+const ARENA_WIN_XP = 34;
+
 const MUSIC_TRACKS = [
   "assets/music/Campfire Spell.mp3",
   "assets/music/Lantern Ruins.mp3",
   "assets/music/Riverstone Lullaby.mp3",
 ];
+const MOBILE_WORLD_SCALE = 0.5;
 
 const PARTICLES = {
   max: 260,
@@ -672,6 +705,18 @@ const state = {
   inventory: {},
   activeShopId: "",
   shopTab: "buy",
+  arena: {
+    active: false,
+    phase: "idle",
+    opponent: null,
+    playerMattId: "",
+    playerMatt: null,
+    playerHp: 0,
+    opponentHp: 0,
+    playerMaxHp: 0,
+    opponentMaxHp: 0,
+    log: [],
+  },
   toastTimer: null,
   caughtDogmatts: -1,
   ambientTimer: 0,
@@ -832,6 +877,22 @@ function resizeCanvas() {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "medium";
   syncCamera();
+}
+
+function isMobileCameraView() {
+  return window.matchMedia?.("(pointer: coarse)")?.matches || window.innerWidth <= 760;
+}
+
+function getWorldRenderScale() {
+  return state.dev.enabled || !isMobileCameraView() ? 1 : MOBILE_WORLD_SCALE;
+}
+
+function getCameraViewWidth() {
+  return canvas.clientWidth / getWorldRenderScale();
+}
+
+function getCameraViewHeight() {
+  return canvas.clientHeight / getWorldRenderScale();
 }
 
 function clamp(value, min, max) {
@@ -1364,6 +1425,7 @@ function createDefaultWorlds() {
 
   addDefaultTownStructure(worlds);
   removeDuplicateDefaultNodes(worlds);
+  applyCoreWorldFixups(worlds);
   return worlds;
 }
 
@@ -1371,6 +1433,40 @@ function ensureNode(world, id, x, y, target, radius = 82) {
   if (!world.nodes.some((node) => node.id === id)) {
     world.nodes.push({ id, x, y, radius, target });
   }
+}
+
+function upsertNodeByTarget(world, id, x, y, target, radius = 82) {
+  if (!world) {
+    return;
+  }
+
+  if (!Array.isArray(world.nodes)) {
+    world.nodes = [];
+  }
+
+  const existing = world.nodes.find((node) => node.id === id || node.target === target);
+  if (existing) {
+    Object.assign(existing, { id, x, y, radius, target });
+  } else {
+    world.nodes.push({ id, x, y, radius, target });
+  }
+}
+
+function applyCoreWorldFixups(worlds) {
+  upsertNodeByTarget(
+    worlds.purplewaterworld,
+    "node-mphqjey8-q6qlfc",
+    3440.2664692820135,
+    5431.532198371577,
+    DEFAULT_WORLD_ID,
+  );
+  upsertNodeByTarget(
+    worlds.treeworld,
+    "node-mphql4r8-37rdm8",
+    3191.5618060695783,
+    5564.766839378239,
+    DEFAULT_WORLD_ID,
+  );
 }
 
 function ensureNpc(world, npcId, x, y) {
@@ -1550,6 +1646,7 @@ function normalizeWorldData(data) {
 
   addDefaultTownStructure(worlds, sourceWorlds);
   removeDuplicateDefaultNodes(worlds);
+  applyCoreWorldFixups(worlds);
   return worlds;
 }
 
@@ -1746,6 +1843,9 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
 
   const originalId = matt.originalId || matt.id || `${matt.type}-${fallbackIndex + 1}`;
   const sourceWorld = matt.sourceWorld || state.currentWorld || DEFAULT_WORLD_ID;
+  const level = clamp(Math.floor(Number(matt.level) || 1), 1, 50);
+  const xp = Math.max(0, Math.floor(Number(matt.xp) || 0));
+  const friendship = clamp(Math.floor(Number(matt.friendship) || 0), 0, 100);
 
   return {
     partyId: matt.partyId || `${sourceWorld}:${originalId}`,
@@ -1758,6 +1858,9 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
     action: "caught",
     frameIndex: Number.isFinite(matt.frameIndex) ? matt.frameIndex : 0,
     direction: matt.direction || "right",
+    level,
+    xp,
+    friendship,
   };
 }
 
@@ -1826,6 +1929,9 @@ function serializeCapturedMatt(matt) {
     y: matt.y,
     frameIndex: matt.frameIndex,
     direction: matt.direction,
+    level: normalized.level,
+    xp: normalized.xp,
+    friendship: normalized.friendship,
   };
 }
 
@@ -1880,6 +1986,9 @@ function hydrateCapturedMatt(saved, caughtIndex) {
     frameTimer: 0,
     frameIndex: saved.frameIndex || 0,
     direction: saved.direction || "right",
+    level: saved.level || 1,
+    xp: saved.xp || 0,
+    friendship: saved.friendship || 0,
     wanderAngle: 0,
     wanderTimer: 0,
     hitCount: 4,
@@ -2070,7 +2179,7 @@ function makeShopButton(label, action, id, disabled = false) {
   button.type = "button";
   button.textContent = label;
   button.dataset.action = action;
-  if (id) {
+  if (id !== undefined && id !== null) {
     button.dataset.id = id;
   }
   button.disabled = disabled;
@@ -2151,7 +2260,7 @@ function appendCapturedMattRows(parent) {
     const title = document.createElement("strong");
     title.textContent = matt.name || MATT_LABELS[matt.type] || "Captured Matt";
     const detail = document.createElement("span");
-    detail.textContent = `${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)} capture. Ty pays ${value} coins.`;
+    detail.textContent = `Lv ${getMattLevel(matt)} friend ${matt.friendship || 0}. ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)} capture. Ty pays ${value} coins.`;
     info.append(title, detail);
 
     const owned = document.createElement("em");
@@ -2211,6 +2320,437 @@ function renderShop(message = "") {
 
   if (shopMessage) {
     shopMessage.textContent = message || "";
+  }
+}
+
+function createArenaState() {
+  return {
+    active: false,
+    phase: "idle",
+    opponent: null,
+    playerMattId: "",
+    playerMatt: null,
+    playerHp: 0,
+    opponentHp: 0,
+    playerMaxHp: 0,
+    opponentMaxHp: 0,
+    log: [],
+  };
+}
+
+function resetArenaBattle(clearActors = false) {
+  state.arena = createArenaState();
+
+  if (clearActors && state.currentWorld === "town_arena") {
+    state.npcs = [];
+    state.dogmatts = attachCapturedParty([]);
+  }
+}
+
+function getMattLevel(matt) {
+  return clamp(Math.floor(Number(matt?.level) || 1), 1, 50);
+}
+
+function getMattXpToNext(level) {
+  return 30 + getMattLevel({ level }) * 18;
+}
+
+function getArenaAbilities(type) {
+  return ARENA_ABILITIES[type] || ARENA_ABILITIES.dogmatt;
+}
+
+function getArenaMattMaxHp(matt, opponentBoost = 0) {
+  const level = getMattLevel(matt);
+  const friendship = Math.floor((Number(matt?.friendship) || 0) / 4);
+  return 70 + level * 12 + friendship + opponentBoost;
+}
+
+function getArenaMattPowerBonus(matt, opponentBoost = 0) {
+  return getMattLevel(matt) * 3 + Math.floor((Number(matt?.friendship) || 0) / 12) + opponentBoost;
+}
+
+function chooseArenaOpponent(playerMatt, waitingOpponent = null) {
+  const base = waitingOpponent?.id
+    ? ARENA_OPPONENTS.find((opponent) => opponent.id === waitingOpponent.id) || waitingOpponent
+    : ARENA_OPPONENTS[Math.floor(Math.random() * ARENA_OPPONENTS.length)];
+  const level = clamp(getMattLevel(playerMatt) + Math.floor(randomBetween(0, 4)), 1, 50);
+  return {
+    ...base,
+    level,
+    friendship: 35 + Math.floor(randomBetween(0, 35)),
+  };
+}
+
+function getArenaMattName(matt) {
+  return matt?.name || MATT_LABELS[matt?.type] || "Matt";
+}
+
+function appendArenaStatus(parent) {
+  const arena = state.arena;
+  const playerName = getArenaMattName(arena.playerMatt);
+  const opponentName = arena.opponent
+    ? `${arena.opponent.name}'s ${MATT_LABELS[arena.opponent.mattType] || "Matt"}`
+    : "Opponent";
+
+  const status = document.createElement("article");
+  status.className = "shop-item";
+
+  const info = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = `${playerName} vs ${opponentName}`;
+  const detail = document.createElement("span");
+  detail.textContent = `Your HP ${arena.playerHp}/${arena.playerMaxHp} | Their HP ${arena.opponentHp}/${arena.opponentMaxHp}`;
+  info.append(title, detail);
+
+  const round = document.createElement("em");
+  round.textContent = arena.phase === "won" ? "Won" : arena.phase === "lost" ? "Lost" : "Battle";
+  status.append(info, round);
+  parent.append(status);
+}
+
+function appendArenaLog(parent) {
+  if (!state.arena.log.length) {
+    return;
+  }
+
+  const log = document.createElement("p");
+  log.className = "shop-empty";
+  log.textContent = state.arena.log.slice(0, 4).join(" ");
+  parent.append(log);
+}
+
+function renderArenaSelect(message = "Choose your Matt for the arena.") {
+  state.activeShopId = "";
+  state.shopTab = "arena";
+  state.arena.active = true;
+  state.arena.phase = "select";
+
+  if (shopOverlay) {
+    shopOverlay.hidden = false;
+  }
+  if (shopTitle) {
+    shopTitle.textContent = state.arena.opponent
+      ? `${state.arena.opponent.name} - ${state.arena.opponent.title}`
+      : "Arena Battle";
+  }
+  if (shopTabs) {
+    shopTabs.innerHTML = "";
+  }
+  if (!shopList) {
+    return;
+  }
+
+  shopList.innerHTML = "";
+
+  if (state.capturedParty.length === 0) {
+    appendEmptyShopMessage(shopList, "You need at least one captured Matt before you can battle.");
+    shopList.append(makeShopButton("Leave Arena", "arena-leave"));
+  } else {
+    state.capturedParty.forEach((matt) => {
+      const row = document.createElement("article");
+      row.className = "shop-item";
+
+      const info = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = matt.name || MATT_LABELS[matt.type] || "Captured Matt";
+      const detail = document.createElement("span");
+      detail.textContent = `Lv ${getMattLevel(matt)} | XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | Friend ${matt.friendship || 0}`;
+      info.append(title, detail);
+
+      row.append(info, document.createElement("em"), makeShopButton("Choose", "arena-select-matt", matt.partyId));
+      shopList.append(row);
+    });
+  }
+
+  if (shopMessage) {
+    shopMessage.textContent = message;
+  }
+}
+
+function spawnArenaBattleActors(opponent) {
+  if (state.currentWorld !== "town_arena") {
+    return;
+  }
+
+  const npcX = clamp(state.player.x + 260, 0, getMapWidth());
+  const npcY = clamp(state.player.y - 130, 0, getMapHeight());
+  const mattX = clamp(state.player.x + 110, 0, getMapWidth());
+  const mattY = clamp(state.player.y - 70, 0, getMapHeight());
+  const npc = createNpc(opponent.id, npcX, npcY);
+  npc.direction = "left";
+
+  const config = getMattConfig(opponent.mattType);
+  const arenaMatt = {
+    id: `arena-${opponent.id}-${opponent.mattType}`,
+    type: opponent.mattType,
+    x: mattX,
+    y: mattY,
+    width: config.width,
+    height: config.height,
+    action: "idle",
+    frameTimer: 0,
+    frameIndex: 0,
+    direction: "left",
+    caught: false,
+    arenaOpponent: true,
+    hitCount: 0,
+    hitCooldown: 0,
+    hitReactionTimer: 0,
+    wanderAngle: 0,
+    wanderTimer: 0,
+    pathId: "",
+    pathPointIndex: 0,
+    pathRoamMode: "offpath",
+    pathRoamTarget: null,
+    pathPauseTimer: 0,
+    idleSpecialTimer: FIREMATT.specialIdleMin,
+    lastSpecialIdleAction: "",
+  };
+
+  state.npcs = [npc];
+  state.dogmatts = [
+    ...state.dogmatts.filter((matt) => matt.caught),
+    arenaMatt,
+  ];
+}
+
+function startArenaBattle(partyId) {
+  const playerMatt = state.capturedParty.find((matt) => matt.partyId === partyId);
+  if (!playerMatt) {
+    renderArenaSelect("That Matt is not in your party anymore.");
+    return;
+  }
+
+  const opponent = chooseArenaOpponent(playerMatt, state.arena.opponent);
+  const playerMaxHp = getArenaMattMaxHp(playerMatt);
+  const opponentMaxHp = getArenaMattMaxHp(
+    { level: opponent.level, friendship: opponent.friendship },
+    18,
+  );
+
+  state.arena = {
+    active: true,
+    phase: "battle",
+    opponent,
+    playerMattId: partyId,
+    playerMatt,
+    playerHp: playerMaxHp,
+    opponentHp: opponentMaxHp,
+    playerMaxHp,
+    opponentMaxHp,
+    log: [`${opponent.name} enters with a Lv ${opponent.level} ${MATT_LABELS[opponent.mattType] || "Matt"}.`],
+  };
+
+  spawnArenaBattleActors(opponent);
+  renderArenaBattle("Pick an ability.");
+}
+
+function resolveArenaAbility(attacker, ability, defenderHp, defenderMaxHp, attackerHp, attackerMaxHp, powerBoost = 0) {
+  const variance = Math.floor(randomBetween(0, 9));
+  const damage = Math.max(4, Math.round(ability.power + powerBoost + variance));
+  const nextDefenderHp = clamp(defenderHp - damage - (ability.burn || 0), 0, defenderMaxHp);
+  const nextAttackerHp = ability.heal
+    ? clamp(attackerHp + ability.heal, 0, attackerMaxHp)
+    : attackerHp;
+  const extra = ability.burn ? ` Extra ${ability.burn} effect damage.` : "";
+  const heal = ability.heal ? ` ${attacker} recovers ${ability.heal}.` : "";
+  return {
+    defenderHp: nextDefenderHp,
+    attackerHp: nextAttackerHp,
+    damage,
+    text: `${attacker} uses ${ability.name} and ${ability.text} for ${damage}.${extra}${heal}`,
+  };
+}
+
+function awardArenaXp() {
+  const arena = state.arena;
+  const partyIndex = state.capturedParty.findIndex((matt) => matt.partyId === arena.playerMattId);
+  if (partyIndex === -1) {
+    return "";
+  }
+
+  const matt = state.capturedParty[partyIndex];
+  const gained = ARENA_WIN_XP + arena.opponent.level * 4;
+  let level = getMattLevel(matt);
+  let xp = (matt.xp || 0) + gained;
+  let leveled = false;
+
+  while (level < 50 && xp >= getMattXpToNext(level)) {
+    xp -= getMattXpToNext(level);
+    level += 1;
+    leveled = true;
+  }
+
+  const friendship = clamp((matt.friendship || 0) + 6, 0, 100);
+  const updated = { ...matt, level, xp, friendship };
+  state.capturedParty[partyIndex] = updated;
+  state.arena.playerMatt = updated;
+
+  state.dogmatts.forEach((candidate) => {
+    if (candidate.partyId === updated.partyId) {
+      candidate.level = level;
+      candidate.xp = xp;
+      candidate.friendship = friendship;
+    }
+  });
+
+  saveCapturedParty();
+  updateCaughtHud(countCaughtMatts());
+
+  return leveled
+    ? `${getArenaMattName(updated)} gained ${gained} XP and reached Lv ${level}.`
+    : `${getArenaMattName(updated)} gained ${gained} XP.`;
+}
+
+function finishArenaBattle(won) {
+  state.arena.phase = won ? "won" : "lost";
+  const result = won ? awardArenaXp() : `${getArenaMattName(state.arena.playerMatt)} needs a rest.`;
+  state.arena.log.unshift(won ? `Arena win. ${result}` : `Arena loss. ${result}`);
+  renderArenaBattle(won ? "You won the arena battle." : "You lost the arena battle.");
+}
+
+function arenaUseAbility(index) {
+  const arena = state.arena;
+  if (!arena.active || arena.phase !== "battle") {
+    return;
+  }
+
+  const playerAbilities = getArenaAbilities(arena.playerMatt.type);
+  const playerAbility = playerAbilities[index];
+  if (!playerAbility) {
+    return;
+  }
+
+  const playerResult = resolveArenaAbility(
+    getArenaMattName(arena.playerMatt),
+    playerAbility,
+    arena.opponentHp,
+    arena.opponentMaxHp,
+    arena.playerHp,
+    arena.playerMaxHp,
+    getArenaMattPowerBonus(arena.playerMatt),
+  );
+  arena.opponentHp = playerResult.defenderHp;
+  arena.playerHp = playerResult.attackerHp;
+  arena.log.unshift(playerResult.text);
+
+  if (arena.opponentHp <= 0) {
+    finishArenaBattle(true);
+    return;
+  }
+
+  const dodged = playerAbility.dodge && Math.random() < playerAbility.dodge;
+  if (dodged) {
+    arena.log.unshift(`${getArenaMattName(arena.playerMatt)} dodges the counterattack.`);
+    renderArenaBattle("Nice dodge. Pick another ability.");
+    return;
+  }
+
+  const opponentAbilities = getArenaAbilities(arena.opponent.mattType);
+  const opponentAbility = opponentAbilities[Math.floor(Math.random() * opponentAbilities.length)];
+  const opponentPower = Math.max(
+    0,
+    getArenaMattPowerBonus({ level: arena.opponent.level, friendship: arena.opponent.friendship }, 4) -
+      (playerAbility.weaken || 0),
+  );
+  const opponentResult = resolveArenaAbility(
+    `${arena.opponent.name}'s Matt`,
+    opponentAbility,
+    arena.playerHp,
+    arena.playerMaxHp,
+    arena.opponentHp,
+    arena.opponentMaxHp,
+    opponentPower,
+  );
+  arena.playerHp = opponentResult.defenderHp;
+  arena.opponentHp = opponentResult.attackerHp;
+  arena.log.unshift(opponentResult.text);
+
+  if (arena.playerHp <= 0) {
+    finishArenaBattle(false);
+    return;
+  }
+
+  renderArenaBattle("Pick another ability.");
+}
+
+function renderArenaBattle(message = "") {
+  const arena = state.arena;
+  if (shopOverlay) {
+    shopOverlay.hidden = false;
+  }
+  if (shopTitle) {
+    shopTitle.textContent = arena.opponent
+      ? `${arena.opponent.name} - ${arena.opponent.title}`
+      : "Arena Battle";
+  }
+  if (shopTabs) {
+    shopTabs.innerHTML = "";
+  }
+  if (!shopList) {
+    return;
+  }
+
+  shopList.innerHTML = "";
+  appendArenaStatus(shopList);
+
+  if (arena.phase === "battle") {
+    getArenaAbilities(arena.playerMatt.type).forEach((ability, index) => {
+      const row = document.createElement("article");
+      row.className = "shop-item";
+
+      const info = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = ability.name;
+      const detail = document.createElement("span");
+      const extras = [
+        ability.heal ? `heal ${ability.heal}` : "",
+        ability.burn ? `extra ${ability.burn}` : "",
+        ability.dodge ? `${Math.round(ability.dodge * 100)}% dodge` : "",
+        ability.weaken ? `weaken ${ability.weaken}` : "",
+      ].filter(Boolean);
+      detail.textContent = `${ability.text}. Power ${ability.power}${extras.length ? `, ${extras.join(", ")}` : ""}.`;
+      info.append(title, detail);
+
+      row.append(info, document.createElement("em"), makeShopButton("Use", "arena-ability", String(index)));
+      shopList.append(row);
+    });
+  } else {
+    shopList.append(makeShopButton("Leave Arena", "arena-leave"));
+  }
+
+  appendArenaLog(shopList);
+
+  if (shopMessage) {
+    shopMessage.textContent = message;
+  }
+}
+
+function openArenaBattle() {
+  if (state.currentWorld !== "town_arena") {
+    return;
+  }
+
+  resetArenaBattle(false);
+  const waitingOpponent = {
+    ...ARENA_OPPONENTS[Math.floor(Math.random() * ARENA_OPPONENTS.length)],
+    level: 1,
+    friendship: 35,
+  };
+  state.arena.active = true;
+  state.arena.phase = "select";
+  state.arena.opponent = waitingOpponent;
+  spawnArenaBattleActors(waitingOpponent);
+  renderArenaSelect(`${waitingOpponent.name} is waiting with ${MATT_LABELS[waitingOpponent.mattType] || "a Matt"}. Choose your Matt.`);
+}
+
+function leaveArena() {
+  resetArenaBattle(true);
+  closeShop();
+  if (state.currentWorld === "town_arena") {
+    setWorld("town_arena_entrance", true, "town_arena");
+    setGameMessage("You step back out of the arena.");
+    saveWorlds();
   }
 }
 
@@ -2420,7 +2960,20 @@ function updateClock(dt) {
   }
 }
 
-function setWorld(id, movePlayer = true) {
+function getTransitionSpawnPoint(destinationWorldId, fromWorldId = "") {
+  const destination = state.worlds[destinationWorldId];
+  const matchingNode = fromWorldId
+    ? destination?.nodes?.find((node) => node.target === fromWorldId)
+    : null;
+
+  if (matchingNode) {
+    return { x: matchingNode.x, y: matchingNode.y };
+  }
+
+  return getMapCenter(destinationWorldId);
+}
+
+function setWorld(id, movePlayer = true, fromWorldId = "") {
   if (!WORLD_IDS.includes(id)) {
     return;
   }
@@ -2438,9 +2991,9 @@ function setWorld(id, movePlayer = true) {
   state.dev.activeWallId = null;
 
   if (movePlayer) {
-    const center = getMapCenter(id);
-    state.player.x = center.x;
-    state.player.y = center.y;
+    const spawnPoint = getTransitionSpawnPoint(id, fromWorldId);
+    state.player.x = spawnPoint.x;
+    state.player.y = spawnPoint.y;
     seedPlayerTrail();
   } else {
     const clamped = clampToCurrentMap(state.player);
@@ -2846,9 +3399,10 @@ function screenToWorld(clientX, clientY) {
     };
   }
 
+  const scale = getWorldRenderScale();
   return {
-    x: state.camera.x + clientX - rect.left,
-    y: state.camera.y + clientY - rect.top,
+    x: state.camera.x + (clientX - rect.left) / scale,
+    y: state.camera.y + (clientY - rect.top) / scale,
   };
 }
 
@@ -3271,8 +3825,8 @@ function getEditorHitRadius() {
 }
 
 function syncCamera() {
-  const viewWidth = canvas.clientWidth;
-  const viewHeight = canvas.clientHeight;
+  const viewWidth = getCameraViewWidth();
+  const viewHeight = getCameraViewHeight();
   const maxX = Math.max(0, getMapWidth() - viewWidth);
   const maxY = Math.max(0, getMapHeight() - viewHeight);
   state.camera.x = clamp(state.player.x - viewWidth / 2, 0, maxX);
@@ -3563,7 +4117,7 @@ function getTileRange(buffer = 0) {
     map.columns - 1,
   );
   const right = clamp(
-    Math.floor((state.camera.x + canvas.clientWidth) / map.tileSize) + buffer,
+    Math.floor((state.camera.x + getCameraViewWidth()) / map.tileSize) + buffer,
     0,
     map.columns - 1,
   );
@@ -3573,7 +4127,7 @@ function getTileRange(buffer = 0) {
     map.rows - 1,
   );
   const bottom = clamp(
-    Math.floor((state.camera.y + canvas.clientHeight) / map.tileSize) + buffer,
+    Math.floor((state.camera.y + getCameraViewHeight()) / map.tileSize) + buffer,
     0,
     map.rows - 1,
   );
@@ -4033,7 +4587,9 @@ function updateDogmatts(dt) {
   let caughtIndex = 0;
 
   for (const dogmatt of state.dogmatts) {
-    if (dogmatt.caught) {
+    if (dogmatt.arenaOpponent) {
+      setAction(dogmatt, "idle");
+    } else if (dogmatt.caught) {
       updateCaughtDogmatt(dogmatt, dt, caughtIndex);
       caughtIndex += 1;
     } else {
@@ -4095,8 +4651,8 @@ function spawnAmbientMotes(dt) {
 
   addParticle({
     type: "mote",
-    x: state.camera.x + randomBetween(0, canvas.clientWidth),
-    y: state.camera.y + randomBetween(0, canvas.clientHeight),
+    x: state.camera.x + randomBetween(0, getCameraViewWidth()),
+    y: state.camera.y + randomBetween(0, getCameraViewHeight()),
     vx: randomBetween(-6, 12),
     vy: randomBetween(-26, -8),
     life: randomBetween(1.6, 3.4),
@@ -4413,8 +4969,10 @@ function applyWhipHit() {
 
 function drawMap() {
   const map = getWorldMapConfig();
+  const viewWidth = getCameraViewWidth();
+  const viewHeight = getCameraViewHeight();
   ctx.fillStyle = map.fill || "#18201d";
-  ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+  ctx.fillRect(0, 0, viewWidth, viewHeight);
 
   if (map.type === "image") {
     const image = images.worldMaps[state.currentWorld];
@@ -4449,7 +5007,7 @@ function drawMap() {
   }
 
   ctx.fillStyle = WORLD_TINTS[state.currentWorld] || "rgba(255, 255, 255, 0)";
-  ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+  ctx.fillRect(0, 0, viewWidth, viewHeight);
 }
 
 function drawMapOverview() {
@@ -4735,7 +5293,11 @@ function tryEnterNode() {
   }
 
   saveCapturedParty();
-  setWorld(node.target);
+  const fromWorld = state.currentWorld;
+  setWorld(node.target, true, fromWorld);
+  if (node.target === "town_arena") {
+    window.setTimeout(openArenaBattle, 0);
+  }
   spawnCaptureEffect(state.player);
   playCaptureSound();
   addScreenShake(8);
@@ -4992,6 +5554,7 @@ function draw() {
       randomBetween(-state.screenShake, state.screenShake),
     );
   }
+  ctx.scale(getWorldRenderScale(), getWorldRenderScale());
   drawMap();
   drawFutureMonsterMarkers();
   drawWorldNodes();
@@ -5150,7 +5713,11 @@ window.addEventListener("keydown", (event) => {
 
   if (key === "escape" && isShopOpen()) {
     event.preventDefault();
-    closeShop();
+    if (state.arena.active) {
+      leaveArena();
+    } else {
+      closeShop();
+    }
     return;
   }
 
@@ -5274,7 +5841,13 @@ touchInventory?.addEventListener("click", (event) => {
   openInventory();
 });
 
-shopClose?.addEventListener("click", closeShop);
+shopClose?.addEventListener("click", () => {
+  if (state.arena.active) {
+    leaveArena();
+  } else {
+    closeShop();
+  }
+});
 
 shopTabs?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-tab]");
@@ -5298,12 +5871,29 @@ shopList?.addEventListener("click", (event) => {
     useInventoryItem(id);
   } else if (action === "sell-matt") {
     sellCapturedMatt(id);
+  } else if (action === "arena-select-matt") {
+    startArenaBattle(id);
+  } else if (action === "arena-ability") {
+    arenaUseAbility(Number(id));
+  } else if (action === "arena-leave") {
+    leaveArena();
   }
 });
 
 window.addEventListener("contextmenu", (event) => {
   event.preventDefault();
 });
+
+function preventMobilePageZoom(event) {
+  if (event.touches?.length > 1) {
+    event.preventDefault();
+  }
+}
+
+document.addEventListener("touchmove", preventMobilePageZoom, { passive: false });
+document.addEventListener("gesturestart", (event) => event.preventDefault());
+document.addEventListener("gesturechange", (event) => event.preventDefault());
+document.addEventListener("gestureend", (event) => event.preventDefault());
 
 window.addEventListener("resize", () => {
   resizeCanvas();
@@ -5345,6 +5935,7 @@ async function startGameForProfile(profileId) {
   state.npcs = [];
   state.particles = [];
   state.screenShake = 0;
+  resetArenaBattle(false);
 
   const start = getMapCenter(state.currentWorld);
   state.player.x = start.x;
