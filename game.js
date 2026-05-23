@@ -11,6 +11,8 @@ const profileStatus = document.querySelector("#profile-status");
 const profileMenu = document.querySelector("#profile-menu");
 const caughtCounter = document.querySelector("#caught-counter");
 const moneyCounter = document.querySelector("#money-counter");
+const healthCounter = document.querySelector("#health-counter");
+const staminaCounter = document.querySelector("#stamina-counter");
 const timeLabel = document.querySelector("#time-label");
 const worldLabel = document.querySelector("#world-label");
 const monsterSlots = [...document.querySelectorAll(".slot")];
@@ -120,10 +122,11 @@ const WORLD_MAPS = {
     fill: "#2b130e",
   },
   purplewaterworld: {
-    width: 2508,
-    height: 2508,
-    type: "blank",
-    fill: "#18172d",
+    width: 7600,
+    height: 6000,
+    type: "image",
+    image: "assets/maps/water/waterworld.jfif",
+    fill: "#102a35",
   },
   temple: {
     width: 2508,
@@ -138,10 +141,11 @@ const WORLD_MAPS = {
     fill: "#161a1e",
   },
   treeworld: {
-    width: 2508,
-    height: 2508,
-    type: "blank",
-    fill: "#142216",
+    width: 7600,
+    height: 6000,
+    type: "image",
+    image: "assets/maps/grass/grassworld.jfif",
+    fill: "#172515",
   },
   home: {
     width: 2508,
@@ -158,6 +162,12 @@ const PLAYER = {
   speed: 680,
   sprintSpeed: 1080,
   attackRange: 235,
+  maxHealth: 100,
+  maxStamina: 100,
+  staminaRegen: 24,
+  sprintStaminaCost: 28,
+  whipStaminaCost: 12,
+  damageInvulnerableTime: 0.85,
   trailSpacing: 11,
   maxTrailPoints: 260,
 };
@@ -192,8 +202,52 @@ const FIREMATT = {
   followStopDistance: 36,
   followBackSpacing: 76,
   followSideSpacing: 56,
+  attackRadius: 150,
+  attackDamage: 18,
+  attackCooldown: 1.9,
+  attackWindup: 0.28,
   specialIdleMin: 10,
   specialIdleMax: 15,
+};
+
+const GRASSMATT = {
+  type: "grassmatt",
+  count: 14,
+  width: 132,
+  height: 132,
+  footOffset: 16,
+  wanderSpeed: 135,
+  fleeSpeed: 535,
+  followSpeed: 725,
+  noticeRadius: 410,
+  fleeRadius: 270,
+  followStopDistance: 36,
+  followBackSpacing: 76,
+  followSideSpacing: 56,
+  attackRadius: 145,
+  attackDamage: 14,
+  attackCooldown: 1.75,
+  attackWindup: 0.24,
+};
+
+const WATERMATT = {
+  type: "watermatt",
+  count: 14,
+  width: 132,
+  height: 132,
+  footOffset: 16,
+  wanderSpeed: 125,
+  fleeSpeed: 545,
+  followSpeed: 730,
+  noticeRadius: 415,
+  fleeRadius: 275,
+  followStopDistance: 36,
+  followBackSpacing: 76,
+  followSideSpacing: 56,
+  attackRadius: 155,
+  attackDamage: 16,
+  attackCooldown: 1.85,
+  attackWindup: 0.26,
 };
 
 const NPC = {
@@ -213,11 +267,15 @@ const NPC = {
 const MATT_CONFIGS = {
   dogmatt: DOGMATT,
   firematt: FIREMATT,
+  grassmatt: GRASSMATT,
+  watermatt: WATERMATT,
 };
 
 const WORLD_MATT_TYPES = {
   mainworld: "dogmatt",
   fireworld: "firematt",
+  treeworld: "grassmatt",
+  purplewaterworld: "watermatt",
 };
 
 const NPC_DEFS = {
@@ -256,6 +314,8 @@ const NPC_IDS = Object.keys(NPC_DEFS);
 const MATT_LABELS = {
   dogmatt: "Mattdogs",
   firematt: "Fire Matts",
+  grassmatt: "Grass Matts",
+  watermatt: "Water Matts",
 };
 
 const ITEM_DEFS = {
@@ -283,6 +343,67 @@ const ITEM_DEFS = {
     sellPrice: 45,
     stackable: true,
   },
+  grass_matt_adoption: {
+    id: "grass_matt_adoption",
+    name: "Grass Matt Adoption",
+    description: "Ty places a Grass Matt directly into your party.",
+    price: 190,
+    sellPrice: 0,
+    mattType: "grassmatt",
+  },
+  water_matt_adoption: {
+    id: "water_matt_adoption",
+    name: "Water Matt Adoption",
+    description: "Ty places a Water Matt directly into your party.",
+    price: 205,
+    sellPrice: 0,
+    mattType: "watermatt",
+  },
+  health_potion: {
+    id: "health_potion",
+    name: "Health Potion",
+    description: "Restores 40 health when used from your inventory.",
+    price: 28,
+    sellPrice: 14,
+    stackable: true,
+    use: { health: 40 },
+  },
+  greater_health_potion: {
+    id: "greater_health_potion",
+    name: "Greater Health Potion",
+    description: "Restores 75 health when used from your inventory.",
+    price: 55,
+    sellPrice: 28,
+    stackable: true,
+    use: { health: 75 },
+  },
+  stamina_tonic: {
+    id: "stamina_tonic",
+    name: "Stamina Tonic",
+    description: "Restores 55 stamina when used from your inventory.",
+    price: 24,
+    sellPrice: 12,
+    stackable: true,
+    use: { stamina: 55 },
+  },
+  guard_armor: {
+    id: "guard_armor",
+    name: "Guard Armor",
+    description: "Light armor that reduces wild Matt damage.",
+    price: 120,
+    sellPrice: 60,
+    unique: true,
+    armor: 0.18,
+  },
+  steel_armor: {
+    id: "steel_armor",
+    name: "Steel Armor",
+    description: "Heavy armor that sharply reduces wild Matt damage.",
+    price: 220,
+    sellPrice: 110,
+    unique: true,
+    armor: 0.34,
+  },
   iron_whip: {
     id: "iron_whip",
     name: "Iron Whip",
@@ -302,18 +423,20 @@ const ITEM_DEFS = {
   inn_meal: {
     id: "inn_meal",
     name: "Hot Inn Meal",
-    description: "Brick's road meal, wrapped for later.",
+    description: "Brick's road meal. Restores some health and stamina.",
     price: 25,
     sellPrice: 12,
     stackable: true,
+    use: { health: 25, stamina: 20 },
   },
   coffee_flask: {
     id: "coffee_flask",
     name: "Coffee Flask",
-    description: "Strong inn coffee for long hunting nights.",
+    description: "Strong inn coffee. Restores stamina.",
     price: 35,
     sellPrice: 17,
     stackable: true,
+    use: { stamina: 45 },
   },
   room_key: {
     id: "room_key",
@@ -329,30 +452,38 @@ const SHOP_DEFS = {
   scott: {
     title: "Scott's Arena Desk",
     greeting: "Tickets are required past the arena gate.",
-    buy: ["arena_ticket"],
+    buy: ["arena_ticket", "health_potion", "stamina_tonic"],
   },
   ty: {
     title: "Ty's Matt Store",
     greeting: "Ty buys captured Matts and sells Matt-handling gear.",
-    buy: ["matt_snack", "matt_charm"],
+    buy: ["matt_snack", "matt_charm", "grass_matt_adoption", "water_matt_adoption", "health_potion", "stamina_tonic"],
     buysMatts: true,
   },
   tom: {
     title: "Tom's Blacksmith",
     greeting: "Tom sells permanent field upgrades.",
-    buy: ["iron_whip", "swift_boots"],
+    buy: ["iron_whip", "swift_boots", "guard_armor", "steel_armor", "greater_health_potion"],
   },
   brick: {
     title: "Brick's Inn Counter",
     greeting: "Brick keeps travelers supplied.",
-    buy: ["inn_meal", "coffee_flask", "room_key"],
+    buy: ["inn_meal", "coffee_flask", "room_key", "health_potion", "stamina_tonic"],
   },
 };
 
 const MATT_SELL_VALUES = {
   dogmatt: 35,
   firematt: 85,
+  grassmatt: 70,
+  watermatt: 75,
 };
+
+const MUSIC_TRACKS = [
+  "assets/music/Campfire Spell.mp3",
+  "assets/music/Lantern Ruins.mp3",
+  "assets/music/Riverstone Lullaby.mp3",
+];
 
 const PARTICLES = {
   max: 260,
@@ -401,10 +532,10 @@ const WORLD_LABELS = {
   town_inn_rooms: "Inn Rooms",
   town_mattstore: "Matt Store",
   fireworld: "Fireworld",
-  purplewaterworld: "Purple Water World",
+  purplewaterworld: "Water World",
   temple: "Temple",
   tomb: "Tomb",
-  treeworld: "Tree World",
+  treeworld: "Grass World",
   home: "Home",
 };
 
@@ -418,10 +549,10 @@ const WORLD_TINTS = {
   town_inn_rooms: "rgba(255, 210, 126, 0.05)",
   town_mattstore: "rgba(150, 240, 200, 0.05)",
   fireworld: "rgba(224, 70, 38, 0.16)",
-  purplewaterworld: "rgba(112, 78, 220, 0.16)",
+  purplewaterworld: "rgba(52, 170, 218, 0.14)",
   temple: "rgba(235, 205, 132, 0.11)",
   tomb: "rgba(80, 92, 104, 0.18)",
-  treeworld: "rgba(63, 148, 88, 0.14)",
+  treeworld: "rgba(86, 178, 76, 0.13)",
   home: "rgba(247, 221, 152, 0.1)",
 };
 
@@ -465,6 +596,18 @@ const ASSETS = {
     caught: numberedFrames("assets/matts/firematt/walking/caught", 6),
     attack: numberedFrames("assets/matts/firematt/attack", 6),
     win: numberedFrames("assets/matts/firematt/win", 9),
+  },
+  grassmatt: {
+    idle: ["assets/matts/grassmatt/idle/1.png"],
+    walking: numberedFrames("assets/matts/grassmatt/walk", 5),
+    caught: numberedFrames("assets/matts/grassmatt/caught", 6),
+    attack: numberedFrames("assets/matts/grassmatt/attack", 11),
+  },
+  watermatt: {
+    idle: ["assets/matts/watermatt/idle/1.png"],
+    walking: numberedFrames("assets/matts/watermatt/walking", 12),
+    caught: numberedFrames("assets/matts/watermatt/caught", 8),
+    attack: numberedFrames("assets/matts/watermatt/attack", 10),
   },
   npcs: {
     scott: {
@@ -551,6 +694,9 @@ const state = {
     frameTimer: 0,
     frameIndex: 0,
     attackTimer: 0,
+    health: PLAYER.maxHealth,
+    stamina: PLAYER.maxStamina,
+    damageCooldown: 0,
   },
   dogmatts: [],
   npcs: [],
@@ -592,6 +738,18 @@ const images = {
     attack: [],
     win: [],
   },
+  grassmatt: {
+    idle: [],
+    walking: [],
+    caught: [],
+    attack: [],
+  },
+  watermatt: {
+    idle: [],
+    walking: [],
+    caught: [],
+    attack: [],
+  },
   npcs: {},
 };
 
@@ -600,6 +758,8 @@ const audio = {
   master: null,
   noiseBuffer: null,
   ambientStarted: false,
+  musicElement: null,
+  musicStarted: false,
 };
 
 function loadImage(src) {
@@ -638,13 +798,15 @@ async function loadAnimationSet(assetSet, width, height) {
 
 async function loadAssets() {
   const worldImageEntries = Object.entries(WORLD_MAPS).filter(([, map]) => map.type === "image" || map.overview);
-  const [worldImages, ivanFrames, dogmattFrames, firemattFrames, npcFrames] = await Promise.all([
+  const [worldImages, ivanFrames, dogmattFrames, firemattFrames, grassmattFrames, watermattFrames, npcFrames] = await Promise.all([
     Promise.all(
       worldImageEntries.map(async ([id, map]) => [id, await loadImage(map.overview || map.image)]),
     ),
     loadAnimationSet(ASSETS.ivan, PLAYER.width, PLAYER.height),
     loadAnimationSet(ASSETS.dogmatt, DOGMATT.width, DOGMATT.height),
     loadAnimationSet(ASSETS.firematt, FIREMATT.width, FIREMATT.height),
+    loadAnimationSet(ASSETS.grassmatt, GRASSMATT.width, GRASSMATT.height),
+    loadAnimationSet(ASSETS.watermatt, WATERMATT.width, WATERMATT.height),
     Promise.all(
       Object.entries(ASSETS.npcs).map(async ([id, assetSet]) => [
         id,
@@ -657,6 +819,8 @@ async function loadAssets() {
   Object.assign(images.ivan, ivanFrames);
   Object.assign(images.dogmatt, dogmattFrames);
   Object.assign(images.firematt, firemattFrames);
+  Object.assign(images.grassmatt, grassmattFrames);
+  Object.assign(images.watermatt, watermattFrames);
   images.npcs = Object.fromEntries(npcFrames);
 }
 
@@ -904,6 +1068,8 @@ function ensureAudio() {
     startAmbientAudio();
   }
 
+  startMusic();
+
   return audio.context;
 }
 
@@ -949,6 +1115,28 @@ function startAmbientAudio() {
   hum.connect(humGain);
   humGain.connect(audio.master);
   hum.start();
+}
+
+function startMusic() {
+  if (audio.musicStarted || MUSIC_TRACKS.length === 0) {
+    return;
+  }
+
+  audio.musicStarted = true;
+  const track = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
+  const music = new Audio(track);
+  music.loop = true;
+  music.volume = 0.34;
+  music.preload = "auto";
+  audio.musicElement = music;
+
+  const playResult = music.play();
+  if (playResult && typeof playResult.catch === "function") {
+    playResult.catch((error) => {
+      audio.musicStarted = false;
+      console.warn("Could not start music.", error);
+    });
+  }
 }
 
 function playWhipSound() {
@@ -1470,6 +1658,29 @@ function updateEconomyHud() {
   }
 }
 
+function getPlayerMaxHealth() {
+  return PLAYER.maxHealth + (hasItem("guard_armor") ? 15 : 0) + (hasItem("steel_armor") ? 30 : 0);
+}
+
+function getPlayerMaxStamina() {
+  return PLAYER.maxStamina + (hasItem("swift_boots") ? 20 : 0);
+}
+
+function updatePlayerStatusHud() {
+  const maxHealth = getPlayerMaxHealth();
+  const maxStamina = getPlayerMaxStamina();
+  state.player.health = clamp(state.player.health ?? maxHealth, 0, maxHealth);
+  state.player.stamina = clamp(state.player.stamina ?? maxStamina, 0, maxStamina);
+
+  if (healthCounter) {
+    healthCounter.textContent = `Health: ${Math.ceil(state.player.health)} / ${maxHealth}`;
+  }
+
+  if (staminaCounter) {
+    staminaCounter.textContent = `Stamina: ${Math.ceil(state.player.stamina)} / ${maxStamina}`;
+  }
+}
+
 function getItemCount(itemId) {
   return Math.max(0, Math.floor(state.inventory[itemId] || 0));
 }
@@ -1506,6 +1717,13 @@ function getPlayerWalkSpeed() {
 
 function getPlayerSprintSpeed() {
   return PLAYER.sprintSpeed + (hasItem("swift_boots") ? 160 : 0);
+}
+
+function getArmorDamageReduction() {
+  const reductions = ["guard_armor", "steel_armor"]
+    .filter(hasItem)
+    .map((itemId) => ITEM_DEFS[itemId].armor || 0);
+  return reductions.length > 0 ? Math.max(...reductions) : 0;
 }
 
 function getCaptureHitThreshold() {
@@ -1887,10 +2105,14 @@ function appendItemRow(parent, itemId, mode) {
       "Buy",
       "buy-item",
       itemId,
-      state.coins < item.price || (item.unique && count > 0),
+      state.coins < item.price ||
+        (item.unique && count > 0) ||
+        (item.mattType && state.capturedParty.length >= MATT_PARTY_LIMIT),
     );
   } else if (mode === "sell") {
     action = makeShopButton("Sell", "sell-item", itemId, count <= 0);
+  } else if (item.use) {
+    action = makeShopButton("Use", "use-item", itemId, count <= 0);
   } else {
     action = makeShopButton("Owned", "", itemId, true);
   }
@@ -1992,6 +2214,36 @@ function renderShop(message = "") {
   }
 }
 
+function addPurchasedMattToParty(type) {
+  if (!MATT_CONFIGS[type] || state.capturedParty.length >= MATT_PARTY_LIMIT) {
+    return false;
+  }
+
+  const originalId = `${type}-ty-${Date.now()}`;
+  const member = normalizeCapturedPartyMember(
+    {
+      id: originalId,
+      originalId,
+      sourceWorld: "town_mattstore",
+      type,
+      x: state.player.x,
+      y: state.player.y,
+      direction: state.player.direction === "left" ? "left" : "right",
+    },
+    state.capturedParty.length,
+  );
+
+  if (!member) {
+    return false;
+  }
+
+  state.capturedParty.push(member);
+  state.dogmatts.push(hydrateCapturedMatt(member, state.capturedParty.length - 1));
+  saveCapturedParty();
+  updateCaughtHud(countCaughtMatts());
+  return true;
+}
+
 function buyShopItem(itemId) {
   const shop = getShopDef();
   const item = ITEM_DEFS[itemId];
@@ -2010,10 +2262,20 @@ function buyShopItem(itemId) {
     return;
   }
 
+  if (item.mattType && state.capturedParty.length >= MATT_PARTY_LIMIT) {
+    renderShop(`Party full: ${MATT_PARTY_LIMIT} Matts max.`);
+    return;
+  }
+
   state.coins -= item.price;
-  addItem(itemId);
+  if (item.mattType) {
+    addPurchasedMattToParty(item.mattType);
+  } else {
+    addItem(itemId);
+  }
   saveEconomy();
   updateEconomyHud();
+  updatePlayerStatusHud();
   renderShop(`Bought ${item.name}.`);
 }
 
@@ -2027,7 +2289,40 @@ function sellInventoryItem(itemId) {
   state.coins += item.sellPrice;
   saveEconomy();
   updateEconomyHud();
+  updatePlayerStatusHud();
   renderShop(`Sold ${item.name} for ${item.sellPrice} coins.`);
+}
+
+function useInventoryItem(itemId) {
+  const item = ITEM_DEFS[itemId];
+  if (!item?.use || getItemCount(itemId) <= 0) {
+    return;
+  }
+
+  const maxHealth = getPlayerMaxHealth();
+  const maxStamina = getPlayerMaxStamina();
+  let used = false;
+
+  if (item.use.health && state.player.health < maxHealth) {
+    state.player.health = clamp(state.player.health + item.use.health, 0, maxHealth);
+    used = true;
+  }
+
+  if (item.use.stamina && state.player.stamina < maxStamina) {
+    state.player.stamina = clamp(state.player.stamina + item.use.stamina, 0, maxStamina);
+    used = true;
+  }
+
+  if (!used) {
+    renderShop(`${item.name} is not needed right now.`);
+    return;
+  }
+
+  removeItem(itemId);
+  saveEconomy();
+  updateEconomyHud();
+  updatePlayerStatusHud();
+  renderShop(`Used ${item.name}.`);
 }
 
 function sellCapturedMatt(partyId) {
@@ -3160,6 +3455,10 @@ function spawnDogmatts() {
       hitCount: 0,
       hitCooldown: 0,
       hitReactionTimer: 0,
+      attackCooldown: 0.35 + random() * 1.2,
+      attackTimer: 0,
+      attackElapsed: 0,
+      attackApplied: false,
       caught: false,
       pathId: path ? path.id : "",
       pathPointIndex: closestPathPoint ? closestPathPoint.index : 0,
@@ -3344,12 +3643,19 @@ function pruneTileCache() {
 
 function updatePlayer(dt) {
   const player = state.player;
+  const maxHealth = getPlayerMaxHealth();
+  const maxStamina = getPlayerMaxStamina();
+  player.health = clamp(player.health ?? maxHealth, 0, maxHealth);
+  player.stamina = clamp(player.stamina ?? maxStamina, 0, maxStamina);
+  player.damageCooldown = Math.max(0, (player.damageCooldown || 0) - dt);
 
   if (state.dev.enabled || isShopOpen()) {
     player.moving = false;
+    player.stamina = Math.min(maxStamina, player.stamina + PLAYER.staminaRegen * dt);
     setAction(player, "idle");
     advanceAnimation(player, images.ivan[player.action].length, 0.13, dt);
     updatePlayerTrail();
+    updatePlayerStatusHud();
     return;
   }
 
@@ -3367,20 +3673,29 @@ function updatePlayer(dt) {
   const moveY = inputY / distance;
   const moving = inputX !== 0 || inputY !== 0;
   player.moving = moving;
+  const sprinting = moving && (keys.has("shift") || touchInput.sprint) && player.stamina > 0;
 
   if (moving) {
     player.speed = getPlayerWalkSpeed();
     player.sprintSpeed = getPlayerSprintSpeed();
-    const speed = keys.has("shift") || touchInput.sprint ? player.sprintSpeed : player.speed;
+    const speed = sprinting ? player.sprintSpeed : player.speed;
     moveWithWalls(player, moveX * speed * dt, moveY * speed * dt, 28);
     player.facingX = moveX;
     player.facingY = moveY;
+
+    if (sprinting) {
+      player.stamina = Math.max(0, player.stamina - PLAYER.sprintStaminaCost * dt);
+    }
 
     if (Math.abs(moveX) > Math.abs(moveY)) {
       player.direction = moveX > 0 ? "right" : "left";
     } else {
       player.direction = moveY > 0 ? "down" : "up";
     }
+  }
+
+  if (!sprinting) {
+    player.stamina = Math.min(maxStamina, player.stamina + PLAYER.staminaRegen * dt);
   }
 
   if (player.attackTimer > 0) {
@@ -3397,6 +3712,7 @@ function updatePlayer(dt) {
   const frameDuration = player.action === "whipping" ? 0.075 : 0.13;
   advanceAnimation(player, images.ivan[player.action].length, frameDuration, dt);
   updatePlayerTrail();
+  updatePlayerStatusHud();
 }
 
 function cryingActionForHits(hitCount) {
@@ -3405,6 +3721,102 @@ function cryingActionForHits(hitCount) {
   }
 
   return `crying${Math.min(hitCount, 3)}`;
+}
+
+function getMattHitAction(matt) {
+  const frameSet = images[matt.type] || {};
+
+  if (matt.type === "dogmatt") {
+    return cryingActionForHits(matt.hitCount);
+  }
+
+  if (frameSet.hit && frameSet.hit.length > 0) {
+    return "hit";
+  }
+
+  if (frameSet.attack && frameSet.attack.length > 0) {
+    return "attack";
+  }
+
+  return "idle";
+}
+
+function facePlayer(matt) {
+  matt.direction = state.player.x < matt.x ? "left" : "right";
+}
+
+function knockOutPlayer() {
+  const maxHealth = getPlayerMaxHealth();
+  const maxStamina = getPlayerMaxStamina();
+  const center = getMapCenter(state.currentWorld);
+  state.player.x = center.x;
+  state.player.y = center.y;
+  state.player.health = maxHealth;
+  state.player.stamina = maxStamina;
+  state.player.damageCooldown = PLAYER.damageInvulnerableTime;
+  seedPlayerTrail();
+  addScreenShake(12);
+  setGameMessage("Ivan got knocked back to a safe spot.");
+  updatePlayerStatusHud();
+}
+
+function damagePlayer(amount, sourceMatt) {
+  if (state.player.damageCooldown > 0 || state.player.health <= 0) {
+    return;
+  }
+
+  const damage = Math.max(1, Math.round(amount * (1 - getArmorDamageReduction())));
+  state.player.health = Math.max(0, state.player.health - damage);
+  state.player.damageCooldown = PLAYER.damageInvulnerableTime;
+  addScreenShake(7);
+  setGameMessage(`${MATT_LABELS[sourceMatt.type] || "A Matt"} hit Ivan for ${damage}.`);
+  updatePlayerStatusHud();
+
+  if (state.player.health <= 0) {
+    knockOutPlayer();
+  }
+}
+
+function startMattAttack(matt, config) {
+  matt.attackTimer = Math.max(0.45, (config.attackWindup || 0.24) + 0.42);
+  matt.attackElapsed = 0;
+  matt.attackApplied = false;
+  matt.attackCooldown = config.attackCooldown || 1.8;
+  matt.frameIndex = 0;
+  matt.frameTimer = 0;
+  facePlayer(matt);
+  setAction(matt, "attack");
+}
+
+function updateMattAttack(matt, config, distance, dt) {
+  if (!config.attackDamage || !config.attackRadius) {
+    return false;
+  }
+
+  matt.attackCooldown = Math.max(0, (matt.attackCooldown || 0) - dt);
+
+  if (matt.attackTimer > 0) {
+    matt.attackTimer = Math.max(0, matt.attackTimer - dt);
+    matt.attackElapsed = (matt.attackElapsed || 0) + dt;
+    facePlayer(matt);
+    setAction(matt, "attack");
+
+    if (!matt.attackApplied && matt.attackElapsed >= (config.attackWindup || 0.24)) {
+      matt.attackApplied = true;
+      if (distance <= config.attackRadius + 42) {
+        damagePlayer(config.attackDamage, matt);
+      }
+    }
+
+    return true;
+  }
+
+  if (distance <= config.attackRadius && matt.attackCooldown <= 0) {
+    startMattAttack(matt, config);
+    return true;
+  }
+
+  return false;
 }
 
 function isFiremattSpecialIdle(action) {
@@ -3511,6 +3923,10 @@ function updateWildDogmatt(dogmatt, dt) {
   dogmatt.hitCooldown = Math.max(0, dogmatt.hitCooldown - dt);
   dogmatt.hitReactionTimer = Math.max(0, (dogmatt.hitReactionTimer || 0) - dt);
 
+  if (!dogmatt.caught && dogmatt.hitReactionTimer <= 0 && updateMattAttack(dogmatt, config, distance, dt)) {
+    return;
+  }
+
   if (distance < config.fleeRadius) {
     const moveX = dx / distance;
     const moveY = dy / distance;
@@ -3544,8 +3960,8 @@ function updateWildDogmatt(dogmatt, dt) {
     }
   }
 
-  if (dogmatt.type === "firematt" && dogmatt.hitReactionTimer > 0) {
-    setAction(dogmatt, "hit");
+  if (dogmatt.hitReactionTimer > 0) {
+    setAction(dogmatt, getMattHitAction(dogmatt));
   } else if (dogmatt.hitCount > 0 && dogmatt.type === "dogmatt") {
     setAction(dogmatt, cryingActionForHits(dogmatt.hitCount));
   } else if (moving) {
@@ -3608,7 +4024,8 @@ function advanceMattAnimation(matt, dt) {
     return;
   }
 
-  const frameDuration = matt.action === "caught" ? 0.16 : matt.type === "firematt" ? 0.095 : 0.2;
+  const frameDuration =
+    matt.action === "caught" ? 0.16 : matt.type === "dogmatt" && matt.action !== "attack" ? 0.2 : 0.095;
   advanceAnimation(matt, frames.length, frameDuration, dt);
 }
 
@@ -3928,7 +4345,7 @@ function hitDogmatt(dogmatt) {
   if (dogmatt.hitCount >= captureHitThreshold) {
     if (state.capturedParty.length >= MATT_PARTY_LIMIT) {
       dogmatt.hitCount = captureHitThreshold - 1;
-      setAction(dogmatt, dogmatt.type === "firematt" ? "hit" : cryingActionForHits(dogmatt.hitCount));
+      setAction(dogmatt, getMattHitAction(dogmatt));
       playHitSound(dogmatt.hitCount);
       setDevStatus(`Party full: ${MATT_PARTY_LIMIT} Matts max.`);
       return;
@@ -3958,7 +4375,7 @@ function hitDogmatt(dogmatt) {
   }
 
   playHitSound(dogmatt.hitCount);
-  setAction(dogmatt, dogmatt.type === "firematt" ? "hit" : cryingActionForHits(dogmatt.hitCount));
+  setAction(dogmatt, getMattHitAction(dogmatt));
 }
 
 function applyWhipHit() {
@@ -4217,12 +4634,17 @@ function drawOverviewActors() {
   ctx.fill();
   ctx.stroke();
 
+  const mattOverviewColors = {
+    dogmatt: "rgba(255, 196, 116, 0.86)",
+    firematt: "rgba(255, 96, 66, 0.86)",
+    grassmatt: "rgba(118, 232, 96, 0.86)",
+    watermatt: "rgba(77, 195, 238, 0.86)",
+  };
+
   for (const dogmatt of state.dogmatts) {
     ctx.fillStyle = dogmatt.caught
       ? "rgba(143, 243, 197, 0.9)"
-      : dogmatt.type === "firematt"
-        ? "rgba(255, 96, 66, 0.86)"
-        : "rgba(255, 196, 116, 0.86)";
+      : mattOverviewColors[dogmatt.type] || "rgba(255, 196, 116, 0.86)";
     ctx.strokeStyle = "rgba(20, 25, 22, 0.76)";
     ctx.lineWidth = 14;
     ctx.beginPath();
@@ -4694,6 +5116,13 @@ function triggerWhip() {
     return;
   }
 
+  if (state.player.stamina < PLAYER.whipStaminaCost) {
+    setGameMessage("Ivan is too tired to swing.");
+    return;
+  }
+
+  state.player.stamina = Math.max(0, state.player.stamina - PLAYER.whipStaminaCost);
+  updatePlayerStatusHud();
   playWhipSound();
   spawnWhipEffect();
   addScreenShake(3);
@@ -4865,6 +5294,8 @@ shopList?.addEventListener("click", (event) => {
     buyShopItem(id);
   } else if (action === "sell-item") {
     sellInventoryItem(id);
+  } else if (action === "use-item") {
+    useInventoryItem(id);
   } else if (action === "sell-matt") {
     sellCapturedMatt(id);
   }
@@ -4922,10 +5353,14 @@ async function startGameForProfile(profileId) {
   state.player.frameIndex = 0;
   state.player.frameTimer = 0;
   state.player.moving = false;
+  state.player.health = getPlayerMaxHealth();
+  state.player.stamina = getPlayerMaxStamina();
+  state.player.damageCooldown = 0;
   seedPlayerTrail();
   initDevPanel();
   updateTimeLabel();
   updateEconomyHud();
+  updatePlayerStatusHud();
 
   if (new URLSearchParams(window.location.search).has("dev")) {
     setDevMode(true);
