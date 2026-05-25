@@ -257,6 +257,49 @@ const WATERMATT = {
   attackWindup: 0.26,
 };
 
+const ROCKMATT = {
+  type: "rockmatt",
+  count: 12,
+  width: 142,
+  height: 142,
+  footOffset: 18,
+  wanderSpeed: 98,
+  fleeSpeed: 455,
+  followSpeed: 650,
+  noticeRadius: 390,
+  fleeRadius: 250,
+  followStopDistance: 38,
+  followBackSpacing: 84,
+  followSideSpacing: 60,
+  attackRadius: 160,
+  attackDamage: 20,
+  attackCooldown: 2.05,
+  attackWindup: 0.32,
+};
+
+const MYSTICMATT = {
+  type: "mysticmatt",
+  count: 10,
+  width: 136,
+  height: 136,
+  footOffset: 18,
+  wanderSpeed: 118,
+  fleeSpeed: 500,
+  followSpeed: 700,
+  noticeRadius: 430,
+  fleeRadius: 270,
+  followStopDistance: 38,
+  followBackSpacing: 80,
+  followSideSpacing: 58,
+  attackRadius: 170,
+  attackDamage: 17,
+  attackCooldown: 1.7,
+  attackWindup: 0.26,
+  specialIdleMin: 5,
+  specialIdleMax: 10,
+  floatDuration: 10,
+};
+
 const NPC = {
   width: 126,
   height: 168,
@@ -276,6 +319,8 @@ const MATT_CONFIGS = {
   firematt: FIREMATT,
   grassmatt: GRASSMATT,
   watermatt: WATERMATT,
+  rockmatt: ROCKMATT,
+  mysticmatt: MYSTICMATT,
 };
 
 const WORLD_MATT_TYPES = {
@@ -283,6 +328,8 @@ const WORLD_MATT_TYPES = {
   fireworld: "firematt",
   treeworld: "grassmatt",
   purplewaterworld: "watermatt",
+  tomb: "rockmatt",
+  temple: "mysticmatt",
 };
 
 const NPC_DEFS = {
@@ -323,6 +370,8 @@ const MATT_LABELS = {
   firematt: "Fire Matts",
   grassmatt: "Grass Matts",
   watermatt: "Water Matts",
+  rockmatt: "Rock Matts",
+  mysticmatt: "Mystic Matts",
 };
 
 const ITEM_DEFS = {
@@ -434,6 +483,22 @@ const ITEM_DEFS = {
     price: 205,
     sellPrice: 0,
     mattType: "watermatt",
+  },
+  rock_matt_adoption: {
+    id: "rock_matt_adoption",
+    name: "Rock Matt Adoption",
+    description: "Ty places a Rock Matt directly into your party.",
+    price: 230,
+    sellPrice: 0,
+    mattType: "rockmatt",
+  },
+  mystic_matt_adoption: {
+    id: "mystic_matt_adoption",
+    name: "Mystic Matt Adoption",
+    description: "Ty places a Mystic Matt directly into your party.",
+    price: 260,
+    sellPrice: 0,
+    mattType: "mysticmatt",
   },
   health_potion: {
     id: "health_potion",
@@ -610,7 +675,7 @@ const SHOP_DEFS = {
   ty: {
     title: "Ty's Matt Store",
     greeting: "Ty buys captured Matts and sells Matt-handling gear.",
-    buy: ["matt_snack", "capture_net", "calming_flute", "matt_treat", "camp_brush", "focus_mint", "bond_ribbon", "memory_locket", "matt_charm", "trade_ledger", "grass_matt_adoption", "water_matt_adoption", "health_potion", "stamina_tonic"],
+    buy: ["matt_snack", "capture_net", "calming_flute", "matt_treat", "camp_brush", "focus_mint", "bond_ribbon", "memory_locket", "matt_charm", "trade_ledger", "grass_matt_adoption", "water_matt_adoption", "rock_matt_adoption", "mystic_matt_adoption", "health_potion", "stamina_tonic"],
     buysMatts: true,
   },
   tom: {
@@ -664,7 +729,7 @@ const NPC_DIALOGUE = {
         id: "store",
         label: "The Store",
         text:
-          "I sell gear because careless captures make mean Matts. A snack, a net, a calm song. Those are cheaper than regret.",
+          "I sell gear because careless captures make mean Matts. Rock Matts need patience, Mystic Matts need quiet, and both are cheaper to befriend than to fix.",
       },
       {
         id: "lore",
@@ -694,7 +759,7 @@ const NPC_DIALOGUE = {
         id: "ruins",
         label: "The Ruins",
         text:
-          "The temple stones are older than the town. Some nights they ring like anvils under the dirt. Something down there still knows our names.",
+          "The tomb keeps Rock Matts close to the ground. The temple lets Mystic Matts float like they remember being lighter than a body. Both places know our names.",
       },
     ],
   },
@@ -712,7 +777,7 @@ const NPC_DIALOGUE = {
         id: "rumors",
         label: "Rumors",
         text:
-          "Water Matts hum near moonlit doors. Grass Matts sleep facing old roots. If both get restless on the same night, stay indoors.",
+          "Water Matts hum near moonlit doors. Grass Matts sleep facing old roots. If a Mystic Matt floats without blinking, the temple is dreaming again.",
       },
       {
         id: "home",
@@ -740,35 +805,36 @@ const NPC_MISSIONS = {
     id: "ty-new-ledger",
     title: "Ty's New Ledger",
     briefing:
-      "Ty is rebuilding the old Matt records. Capture one Grass Matt and one Water Matt so he can compare how their markings changed after the split.",
+      "Ty is rebuilding the old Matt records. Capture one Grass Matt, one Water Matt, and one Mystic Matt so he can compare how their markings changed after the split.",
     requirements: [
       { type: "grassmatt", count: 1 },
       { type: "watermatt", count: 1 },
+      { type: "mysticmatt", count: 1 },
     ],
-    rewardCoins: 150,
+    rewardCoins: 210,
     rewardItems: [
       { id: "trade_ledger", count: 1 },
       { id: "matt_treat", count: 2 },
     ],
     completeText:
-      "Ty writes for a long time before smiling. The water lines and root lines still match. They came from the same first family.",
+      "Ty writes for a long time before smiling. The water lines, root lines, and temple marks still match. They came from the same first family.",
   },
   tom: {
     id: "tom-forge-proof",
     title: "Forge Proof",
     briefing:
-      "Tom needs a loyal Mattdog and a Fire Matt's heat signature to temper a safer whip edge.",
+      "Tom needs a Fire Matt's heat signature and a Rock Matt's tomb grit to temper a safer whip edge.",
     requirements: [
-      { type: "dogmatt", count: 1 },
       { type: "firematt", count: 1 },
+      { type: "rockmatt", count: 1 },
     ],
-    rewardCoins: 110,
+    rewardCoins: 150,
     rewardItems: [
       { id: "whetstone", count: 1 },
       { id: "ember_salve", count: 2 },
     ],
     completeText:
-      "Tom cools the steel and nods. This edge should calm without cutting deeper than it has to.",
+      "Tom cools the steel against tomb grit and nods. This edge should calm without cutting deeper than it has to.",
   },
   brick: {
     id: "brick-road-rumors",
@@ -794,6 +860,8 @@ const MATT_SELL_VALUES = {
   firematt: 85,
   grassmatt: 70,
   watermatt: 75,
+  rockmatt: 95,
+  mysticmatt: 120,
 };
 
 const ARENA_OPPONENTS = [
@@ -801,6 +869,8 @@ const ARENA_OPPONENTS = [
   { id: "ty", name: "Ty", mattType: "grassmatt", title: "Matt Handler", strategy: "control" },
   { id: "tom", name: "Tom", mattType: "firematt", title: "Forge Brawler", strategy: "guard" },
   { id: "brick", name: "Brick", mattType: "watermatt", title: "Inn Bruiser", strategy: "tempo" },
+  { id: "tom", name: "Tom", mattType: "rockmatt", title: "Stone Circuit Smith", strategy: "guard" },
+  { id: "ty", name: "Ty", mattType: "mysticmatt", title: "Mystic Matt Handler", strategy: "control" },
 ];
 
 const FRIENDSHIP_RANKS = [
@@ -1144,6 +1214,169 @@ const ARENA_ABILITIES = {
       crit: 0.1,
     },
   ],
+  rockmatt: [
+    {
+      id: "stone_jab",
+      name: "Stone Jab",
+      power: 21,
+      cost: 17,
+      cooldown: 0,
+      element: "stone",
+      text: "steps in with a blunt stone jab",
+      detail: "Reliable rock damage.",
+    },
+    {
+      id: "granite_guard",
+      name: "Granite Guard",
+      power: 10,
+      shield: 24,
+      cost: 24,
+      cooldown: 1,
+      element: "stone",
+      text: "plants itself behind granite plates",
+      detail: "Adds a strong shield and Guard.",
+      selfStatus: [{ id: "guard", turns: 2, amount: 7 }],
+    },
+    {
+      id: "gravel_snare",
+      name: "Gravel Snare",
+      power: 16,
+      cost: 23,
+      cooldown: 1,
+      element: "stone",
+      text: "kicks gravel under the enemy",
+      detail: "Damage plus Snare.",
+      targetStatus: [{ id: "snare", turns: 2, amount: 8 }],
+    },
+    {
+      id: "faultline",
+      name: "Faultline",
+      power: 28,
+      cost: 35,
+      cooldown: 2,
+      element: "stone",
+      friendship: 34,
+      text: "cracks the floor in a sharp line",
+      detail: "Heavy hit that weakens the target.",
+      targetStatus: [{ id: "weaken", turns: 2, amount: 7 }],
+      pierce: 8,
+    },
+    {
+      id: "obsidian_shell",
+      name: "Obsidian Shell",
+      power: 14,
+      shield: 34,
+      cost: 42,
+      cooldown: 3,
+      element: "stone",
+      level: 6,
+      friendship: 56,
+      text: "wraps itself in dark stone",
+      detail: "Big shield with Thorns.",
+      selfStatus: [
+        { id: "guard", turns: 2, amount: 8 },
+        { id: "thorns", turns: 2, amount: 6 },
+      ],
+    },
+    {
+      id: "mountain_verdict",
+      name: "Mountain Verdict",
+      power: 40,
+      cost: 52,
+      cooldown: 3,
+      element: "stone",
+      level: 9,
+      friendship: 80,
+      text: "drops the weight of the tomb",
+      detail: "A high-bond finisher with strong shield pierce.",
+      pierce: 22,
+      crit: 0.08,
+    },
+  ],
+  mysticmatt: [
+    {
+      id: "arcane_pulse",
+      name: "Arcane Pulse",
+      power: 20,
+      cost: 16,
+      cooldown: 0,
+      element: "mystic",
+      text: "rings the air with a purple pulse",
+      detail: "Reliable mystic damage.",
+    },
+    {
+      id: "veil_drift",
+      name: "Veil Drift",
+      power: 12,
+      cost: 23,
+      cooldown: 1,
+      element: "mystic",
+      text: "floats out of phase",
+      detail: "Adds Mist and Focus.",
+      selfStatus: [
+        { id: "mist", turns: 2, amount: 30 },
+        { id: "focus", turns: 2, amount: 4 },
+      ],
+    },
+    {
+      id: "star_bind",
+      name: "Star Bind",
+      power: 17,
+      cost: 25,
+      cooldown: 1,
+      element: "mystic",
+      text: "threads star light around the enemy",
+      detail: "Snare and Weaken together.",
+      targetStatus: [
+        { id: "snare", turns: 2, amount: 7 },
+        { id: "weaken", turns: 1, amount: 5 },
+      ],
+    },
+    {
+      id: "rune_mend",
+      name: "Rune Mend",
+      power: 8,
+      heal: 26,
+      cost: 34,
+      cooldown: 2,
+      element: "mystic",
+      friendship: 35,
+      text: "draws a healing rune in the air",
+      detail: "Healing, cleanse, and light damage.",
+      cleanse: true,
+      selfStatus: [{ id: "regen", turns: 2, amount: 6 }],
+    },
+    {
+      id: "astral_break",
+      name: "Astral Break",
+      power: 35,
+      cost: 45,
+      cooldown: 3,
+      element: "mystic",
+      level: 6,
+      friendship: 58,
+      text: "splits the target's aura",
+      detail: "Piercing hit with bonus crit.",
+      pierce: 16,
+      crit: 0.14,
+    },
+    {
+      id: "temple_echo",
+      name: "Temple Echo",
+      power: 30,
+      heal: 18,
+      shield: 18,
+      cost: 54,
+      cooldown: 3,
+      element: "mystic",
+      level: 9,
+      friendship: 82,
+      text: "answers with the temple's old voice",
+      detail: "A high-bond sustain finisher with Focus.",
+      selfStatus: [{ id: "focus", turns: 3, amount: 8 }],
+      targetStatus: [{ id: "weaken", turns: 2, amount: 8 }],
+    },
+  ],
 };
 
 const ARENA_WIN_XP = 38;
@@ -1275,6 +1508,21 @@ const ASSETS = {
     walking: numberedFrames("assets/matts/watermatt/walking", 12),
     caught: numberedFrames("assets/matts/watermatt/caught", 8),
     attack: numberedFrames("assets/matts/watermatt/attack", 10),
+  },
+  rockmatt: {
+    idle: ["assets/matts/rockmatt/idle/1.png"],
+    walking: numberedFrames("assets/matts/rockmatt/walking", 12),
+    caught: numberedFrames("assets/matts/rockmatt/caught", 12),
+    attack: numberedFrames("assets/matts/rockmatt/attack", 12),
+  },
+  mysticmatt: {
+    idle: ["assets/matts/mysticmatt/idle/float/1.png"],
+    mysticIdleStart: numberedFrames("assets/matts/mysticmatt/idle/start", 9),
+    mysticIdleFloat: numberedFrames("assets/matts/mysticmatt/idle/float", 8),
+    mysticIdleStop: numberedFrames("assets/matts/mysticmatt/idle/stop", 9),
+    walking: numberedFrames("assets/matts/mysticmatt/walking", 10),
+    caught: numberedFrames("assets/matts/mysticmatt/caught", 8),
+    attack: numberedFrames("assets/matts/mysticmatt/attack", 6),
   },
   npcs: {
     scott: {
@@ -1447,6 +1695,21 @@ const images = {
     caught: [],
     attack: [],
   },
+  rockmatt: {
+    idle: [],
+    walking: [],
+    caught: [],
+    attack: [],
+  },
+  mysticmatt: {
+    idle: [],
+    mysticIdleStart: [],
+    mysticIdleFloat: [],
+    mysticIdleStop: [],
+    walking: [],
+    caught: [],
+    attack: [],
+  },
   npcs: {},
 };
 
@@ -1496,7 +1759,17 @@ async function loadAnimationSet(assetSet, width, height) {
 
 async function loadAssets() {
   const worldImageEntries = Object.entries(WORLD_MAPS).filter(([, map]) => map.type === "image" || map.overview);
-  const [worldImages, ivanFrames, dogmattFrames, firemattFrames, grassmattFrames, watermattFrames, npcFrames] = await Promise.all([
+  const [
+    worldImages,
+    ivanFrames,
+    dogmattFrames,
+    firemattFrames,
+    grassmattFrames,
+    watermattFrames,
+    rockmattFrames,
+    mysticmattFrames,
+    npcFrames,
+  ] = await Promise.all([
     Promise.all(
       worldImageEntries.map(async ([id, map]) => [id, await loadImage(map.overview || map.image)]),
     ),
@@ -1505,6 +1778,8 @@ async function loadAssets() {
     loadAnimationSet(ASSETS.firematt, FIREMATT.width, FIREMATT.height),
     loadAnimationSet(ASSETS.grassmatt, GRASSMATT.width, GRASSMATT.height),
     loadAnimationSet(ASSETS.watermatt, WATERMATT.width, WATERMATT.height),
+    loadAnimationSet(ASSETS.rockmatt, ROCKMATT.width, ROCKMATT.height),
+    loadAnimationSet(ASSETS.mysticmatt, MYSTICMATT.width, MYSTICMATT.height),
     Promise.all(
       Object.entries(ASSETS.npcs).map(async ([id, assetSet]) => [
         id,
@@ -1519,6 +1794,8 @@ async function loadAssets() {
   Object.assign(images.firematt, firemattFrames);
   Object.assign(images.grassmatt, grassmattFrames);
   Object.assign(images.watermatt, watermattFrames);
+  Object.assign(images.rockmatt, rockmattFrames);
+  Object.assign(images.mysticmatt, mysticmattFrames);
   images.npcs = Object.fromEntries(npcFrames);
 }
 
@@ -2745,7 +3022,8 @@ function hydrateCapturedMatt(saved, caughtIndex) {
     pathRoamMode: "offpath",
     pathRoamTarget: null,
     pathPauseTimer: 0,
-    idleSpecialTimer: FIREMATT.specialIdleMin,
+    idleSpecialTimer: config.specialIdleMin || FIREMATT.specialIdleMin,
+    mysticFloatTimer: 0,
     lastSpecialIdleAction: "",
   };
 }
@@ -3671,7 +3949,8 @@ function createArenaMattActor(matt, x, y, side, caught = false) {
     pathRoamMode: "offpath",
     pathRoamTarget: null,
     pathPauseTimer: 0,
-    idleSpecialTimer: FIREMATT.specialIdleMin,
+    idleSpecialTimer: config.specialIdleMin || FIREMATT.specialIdleMin,
+    mysticFloatTimer: 0,
     lastSpecialIdleAction: "",
   };
 }
@@ -5676,6 +5955,12 @@ function scheduleFiremattSpecialIdle(firematt, random = Math.random) {
     FIREMATT.specialIdleMin + random() * (FIREMATT.specialIdleMax - FIREMATT.specialIdleMin);
 }
 
+function scheduleMysticMattSpecialIdle(matt, random = Math.random) {
+  matt.idleSpecialTimer =
+    MYSTICMATT.specialIdleMin + random() * (MYSTICMATT.specialIdleMax - MYSTICMATT.specialIdleMin);
+  matt.mysticFloatTimer = 0;
+}
+
 function spawnDogmatts() {
   const type = getCurrentMattType();
   if (!type) {
@@ -5746,6 +6031,10 @@ function spawnDogmatts() {
 
     if (type === "firematt") {
       scheduleFiremattSpecialIdle(matt, random);
+    }
+
+    if (type === "mysticmatt") {
+      scheduleMysticMattSpecialIdle(matt, random);
     }
 
     dogmatts.push(matt);
@@ -6155,6 +6444,10 @@ function isFiremattSpecialIdle(action) {
   return action === "idleNormal" || action === "idleHammer" || action === "idleNose";
 }
 
+function isMysticMattSpecialIdle(action) {
+  return action === "mysticIdleStart" || action === "mysticIdleFloat" || action === "mysticIdleStop";
+}
+
 function getFiremattSpecialIdleAction(firematt) {
   const actions = ["idleNormal", "idleHammer", "idleNose"];
   const index = Math.floor(randomBetween(0, actions.length));
@@ -6165,19 +6458,41 @@ function getFiremattSpecialIdleAction(firematt) {
 }
 
 function setWildMattBaseAction(matt, action, dt) {
-  if (matt.type !== "firematt" || action !== "idle") {
+  if (action !== "idle") {
     setAction(matt, action);
     return;
   }
 
-  if (isFiremattSpecialIdle(matt.action)) {
+  if (matt.type === "firematt") {
+    if (isFiremattSpecialIdle(matt.action)) {
+      return;
+    }
+
+    matt.idleSpecialTimer = Math.max(0, (matt.idleSpecialTimer || 0) - dt);
+
+    if (matt.idleSpecialTimer <= 0) {
+      setAction(matt, getFiremattSpecialIdleAction(matt));
+      return;
+    }
+
+    setAction(matt, "idle");
     return;
   }
 
-  matt.idleSpecialTimer = Math.max(0, (matt.idleSpecialTimer || 0) - dt);
+  if (matt.type === "mysticmatt") {
+    if (isMysticMattSpecialIdle(matt.action)) {
+      return;
+    }
 
-  if (matt.idleSpecialTimer <= 0) {
-    setAction(matt, getFiremattSpecialIdleAction(matt));
+    matt.idleSpecialTimer = Math.max(0, (matt.idleSpecialTimer || 0) - dt);
+
+    if (matt.idleSpecialTimer <= 0) {
+      matt.mysticFloatTimer = MYSTICMATT.floatDuration;
+      setAction(matt, "mysticIdleStart");
+      return;
+    }
+
+    setAction(matt, "idle");
     return;
   }
 
@@ -6356,6 +6671,41 @@ function advanceMattAnimation(matt, dt) {
     return;
   }
 
+  if (matt.type === "mysticmatt" && isMysticMattSpecialIdle(matt.action)) {
+    const frameDuration = matt.action === "mysticIdleFloat" ? 0.11 : 0.09;
+    matt.frameTimer += dt;
+
+    if (matt.action === "mysticIdleFloat") {
+      matt.mysticFloatTimer = Math.max(0, (matt.mysticFloatTimer || MYSTICMATT.floatDuration) - dt);
+    }
+
+    if (matt.frameTimer >= frameDuration) {
+      matt.frameTimer = 0;
+
+      if (matt.action === "mysticIdleStart") {
+        if (matt.frameIndex < frames.length - 1) {
+          matt.frameIndex += 1;
+        } else {
+          matt.mysticFloatTimer = MYSTICMATT.floatDuration;
+          setAction(matt, "mysticIdleFloat");
+        }
+      } else if (matt.action === "mysticIdleFloat") {
+        matt.frameIndex = (matt.frameIndex + 1) % frames.length;
+      } else if (matt.frameIndex < frames.length - 1) {
+        matt.frameIndex += 1;
+      } else {
+        setAction(matt, "idle");
+        scheduleMysticMattSpecialIdle(matt);
+      }
+    }
+
+    if (matt.action === "mysticIdleFloat" && matt.mysticFloatTimer <= 0) {
+      setAction(matt, "mysticIdleStop");
+    }
+
+    return;
+  }
+
   const frameDuration =
     matt.action === "caught" ? 0.16 : matt.type === "dogmatt" && matt.action !== "attack" ? 0.2 : 0.095;
   advanceAnimation(matt, frames.length, frameDuration, dt);
@@ -6377,8 +6727,10 @@ function updateArenaBattler(matt, dt) {
     setAction(matt, "attack");
   } else if (matt.arenaHitTimer > 0 && getMattFrames({ ...matt, action: "hit" })?.length) {
     setAction(matt, "hit");
+  } else if (matt.caught) {
+    setAction(matt, "caught");
   } else {
-    setAction(matt, matt.caught ? "caught" : "idle");
+    setWildMattBaseAction(matt, "idle", dt);
   }
 }
 
