@@ -134,15 +134,17 @@ const WORLD_MAPS = {
     fill: "#102a35",
   },
   temple: {
-    width: 2508,
-    height: 2508,
-    type: "blank",
+    width: 7600,
+    height: 6000,
+    type: "image",
+    image: "assets/maps/temple/temple.jfif",
     fill: "#272313",
   },
   tomb: {
-    width: 2508,
-    height: 2508,
-    type: "blank",
+    width: 7600,
+    height: 6000,
+    type: "image",
+    image: "assets/maps/tomb/tomb.jfif",
     fill: "#161a1e",
   },
   treeworld: {
