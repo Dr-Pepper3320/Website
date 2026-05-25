@@ -11,6 +11,7 @@ const profileStatus = document.querySelector("#profile-status");
 const profileMenu = document.querySelector("#profile-menu");
 const caughtCounter = document.querySelector("#caught-counter");
 const moneyCounter = document.querySelector("#money-counter");
+const playerCounter = document.querySelector("#player-counter");
 const healthCounter = document.querySelector("#health-counter");
 const staminaCounter = document.querySelector("#stamina-counter");
 const timeLabel = document.querySelector("#time-label");
@@ -379,9 +380,30 @@ const WORLD_MATT_TYPES = {
   mainworld: "dogmatt",
   fireworld: "firematt",
   treeworld: "grassmatt",
+  grass_tree: "grassmatt",
+  grass_camp: "grassmatt",
+  grass_cave: "grassmatt",
   purplewaterworld: "watermatt",
+  water_tree: "watermatt",
+  water_hut: "watermatt",
+  water_cove: "watermatt",
   tomb: "rockmatt",
   temple: "mysticmatt",
+};
+
+const WORLD_ENCOUNTER_PROFILES = {
+  mainworld: { levelMin: 1, levelMax: 3, captureDifficulty: 1, damageScale: 0.85, count: 20 },
+  fireworld: { levelMin: 4, levelMax: 8, captureDifficulty: 2.3, damageScale: 1.08, count: 10 },
+  treeworld: { levelMin: 2, levelMax: 6, captureDifficulty: 1.7, damageScale: 0.96, count: 14 },
+  grass_tree: { levelMin: 4, levelMax: 8, captureDifficulty: 2, damageScale: 1.02, count: 4 },
+  grass_camp: { levelMin: 6, levelMax: 10, captureDifficulty: 2.4, damageScale: 1.08, count: 5 },
+  grass_cave: { levelMin: 9, levelMax: 14, captureDifficulty: 3.2, damageScale: 1.2, count: 6, eliteChance: 0.12 },
+  purplewaterworld: { levelMin: 3, levelMax: 7, captureDifficulty: 2, damageScale: 1.02, count: 14 },
+  water_tree: { levelMin: 5, levelMax: 9, captureDifficulty: 2.4, damageScale: 1.08, count: 5 },
+  water_hut: { levelMin: 7, levelMax: 11, captureDifficulty: 2.8, damageScale: 1.14, count: 5 },
+  water_cove: { levelMin: 10, levelMax: 15, captureDifficulty: 3.4, damageScale: 1.25, count: 6, eliteChance: 0.14 },
+  tomb: { levelMin: 7, levelMax: 12, captureDifficulty: 3.1, damageScale: 1.22, count: 12, eliteChance: 0.1 },
+  temple: { levelMin: 8, levelMax: 14, captureDifficulty: 3.5, damageScale: 1.2, count: 10, eliteChance: 0.16 },
 };
 
 const NPC_DEFS = {
@@ -1500,6 +1522,7 @@ const ACTIVE_PROFILE_STORAGE_KEY = "ivan-monster-hunt-active-profile-v1";
 const MATT_PARTY_LIMIT = 6;
 const STARTING_COINS = 120;
 const SHOP_INTERACT_RADIUS = 310;
+const MAX_PLAYER_LEVEL = 50;
 const WORLD_IDS = [
   "mainworld",
   "town",
@@ -1570,6 +1593,77 @@ const WORLD_TINTS = {
   grass_camp: "rgba(86, 178, 76, 0.11)",
   grass_cave: "rgba(86, 178, 76, 0.11)",
   home: "rgba(247, 221, 152, 0.1)",
+};
+
+const PLAYER_SKILLS = {
+  trail_runner: {
+    id: "trail_runner",
+    name: "Trail Runner",
+    branch: "Explorer",
+    maxRank: 3,
+    description: "Move faster and sprint longer.",
+    perRank: "+30 walk speed, +45 sprint speed, +8 stamina",
+  },
+  steady_breath: {
+    id: "steady_breath",
+    name: "Steady Breath",
+    branch: "Explorer",
+    maxRank: 3,
+    requires: { trail_runner: 1 },
+    description: "Recover stamina faster and spend less while sprinting.",
+    perRank: "+7 stamina regen, -2 sprint drain",
+  },
+  field_endurance: {
+    id: "field_endurance",
+    name: "Field Endurance",
+    branch: "Survivor",
+    maxRank: 3,
+    description: "Increase Ivan's maximum health.",
+    perRank: "+14 max health",
+  },
+  iron_will: {
+    id: "iron_will",
+    name: "Iron Will",
+    branch: "Survivor",
+    maxRank: 3,
+    requires: { field_endurance: 1 },
+    description: "Reduce wild Matt damage before armor is applied.",
+    perRank: "-6% wild damage",
+  },
+  whip_mastery: {
+    id: "whip_mastery",
+    name: "Whip Mastery",
+    branch: "Hunter",
+    maxRank: 3,
+    description: "Extend whip reach and make field captures less exhausting.",
+    perRank: "+28 whip range, capture XP bonus",
+  },
+  calm_hands: {
+    id: "calm_hands",
+    name: "Calm Hands",
+    branch: "Hunter",
+    maxRank: 3,
+    requires: { whip_mastery: 1 },
+    description: "Improve capture odds against stronger Matts.",
+    perRank: "+6% capture chance",
+  },
+  matt_mentor: {
+    id: "matt_mentor",
+    name: "Matt Mentor",
+    branch: "Bond",
+    maxRank: 3,
+    description: "Captured Matts gain more friendship and arena XP.",
+    perRank: "+15% Matt XP and +1 friendship rewards",
+  },
+  arena_instinct: {
+    id: "arena_instinct",
+    name: "Arena Instinct",
+    branch: "Bond",
+    maxRank: 3,
+    requires: { matt_mentor: 1 },
+    description: "Start arena battles sharper and hit harder.",
+    perRank: "+3 arena energy, +2 arena power",
+  },
 };
 
 function numberedFrames(path, count) {
@@ -1700,6 +1794,7 @@ const state = {
   coins: STARTING_COINS,
   inventory: {},
   missions: {},
+  playerProgress: { level: 1, xp: 0, skillPoints: 0, skills: {} },
   arenaStats: { wins: 0, losses: 0, streak: 0, bestStreak: 0, rankPoints: 0 },
   friendshipCare: {},
   friendshipWalkTimer: 0,
@@ -2911,6 +3006,25 @@ function normalizeArenaStats(stats) {
   };
 }
 
+function normalizePlayerProgress(progress) {
+  const normalizedSkills = {};
+  if (progress?.skills && typeof progress.skills === "object") {
+    Object.entries(PLAYER_SKILLS).forEach(([skillId, skill]) => {
+      const rank = clamp(Math.floor(Number(progress.skills[skillId]) || 0), 0, skill.maxRank);
+      if (rank > 0) {
+        normalizedSkills[skillId] = rank;
+      }
+    });
+  }
+
+  return {
+    level: clamp(Math.floor(Number(progress?.level) || 1), 1, MAX_PLAYER_LEVEL),
+    xp: Math.max(0, Math.floor(Number(progress?.xp) || 0)),
+    skillPoints: Math.max(0, Math.floor(Number(progress?.skillPoints) || 0)),
+    skills: normalizedSkills,
+  };
+}
+
 function normalizeFriendshipCare(care) {
   const normalized = {};
 
@@ -2936,6 +3050,7 @@ function loadEconomy() {
       state.coins = Math.max(0, Math.floor(Number(data.coins) || 0));
       state.inventory = normalizeInventory(data.inventory);
       state.missions = normalizeMissions(data.missions);
+      state.playerProgress = normalizePlayerProgress(data.playerProgress);
       state.arenaStats = normalizeArenaStats(data.arenaStats);
       state.friendshipCare = normalizeFriendshipCare(data.friendshipCare);
       return;
@@ -2947,6 +3062,7 @@ function loadEconomy() {
   state.coins = STARTING_COINS;
   state.inventory = {};
   state.missions = {};
+  state.playerProgress = normalizePlayerProgress();
   state.arenaStats = normalizeArenaStats();
   state.friendshipCare = {};
 }
@@ -2956,10 +3072,11 @@ function saveEconomy() {
     localStorage.setItem(
       getEconomyStorageKey(),
       JSON.stringify({
-        version: 3,
+        version: 4,
         coins: state.coins,
         inventory: state.inventory,
         missions: state.missions,
+        playerProgress: state.playerProgress,
         arenaStats: state.arenaStats,
         friendshipCare: state.friendshipCare,
       }),
@@ -2975,19 +3092,165 @@ function updateEconomyHud() {
   }
 
   if (shopMoney) {
-    shopMoney.textContent = `Coins: ${state.coins}`;
+    shopMoney.textContent = `Coins: ${state.coins} | Ivan Lv ${getPlayerLevel()} | SP ${getPlayerSkillPoints()}`;
   }
+}
+
+function getPlayerLevel() {
+  return clamp(Math.floor(Number(state.playerProgress?.level) || 1), 1, MAX_PLAYER_LEVEL);
+}
+
+function getPlayerSkillPoints() {
+  return Math.max(0, Math.floor(Number(state.playerProgress?.skillPoints) || 0));
+}
+
+function getPlayerXpToNext(level = getPlayerLevel()) {
+  return 70 + level * 40 + Math.floor(level * level * 4);
+}
+
+function getSkillRank(skillId) {
+  return clamp(Math.floor(Number(state.playerProgress?.skills?.[skillId]) || 0), 0, PLAYER_SKILLS[skillId]?.maxRank || 0);
+}
+
+function getSkillBonus(skillId, perRank) {
+  return getSkillRank(skillId) * perRank;
+}
+
+function updatePlayerProgressHud() {
+  if (!playerCounter) {
+    return;
+  }
+
+  const level = getPlayerLevel();
+  const xp = Math.max(0, Math.floor(Number(state.playerProgress?.xp) || 0));
+  const next = level >= MAX_PLAYER_LEVEL ? "MAX" : `${xp} / ${getPlayerXpToNext(level)}`;
+  playerCounter.textContent = `Ivan Lv ${level} - XP ${next} - SP ${getPlayerSkillPoints()}`;
+}
+
+function awardPlayerXp(amount, reason = "") {
+  const gained = Math.max(0, Math.floor(Number(amount) || 0));
+  if (gained <= 0) {
+    return { gained: 0, leveled: false };
+  }
+
+  const progress = normalizePlayerProgress(state.playerProgress);
+  let leveled = false;
+  let level = progress.level;
+  let xp = progress.xp + gained;
+  let skillPoints = progress.skillPoints;
+
+  while (level < MAX_PLAYER_LEVEL && xp >= getPlayerXpToNext(level)) {
+    xp -= getPlayerXpToNext(level);
+    level += 1;
+    skillPoints += 1;
+    leveled = true;
+  }
+
+  if (level >= MAX_PLAYER_LEVEL) {
+    xp = 0;
+  }
+
+  state.playerProgress = { ...progress, level, xp, skillPoints };
+  saveEconomy();
+  updateEconomyHud();
+  updatePlayerProgressHud();
+  updatePlayerStatusHud();
+
+  if (leveled) {
+    setGameMessage(`Ivan reached Lv ${level}. Skill point gained.`);
+  } else if (reason) {
+    setGameMessage(`Ivan gained ${gained} XP from ${reason}.`);
+  }
+
+  return { gained, leveled, level };
+}
+
+function getSpentSkillPoints() {
+  return Object.values(state.playerProgress?.skills || {}).reduce((total, rank) => total + Math.max(0, Math.floor(Number(rank) || 0)), 0);
+}
+
+function getSkillRequirementText(skill) {
+  if (!skill?.requires) {
+    return "";
+  }
+
+  return Object.entries(skill.requires)
+    .map(([skillId, rank]) => `${PLAYER_SKILLS[skillId]?.name || skillId} ${rank}`)
+    .join(", ");
+}
+
+function canUnlockSkill(skillId) {
+  const skill = PLAYER_SKILLS[skillId];
+  if (!skill) {
+    return { ok: false, reason: "Unknown skill." };
+  }
+  if (getSkillRank(skillId) >= skill.maxRank) {
+    return { ok: false, reason: "Max rank." };
+  }
+  if (getPlayerSkillPoints() <= 0) {
+    return { ok: false, reason: "Need 1 skill point." };
+  }
+
+  for (const [requiredId, requiredRank] of Object.entries(skill.requires || {})) {
+    if (getSkillRank(requiredId) < requiredRank) {
+      return { ok: false, reason: `Needs ${getSkillRequirementText(skill)}.` };
+    }
+  }
+
+  return { ok: true, reason: "" };
+}
+
+function unlockSkill(skillId) {
+  const check = canUnlockSkill(skillId);
+  const skill = PLAYER_SKILLS[skillId];
+  if (!check.ok || !skill) {
+    renderShop(check.reason || "That skill cannot be learned yet.");
+    return;
+  }
+
+  state.playerProgress = normalizePlayerProgress(state.playerProgress);
+  state.playerProgress.skillPoints -= 1;
+  state.playerProgress.skills[skillId] = getSkillRank(skillId) + 1;
+  if (skillId === "field_endurance") {
+    state.player.health = Math.min(getPlayerMaxHealth(), (state.player.health || 0) + 14);
+  }
+  if (skillId === "trail_runner") {
+    state.player.stamina = Math.min(getPlayerMaxStamina(), (state.player.stamina || 0) + 8);
+  }
+  saveEconomy();
+  updateEconomyHud();
+  updatePlayerProgressHud();
+  updatePlayerStatusHud();
+  renderShop(`${skill.name} increased to rank ${getSkillRank(skillId)}.`);
+}
+
+function resetPlayerSkills() {
+  const spent = getSpentSkillPoints();
+  if (spent <= 0) {
+    renderShop("No learned skills to reset.");
+    return;
+  }
+
+  state.playerProgress = normalizePlayerProgress(state.playerProgress);
+  state.playerProgress.skillPoints += spent;
+  state.playerProgress.skills = {};
+  saveEconomy();
+  updateEconomyHud();
+  updatePlayerProgressHud();
+  updatePlayerStatusHud();
+  renderShop(`Skills reset. Refunded ${spent} skill point${spent === 1 ? "" : "s"}.`);
 }
 
 function getPlayerMaxHealth() {
   return PLAYER.maxHealth +
     (hasItem("guard_armor") ? 15 : 0) +
     (hasItem("steel_armor") ? 30 : 0) +
-    (hasItem("tempered_plate") ? 45 : 0);
+    (hasItem("tempered_plate") ? 45 : 0) +
+    getSkillBonus("field_endurance", 14);
 }
 
 function getPlayerMaxStamina() {
-  return PLAYER.maxStamina + (hasItem("swift_boots") ? 20 : 0) + (hasItem("trail_map") ? 12 : 0);
+  return PLAYER.maxStamina + (hasItem("swift_boots") ? 20 : 0) + (hasItem("trail_map") ? 12 : 0) + getSkillBonus("trail_runner", 8);
 }
 
 function updatePlayerStatusHud() {
@@ -3032,26 +3295,88 @@ function removeItem(itemId, amount = 1) {
 }
 
 function getWhipAttackRange() {
-  return PLAYER.attackRange + (hasItem("iron_whip") ? 80 : 0) + (hasItem("whetstone") ? 35 : 0);
+  return PLAYER.attackRange +
+    (hasItem("iron_whip") ? 80 : 0) +
+    (hasItem("whetstone") ? 35 : 0) +
+    getSkillBonus("whip_mastery", 28);
 }
 
 function getPlayerWalkSpeed() {
-  return PLAYER.speed + (hasItem("swift_boots") ? 130 : 0) + (hasItem("trail_map") ? 55 : 0);
+  return PLAYER.speed + (hasItem("swift_boots") ? 130 : 0) + (hasItem("trail_map") ? 55 : 0) + getSkillBonus("trail_runner", 30);
 }
 
 function getPlayerSprintSpeed() {
-  return PLAYER.sprintSpeed + (hasItem("swift_boots") ? 160 : 0) + (hasItem("trail_map") ? 70 : 0);
+  return PLAYER.sprintSpeed + (hasItem("swift_boots") ? 160 : 0) + (hasItem("trail_map") ? 70 : 0) + getSkillBonus("trail_runner", 45);
+}
+
+function getPlayerStaminaRegen() {
+  return PLAYER.staminaRegen + getSkillBonus("steady_breath", 7);
+}
+
+function getPlayerSprintStaminaCost() {
+  return Math.max(10, PLAYER.sprintStaminaCost - getSkillBonus("steady_breath", 2));
 }
 
 function getArmorDamageReduction() {
   const reductions = ["guard_armor", "steel_armor", "tempered_plate"]
     .filter(hasItem)
     .map((itemId) => ITEM_DEFS[itemId].armor || 0);
-  return reductions.length > 0 ? Math.max(...reductions) : 0;
+  const armorReduction = reductions.length > 0 ? Math.max(...reductions) : 0;
+  return clamp(armorReduction + getSkillBonus("iron_will", 0.06), 0, 0.72);
 }
 
-function getCaptureHitThreshold() {
-  let threshold = 4;
+function hashStringSeed(text) {
+  return String(text || "")
+    .split("")
+    .reduce((hash, char) => ((hash * 31 + char.charCodeAt(0)) % 2147483647) || 1, 17);
+}
+
+function getWorldEncounterProfile(worldId = state.currentWorld) {
+  const mattType = WORLD_MATT_TYPES[worldId] || "";
+  if (!mattType) {
+    return null;
+  }
+
+  const config = getMattConfig(mattType);
+  return {
+    mattType,
+    levelMin: 1,
+    levelMax: 3,
+    captureDifficulty: 1,
+    damageScale: 1,
+    count: config.count,
+    eliteChance: 0,
+    ...(WORLD_ENCOUNTER_PROFILES[worldId] || {}),
+  };
+}
+
+function rollWildMattLevel(profile, random = Math.random) {
+  const min = clamp(Math.floor(profile?.levelMin || 1), 1, 50);
+  const max = clamp(Math.floor(profile?.levelMax || min), min, 50);
+  let level = min + Math.floor(random() * (max - min + 1));
+
+  if (profile?.eliteChance && random() < profile.eliteChance) {
+    level += Math.max(1, Math.ceil((max - min + 1) * 0.3));
+  }
+
+  return clamp(level, 1, 50);
+}
+
+function getWildMattCaptureHits(matt) {
+  const level = getMattLevel(matt);
+  const difficulty = Number(matt?.captureDifficulty) || 1;
+  return clamp(Math.round(2 + difficulty + level / 9), 3, 8);
+}
+
+function getWildMattCaptureChance(matt) {
+  const level = getMattLevel(matt);
+  const difficulty = Number(matt?.captureDifficulty) || 1;
+  const base = 0.98 - difficulty * 0.07 - level * 0.012;
+  return clamp(base, 0.34, 0.94);
+}
+
+function getCaptureHitThreshold(matt = null) {
+  let threshold = matt ? getWildMattCaptureHits(matt) : 4;
   if (hasItem("matt_snack")) {
     threshold -= 1;
   }
@@ -3064,11 +3389,40 @@ function getCaptureHitThreshold() {
   return Math.max(2, threshold);
 }
 
-function getMattSellValue(type) {
+function getCaptureAttemptChance(matt, { snackUsed = false, netUsed = false, fluteUsed = false } = {}) {
+  let chance = getWildMattCaptureChance(matt);
+  if (snackUsed) {
+    chance += 0.08;
+  }
+  if (netUsed) {
+    chance += 0.22;
+  }
+  if (fluteUsed) {
+    chance += 0.14;
+  }
+  chance += getSkillBonus("calm_hands", 0.06);
+  return clamp(chance, 0.18, 0.98);
+}
+
+function getWildMattAttackDamage(matt, config = getMattConfig(matt?.type)) {
+  const base = config.attackDamage || 0;
+  if (base <= 0) {
+    return 0;
+  }
+
+  const level = getMattLevel(matt);
+  const difficulty = Math.max(1, Number(matt?.captureDifficulty) || 1);
+  const scale = Math.max(0.4, Number(matt?.damageScale) || 1);
+  return Math.max(1, Math.round(base * scale * (1 + (level - 1) * 0.045 + (difficulty - 1) * 0.055)));
+}
+
+function getMattSellValue(type, matt = null) {
   const baseValue = MATT_SELL_VALUES[type] || 25;
   const charmBonus = hasItem("matt_charm") ? 0.2 : 0;
   const ledgerBonus = hasItem("trade_ledger") ? 0.15 : 0;
-  return Math.round(baseValue * (1 + charmBonus + ledgerBonus));
+  const levelBonus = matt ? Math.max(0, getMattLevel(matt) - 1) * 0.035 : 0;
+  const difficultyBonus = matt ? (Math.max(1, Number(matt.captureDifficulty) || 1) - 1) * 0.05 : 0;
+  return Math.round(baseValue * (1 + charmBonus + ledgerBonus + levelBonus + difficultyBonus));
 }
 
 function makeCapturedPartyId(matt) {
@@ -3085,6 +3439,7 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
   const level = clamp(Math.floor(Number(matt.level) || 1), 1, 50);
   const xp = Math.max(0, Math.floor(Number(matt.xp) || 0));
   const friendship = clamp(Math.floor(Number(matt.friendship) || 0), 0, 100);
+  const captureDifficulty = Math.max(1, Number(matt.captureDifficulty) || 1);
 
   return {
     partyId: matt.partyId || `${sourceWorld}:${originalId}`,
@@ -3100,6 +3455,7 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
     level,
     xp,
     friendship,
+    captureDifficulty,
   };
 }
 
@@ -3171,6 +3527,7 @@ function serializeCapturedMatt(matt) {
     level: normalized.level,
     xp: normalized.xp,
     friendship: normalized.friendship,
+    captureDifficulty: normalized.captureDifficulty,
   };
 }
 
@@ -3228,6 +3585,7 @@ function hydrateCapturedMatt(saved, caughtIndex) {
     level: saved.level || 1,
     xp: saved.xp || 0,
     friendship: saved.friendship || 0,
+    captureDifficulty: saved.captureDifficulty || 1,
     wanderAngle: 0,
     wanderTimer: 0,
     hitCount: 4,
@@ -3513,6 +3871,7 @@ function getShopTabLabel(tab) {
     sell: "Sell",
     inventory: "Bag",
     bond: "Bond",
+    skills: "Skills",
   }[tab] || tab;
 }
 
@@ -3618,6 +3977,7 @@ function completeMission(missionId) {
   saveEconomy();
   updateEconomyHud();
   updatePlayerStatusHud();
+  awardPlayerXp(90 + (mission.rewardCoins || 0), "mission work");
   renderShop(mission.completeText);
 }
 
@@ -3675,8 +4035,9 @@ function applyCapturedMattProgress(partyId, { friendship = 0, xp = 0 } = {}) {
   }
 
   const matt = state.capturedParty[partyIndex];
-  const friendshipGain = getFriendshipGain(friendship);
-  const xpGain = Math.max(0, Math.floor(Number(xp) || 0));
+  const mentorRank = getSkillRank("matt_mentor");
+  const friendshipGain = getFriendshipGain(friendship + (friendship > 0 ? mentorRank : 0));
+  const xpGain = Math.max(0, Math.floor((Number(xp) || 0) * (1 + mentorRank * 0.15)));
   let level = getMattLevel(matt);
   let nextXp = Math.max(0, Math.floor(Number(matt.xp) || 0)) + xpGain;
   let leveled = false;
@@ -3757,11 +4118,12 @@ function sparWithMatt(partyId) {
   }
 
   state.player.stamina = Math.max(0, state.player.stamina - staminaCost);
+  const ivanProgress = awardPlayerXp(12 + getPlayerLevel(), "sparring");
   updatePlayerStatusHud();
   renderShop(
     result.leveled
-      ? `${getArenaMattName(result.matt)} sparred hard and reached Lv ${result.matt.level}.`
-      : `${getArenaMattName(result.matt)} sparred with Ivan. XP +${result.xpGain}, friendship +${result.friendshipGain}.`,
+      ? `${getArenaMattName(result.matt)} sparred hard and reached Lv ${result.matt.level}. Ivan XP +${ivanProgress.gained}.`
+      : `${getArenaMattName(result.matt)} sparred with Ivan. XP +${result.xpGain}, friendship +${result.friendshipGain}. Ivan XP +${ivanProgress.gained}.`,
   );
 }
 
@@ -3800,6 +4162,47 @@ function renderBond(parent) {
   });
 }
 
+function renderSkills(parent) {
+  const level = getPlayerLevel();
+  const xp = Math.max(0, Math.floor(Number(state.playerProgress?.xp) || 0));
+  const next = level >= MAX_PLAYER_LEVEL ? "max level" : `${xp}/${getPlayerXpToNext(level)} XP`;
+  appendShopTextCard(
+    parent,
+    `Ivan Lv ${level}`,
+    `${next}. Skill points: ${getPlayerSkillPoints()}. Skills spent: ${getSpentSkillPoints()}.`,
+    makeShopButton("Reset", "reset-skills", null, getSpentSkillPoints() <= 0),
+  );
+
+  let currentBranch = "";
+  Object.values(PLAYER_SKILLS).forEach((skill) => {
+    if (skill.branch !== currentBranch) {
+      currentBranch = skill.branch;
+      const heading = document.createElement("h3");
+      heading.textContent = currentBranch;
+      parent.append(heading);
+    }
+
+    const rank = getSkillRank(skill.id);
+    const check = canUnlockSkill(skill.id);
+    const row = document.createElement("article");
+    row.className = "shop-item skill-item";
+
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = `${skill.branch}: ${skill.name}`;
+    const detail = document.createElement("span");
+    const requirement = getSkillRequirementText(skill);
+    detail.textContent = `Rank ${rank}/${skill.maxRank}. ${skill.description} ${skill.perRank}${requirement ? `. Requires ${requirement}` : ""}.`;
+    info.append(title, detail);
+
+    const owned = document.createElement("em");
+    owned.textContent = rank >= skill.maxRank ? "Max" : `${rank}/${skill.maxRank}`;
+    const label = rank >= skill.maxRank ? "Max" : getPlayerSkillPoints() <= 0 ? "No SP" : check.ok ? "Learn" : "Locked";
+    row.append(info, owned, makeShopButton(label, "learn-skill", skill.id, !check.ok));
+    parent.append(row);
+  });
+}
+
 function appendCapturedMattRows(parent) {
   if (!getShopDef()?.buysMatts) {
     return;
@@ -3815,7 +4218,7 @@ function appendCapturedMattRows(parent) {
   }
 
   state.capturedParty.forEach((matt) => {
-    const value = getMattSellValue(matt.type);
+    const value = getMattSellValue(matt.type, matt);
     const row = document.createElement("article");
     row.className = "shop-item";
 
@@ -3845,7 +4248,7 @@ function renderShop(message = "") {
 
   if (shopTabs) {
     shopTabs.innerHTML = "";
-    const tabs = shop ? ["talk", "mission", "buy", "sell", "inventory", "bond"] : ["inventory", "bond"];
+    const tabs = shop ? ["talk", "mission", "buy", "sell", "inventory", "bond", "skills"] : ["inventory", "bond", "skills"];
     tabs.forEach((tab) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -3878,6 +4281,8 @@ function renderShop(message = "") {
     }
   } else if (state.shopTab === "bond") {
     renderBond(shopList);
+  } else if (state.shopTab === "skills") {
+    renderSkills(shopList);
   } else {
     const entries = getInventoryEntries();
     if (entries.length === 0) {
@@ -3977,8 +4382,9 @@ function getArenaMattMaxHp(matt, opponentBoost = 0) {
 
 function getArenaMattPowerBonus(matt, opponentBoost = 0) {
   const handbookBonus = hasItem("arena_handbook") ? 4 : 0;
+  const instinctBonus = opponentBoost === 0 ? getSkillBonus("arena_instinct", 2) : 0;
   const rank = getFriendshipRank(matt?.friendship || 0);
-  return getMattLevel(matt) * 3 + Math.floor((Number(matt?.friendship) || 0) / 12) + rank.power + opponentBoost + handbookBonus;
+  return getMattLevel(matt) * 3 + Math.floor((Number(matt?.friendship) || 0) / 12) + rank.power + opponentBoost + handbookBonus + instinctBonus;
 }
 
 function getArenaMattCritChance(matt, ability = {}) {
@@ -3989,7 +4395,8 @@ function getArenaMattCritChance(matt, ability = {}) {
 function getArenaInitialEnergy(matt, opponentBoost = 0, includePlayerItems = true) {
   const rank = getFriendshipRank(matt?.friendship || 0);
   const locketBonus = includePlayerItems && hasItem("memory_locket") ? 6 : 0;
-  return clamp(62 + rank.energy + Math.floor(getMattLevel(matt) / 3) + opponentBoost + locketBonus, 0, ARENA_MAX_ENERGY);
+  const instinctBonus = includePlayerItems ? getSkillBonus("arena_instinct", 3) : 0;
+  return clamp(62 + rank.energy + Math.floor(getMattLevel(matt) / 3) + opponentBoost + locketBonus + instinctBonus, 0, ARENA_MAX_ENERGY);
 }
 
 function getArenaRankTitle(points = state.arenaStats.rankPoints) {
@@ -4013,12 +4420,22 @@ function getArenaRecordText() {
   return `${getArenaRankTitle(stats.rankPoints)} | ${stats.wins}W-${stats.losses}L | streak ${stats.streak} | best ${stats.bestStreak}`;
 }
 
+function getCapturedPartyPeakLevel() {
+  return state.capturedParty.reduce((highest, matt) => Math.max(highest, getMattLevel(matt)), 1);
+}
+
 function chooseArenaOpponent(playerMatt, waitingOpponent = null) {
   const base = waitingOpponent?.id
     ? ARENA_OPPONENTS.find((opponent) => opponent.id === waitingOpponent.id) || waitingOpponent
     : ARENA_OPPONENTS[Math.floor(Math.random() * ARENA_OPPONENTS.length)];
   const streakBoost = Math.min(5, Math.floor((state.arenaStats.streak || 0) / 2));
-  const level = clamp(getMattLevel(playerMatt) + Math.floor(randomBetween(0, 4)) + streakBoost, 1, 50);
+  const rankBoost = Math.min(6, Math.floor((state.arenaStats.rankPoints || 0) / 35));
+  const partyLevelPressure = Math.min(3, Math.max(0, getCapturedPartyPeakLevel() - getMattLevel(playerMatt)));
+  const level = clamp(
+    getMattLevel(playerMatt) + Math.floor(randomBetween(0, 4)) + streakBoost + rankBoost + partyLevelPressure,
+    1,
+    50,
+  );
   return {
     ...base,
     level,
@@ -4739,11 +5156,14 @@ function finishArenaBattle(won) {
     : hasItem("sparring_gloves")
       ? 8
       : 0;
+  const playerXp = won ? 55 + arena.opponent.level * 9 + Math.min(45, stats.streak * 5) : 18 + arena.opponent.level * 3;
+  const playerProgress = awardPlayerXp(playerXp, won ? "arena win" : "arena lesson");
   state.coins += coinReward;
   saveEconomy();
   updateEconomyHud();
 
-  const result = coinReward > 0 ? `${progress} Coins +${coinReward}.` : progress;
+  const playerXpText = playerProgress.gained ? ` Ivan XP +${playerProgress.gained}.` : "";
+  const result = coinReward > 0 ? `${progress} Coins +${coinReward}.${playerXpText}` : `${progress}${playerXpText}`;
   arena.log.unshift(won ? `Arena win. ${result}` : `Arena loss. ${result}`);
   renderArenaBattle(won ? "You won the arena battle." : "You lost the arena battle.");
 }
@@ -5097,7 +5517,7 @@ function sellCapturedMatt(partyId) {
   }
 
   const [matt] = state.capturedParty.splice(index, 1);
-  const value = getMattSellValue(matt.type);
+  const value = getMattSellValue(matt.type, matt);
   state.coins += value;
   state.dogmatts = state.dogmatts.filter((candidate) => candidate.partyId !== partyId);
   saveCapturedParty();
@@ -6197,7 +6617,7 @@ function getFollowTarget(caughtIndex, config = DOGMATT) {
 }
 
 function getCurrentMattType() {
-  return WORLD_MATT_TYPES[state.currentWorld] || "";
+  return getWorldEncounterProfile()?.mattType || "";
 }
 
 function getMattConfig(type) {
@@ -6266,14 +6686,15 @@ function scheduleMysticMattSpecialIdle(matt, random = Math.random) {
 }
 
 function spawnDogmatts() {
-  const type = getCurrentMattType();
+  const profile = getWorldEncounterProfile();
+  const type = profile?.mattType || "";
   if (!type) {
     state.dogmatts = attachCapturedParty([]);
     return;
   }
 
   const config = getMattConfig(type);
-  const random = seededRandom(4281);
+  const random = seededRandom(4281 + hashStringSeed(state.currentWorld));
   const dogmatts = [];
   const nearbyDogmatts = 6;
   const spawnAreas = getWorld().spawnAreas;
@@ -6284,7 +6705,7 @@ function spawnDogmatts() {
   const mapHeight = getMapHeight();
   const margin = Math.min(600, Math.max(80, Math.min(mapWidth, mapHeight) * 0.12));
 
-  for (let index = 0; index < config.count; index += 1) {
+  for (let index = 0; index < (profile.count || config.count); index += 1) {
     let x = margin + random() * Math.max(1, mapWidth - margin * 2);
     let y = margin + random() * Math.max(1, mapHeight - margin * 2);
     let spawnArea = null;
@@ -6310,6 +6731,7 @@ function spawnDogmatts() {
     const pathRoamTarget = spawnArea
       ? chooseSpawnRoamTarget(spawnArea, random)
       : copyPoint(path?.points?.[pathPointIndex]);
+    const level = rollWildMattLevel(profile, random);
     const matt = {
       id: `${type}-${index + 1}`,
       type,
@@ -6323,6 +6745,13 @@ function spawnDogmatts() {
       direction: random() > 0.5 ? "right" : "left",
       wanderAngle: random() * Math.PI * 2,
       wanderTimer: 0.8 + random() * 2.4,
+      level,
+      xp: 0,
+      friendship: 0,
+      captureDifficulty: profile.captureDifficulty,
+      captureChance: getWildMattCaptureChance({ level, captureDifficulty: profile.captureDifficulty }),
+      captureHitsRequired: getWildMattCaptureHits({ level, captureDifficulty: profile.captureDifficulty }),
+      damageScale: profile.damageScale,
       hitCount: 0,
       hitCooldown: 0,
       hitReactionTimer: 0,
@@ -6582,7 +7011,7 @@ function updatePlayer(dt) {
 
   if (state.dev.enabled || isShopOpen() || (state.arena.active && state.arena.phase !== "idle")) {
     player.moving = false;
-    player.stamina = Math.min(maxStamina, player.stamina + PLAYER.staminaRegen * dt);
+    player.stamina = Math.min(maxStamina, player.stamina + getPlayerStaminaRegen() * dt);
     updatePlayerRestAnimation(player, dt);
     updatePlayerTrail();
     updatePlayerStatusHud();
@@ -6614,7 +7043,7 @@ function updatePlayer(dt) {
     player.facingY = moveY;
 
     if (sprinting) {
-      player.stamina = Math.max(0, player.stamina - PLAYER.sprintStaminaCost * dt);
+      player.stamina = Math.max(0, player.stamina - getPlayerSprintStaminaCost() * dt);
     }
 
     if (Math.abs(moveX) > Math.abs(moveY)) {
@@ -6625,7 +7054,7 @@ function updatePlayer(dt) {
   }
 
   if (!sprinting) {
-    player.stamina = Math.min(maxStamina, player.stamina + PLAYER.staminaRegen * dt);
+    player.stamina = Math.min(maxStamina, player.stamina + getPlayerStaminaRegen() * dt);
   }
 
   if (player.attackTimer > 0) {
@@ -6702,7 +7131,7 @@ function damagePlayer(amount, sourceMatt) {
   state.player.health = Math.max(0, state.player.health - damage);
   state.player.damageCooldown = PLAYER.damageInvulnerableTime;
   addScreenShake(7);
-  setGameMessage(`${MATT_LABELS[sourceMatt.type] || "A Matt"} hit Ivan for ${damage}.`);
+  setGameMessage(`Lv ${getMattLevel(sourceMatt)} ${MATT_LABELS[sourceMatt.type] || "Matt"} hit Ivan for ${damage}.`);
   updatePlayerStatusHud();
 
   if (state.player.health <= 0) {
@@ -6737,7 +7166,7 @@ function updateMattAttack(matt, config, distance, dt) {
     if (!matt.attackApplied && matt.attackElapsed >= (config.attackWindup || 0.24)) {
       matt.attackApplied = true;
       if (distance <= config.attackRadius + 42) {
-        damagePlayer(config.attackDamage, matt);
+        damagePlayer(getWildMattAttackDamage(matt, config), matt);
       }
     }
 
@@ -7406,7 +7835,7 @@ function update(dt) {
 }
 
 function hitDogmatt(dogmatt) {
-  const captureHitThreshold = getCaptureHitThreshold();
+  const captureHitThreshold = getCaptureHitThreshold(dogmatt);
   dogmatt.hitCooldown = 0.25;
   dogmatt.hitReactionTimer = 0.55;
   dogmatt.pathPanicTimer = Math.max(dogmatt.pathPanicTimer || 0, 2.2);
@@ -7428,7 +7857,9 @@ function hitDogmatt(dogmatt) {
 
     const snackUsed = hasItem("matt_snack");
     const netUsed = hasItem("capture_net");
-    const fluteBonus = hasItem("calming_flute") ? 6 : 0;
+    const fluteUsed = hasItem("calming_flute");
+    const fluteBonus = fluteUsed ? 6 : 0;
+    const captureChance = getCaptureAttemptChance(dogmatt, { snackUsed, netUsed, fluteUsed });
 
     if (snackUsed) {
       removeItem("matt_snack");
@@ -7442,7 +7873,20 @@ function hitDogmatt(dogmatt) {
 
     saveEconomy();
     updateEconomyHud();
-    dogmatt.hitCount = 4;
+
+    if (Math.random() > captureChance) {
+      dogmatt.hitCount = Math.max(0, captureHitThreshold - 1);
+      dogmatt.pathPanicTimer = Math.max(dogmatt.pathPanicTimer || 0, 3.5);
+      dogmatt.attackCooldown = Math.min(dogmatt.attackCooldown || 0, 0.3);
+      setAction(dogmatt, getMattHitAction(dogmatt));
+      playHitSound(dogmatt.hitCount);
+      setGameMessage(
+        `Lv ${getMattLevel(dogmatt)} ${MATT_LABELS[dogmatt.type] || "Matt"} resisted capture (${Math.round(captureChance * 100)}%).`,
+      );
+      return;
+    }
+
+    dogmatt.hitCount = captureHitThreshold;
     dogmatt.caught = true;
     dogmatt.sourceWorld = state.currentWorld;
     dogmatt.originalId = dogmatt.originalId || dogmatt.id;
@@ -7454,6 +7898,13 @@ function hitDogmatt(dogmatt) {
     spawnCaptureEffect(dogmatt);
     playCaptureSound();
     addScreenShake(10);
+    const ivanProgress = awardPlayerXp(
+      Math.round(24 + getMattLevel(dogmatt) * 6 + (Number(dogmatt.captureDifficulty) || 1) * 10 + getSkillBonus("whip_mastery", 5)),
+      "capture",
+    );
+    setGameMessage(
+      `Captured Lv ${getMattLevel(dogmatt)} ${MATT_LABELS[dogmatt.type] || "Matt"} (${Math.round(captureChance * 100)}%). Ivan XP +${ivanProgress.gained}${ivanProgress.leveled ? `, Lv ${ivanProgress.level}` : ""}.`,
+    );
     updateCaughtHud(countCaughtMatts());
     saveCapturedParty();
     return;
@@ -7664,6 +8115,19 @@ function drawDogmatt(dogmatt) {
 
   ctx.drawImage(sprite, -config.width / 2, -config.height + config.footOffset);
   ctx.restore();
+
+  if (!dogmatt.caught && !dogmatt.arenaBattler) {
+    const difficulty = Math.max(1, Number(dogmatt.captureDifficulty) || 1);
+    ctx.save();
+    ctx.font = "800 13px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(18, 16, 14, 0.82)";
+    ctx.fillStyle = difficulty >= 3 ? "#ffb36d" : difficulty >= 2 ? "#f7f1d0" : "#baf7ce";
+    ctx.strokeText(`Lv ${getMattLevel(dogmatt)}`, screenX, screenY - config.height * scale - 12);
+    ctx.fillText(`Lv ${getMattLevel(dogmatt)}`, screenX, screenY - config.height * scale - 12);
+    ctx.restore();
+  }
 }
 
 function getNpcRenderScale(npc) {
@@ -8389,6 +8853,13 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (key === "k" && !event.repeat) {
+    event.preventDefault();
+    openInventory();
+    setShopTab("skills");
+    return;
+  }
+
   if (key === "e" && !event.repeat) {
     event.preventDefault();
     if (!state.dev.enabled) {
@@ -8522,6 +8993,10 @@ shopList?.addEventListener("click", (event) => {
     useBondItemOnMatt(id, "focus_mint", 8, 18);
   } else if (action === "bond-spar") {
     sparWithMatt(id);
+  } else if (action === "learn-skill") {
+    unlockSkill(id);
+  } else if (action === "reset-skills") {
+    resetPlayerSkills();
   } else if (action === "arena-select-matt") {
     startArenaBattle(id);
   } else if (action === "arena-ability") {
@@ -8617,6 +9092,7 @@ async function startGameForProfile(profileId) {
   initDevPanel();
   updateTimeLabel();
   updateEconomyHud();
+  updatePlayerProgressHud();
   updatePlayerStatusHud();
 
   if (new URLSearchParams(window.location.search).has("dev")) {
