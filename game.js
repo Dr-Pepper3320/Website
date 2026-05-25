@@ -1406,7 +1406,7 @@ const CLOCK = {
   nightEndHour: 6,
 };
 
-const WORLD_STORAGE_KEY = "ivan-monster-hunt-worlds-v1";
+const WORLD_STORAGE_KEY = "ivan-monster-hunt-worlds-v2";
 const MATT_PROGRESS_STORAGE_KEY = "ivan-monster-hunt-matt-progress-v1";
 const ECONOMY_STORAGE_KEY = "ivan-monster-hunt-economy-v1";
 const PROFILE_STORAGE_KEY = "ivan-monster-hunt-profiles-v1";
@@ -5035,15 +5035,32 @@ function clearCurrentWorld() {
 }
 
 function refreshDogmattPaths() {
-  const paths = getWorld().paths;
+  const world = getWorld();
+  const paths = world.paths;
 
   state.dogmatts.forEach((dogmatt, index) => {
     if (dogmatt.caught) {
       return;
     }
 
-    dogmatt.pathId = paths.length > 0 ? paths[index % paths.length].id : "";
-    dogmatt.pathPointIndex = 0;
+    const path = paths.length > 0 ? paths[index % paths.length] : null;
+    const spawnArea = getContainingSpawnArea(dogmatt, world.spawnAreas);
+
+    dogmatt.pathId = path ? path.id : "";
+    dogmatt.pathDirection = dogmatt.pathDirection === -1 ? -1 : 1;
+    dogmatt.spawnAreaId = spawnArea ? spawnArea.id : "";
+    dogmatt.pathPauseTimer = 0;
+
+    if (spawnArea) {
+      dogmatt.pathRoamMode = "spawn";
+      dogmatt.pathRoamTarget = chooseSpawnRoamTarget(spawnArea);
+    } else if (path) {
+      reacquireMattPathTarget(dogmatt, path);
+    } else {
+      dogmatt.pathPointIndex = 0;
+      dogmatt.pathRoamMode = "";
+      dogmatt.pathRoamTarget = null;
+    }
   });
 }
 
@@ -5937,19 +5954,46 @@ function chooseRandomPath(paths, random = Math.random) {
   return paths[Math.floor(random() * paths.length)];
 }
 
-function choosePathRoamTarget(matt, path, random = Math.random) {
-  if (!path || !Array.isArray(path.points) || path.points.length === 0) {
-    return null;
+function copyPoint(point) {
+  return point ? { x: point.x, y: point.y } : null;
+}
+
+function getContainingSpawnArea(point, spawnAreas = getWorld().spawnAreas) {
+  return spawnAreas.find((area) => pointInRect(point, normalizeRect(area))) || null;
+}
+
+function chooseSpawnRoamTarget(area, random = Math.random) {
+  return area ? randomPointInArea(area, random) : null;
+}
+
+function normalizePathPointIndex(index, path) {
+  const count = path?.points?.length || 0;
+  if (count === 0) {
+    return 0;
   }
 
-  const anchor = path.points[Math.floor(random() * path.points.length)];
-  const angle = random() * Math.PI * 2;
-  const radius = 35 + random() * 155;
+  return ((index % count) + count) % count;
+}
 
-  return {
-    x: clamp(anchor.x + Math.cos(angle) * radius, 0, getMapWidth()),
-    y: clamp(anchor.y + Math.sin(angle) * radius, 0, getMapHeight()),
-  };
+function setMattPathTarget(matt, path, index) {
+  if (!path || !Array.isArray(path.points) || path.points.length === 0) {
+    matt.pathRoamTarget = null;
+    return;
+  }
+
+  matt.pathRoamMode = "path";
+  matt.pathPointIndex = normalizePathPointIndex(index, path);
+  matt.pathRoamTarget = copyPoint(path.points[matt.pathPointIndex]);
+}
+
+function reacquireMattPathTarget(matt, path) {
+  const closestPathPoint = findClosestPathPoint(matt, path);
+  setMattPathTarget(matt, path, closestPathPoint ? closestPathPoint.index : 0);
+}
+
+function getNextMattPathPointIndex(matt, path) {
+  const direction = matt.pathDirection === -1 ? -1 : 1;
+  return normalizePathPointIndex((matt.pathPointIndex || 0) + direction, path);
 }
 
 function scheduleFiremattSpecialIdle(firematt, random = Math.random) {
@@ -5985,10 +6029,11 @@ function spawnDogmatts() {
   for (let index = 0; index < config.count; index += 1) {
     let x = margin + random() * Math.max(1, mapWidth - margin * 2);
     let y = margin + random() * Math.max(1, mapHeight - margin * 2);
+    let spawnArea = null;
 
     if (activeSpawnAreas.length > 0) {
-      const area = activeSpawnAreas[Math.floor(random() * activeSpawnAreas.length)];
-      const spawnPoint = randomPointInArea(area, random);
+      spawnArea = activeSpawnAreas[Math.floor(random() * activeSpawnAreas.length)];
+      const spawnPoint = randomPointInArea(spawnArea, random);
       x = clamp(spawnPoint.x, 0, mapWidth);
       y = clamp(spawnPoint.y, 0, mapHeight);
     } else if (index < nearbyDogmatts) {
@@ -6003,6 +6048,10 @@ function spawnDogmatts() {
 
     const path = chooseRandomPath(paths, random);
     const closestPathPoint = path ? findClosestPathPoint({ x, y }, path) : null;
+    const pathPointIndex = closestPathPoint ? closestPathPoint.index : 0;
+    const pathRoamTarget = spawnArea
+      ? chooseSpawnRoamTarget(spawnArea, random)
+      : copyPoint(path?.points?.[pathPointIndex]);
     const matt = {
       id: `${type}-${index + 1}`,
       type,
@@ -6025,10 +6074,13 @@ function spawnDogmatts() {
       attackApplied: false,
       caught: false,
       pathId: path ? path.id : "",
-      pathPointIndex: closestPathPoint ? closestPathPoint.index : 0,
-      pathRoamMode: random() > 0.28 ? "path" : "offpath",
-      pathRoamTarget: path ? choosePathRoamTarget(null, path, random) : null,
+      pathPointIndex,
+      pathDirection: random() < 0.5 ? -1 : 1,
+      spawnAreaId: spawnArea ? spawnArea.id : "",
+      pathRoamMode: spawnArea ? "spawn" : "path",
+      pathRoamTarget,
       pathPauseTimer: random() > 0.76 ? 0.6 + random() * 1.9 : 0,
+      pathPanicTimer: 0,
     };
 
     if (type === "firematt") {
@@ -6506,53 +6558,76 @@ function updateMattPathRoam(matt, path, config, dt) {
     return false;
   }
 
+  const world = getWorld();
+  const currentSpawnArea = getContainingSpawnArea(matt, world.spawnAreas);
+
   if (matt.pathPauseTimer > 0) {
     matt.pathPauseTimer = Math.max(0, matt.pathPauseTimer - dt);
     setWildMattBaseAction(matt, "idle", dt);
     return false;
   }
 
-  if (!matt.pathRoamTarget || Math.random() < dt * 0.18) {
-    if (matt.pathRoamMode !== "offpath" && Math.random() < 0.32) {
-      matt.pathRoamMode = "offpath";
-    } else {
-      matt.pathRoamMode = "path";
-    }
+  if (!matt.pathDirection) {
+    matt.pathDirection = Math.random() < 0.5 ? -1 : 1;
+  }
 
-    if (matt.pathRoamMode === "path") {
-      matt.pathPointIndex = Math.floor(Math.random() * path.points.length);
-      matt.pathRoamTarget = path.points[matt.pathPointIndex];
-    } else {
-      matt.pathRoamTarget = choosePathRoamTarget(matt, path);
+  if (currentSpawnArea && matt.pathRoamMode !== "path") {
+    matt.spawnAreaId = currentSpawnArea.id;
+    matt.pathRoamMode = "spawn";
+
+    if (
+      !matt.pathRoamTarget ||
+      !pointInRect(matt.pathRoamTarget, normalizeRect(currentSpawnArea)) ||
+      Math.random() < dt * 0.08
+    ) {
+      if (Math.random() < 0.24) {
+        reacquireMattPathTarget(matt, path);
+      } else {
+        matt.pathRoamTarget = chooseSpawnRoamTarget(currentSpawnArea);
+      }
     }
+  } else if (!matt.pathRoamTarget || matt.pathRoamMode !== "path") {
+    reacquireMattPathTarget(matt, path);
   }
 
   const target = matt.pathRoamTarget;
+  if (!target) {
+    return false;
+  }
+
   const dx = target.x - matt.x;
   const dy = target.y - matt.y;
   const distance = Math.hypot(dx, dy) || 1;
 
   if (distance < 26) {
-    if (Math.random() < 0.36) {
-      matt.pathPauseTimer = 0.45 + Math.random() * 1.6;
-    }
+    if (matt.pathRoamMode === "spawn" && currentSpawnArea) {
+      if (Math.random() < 0.42) {
+        matt.pathPauseTimer = 0.5 + Math.random() * 1.8;
+      }
 
-    if (matt.pathRoamMode === "path" && Math.random() < 0.58) {
-      const step = Math.random() < 0.5 ? -1 : 1;
-      matt.pathPointIndex = (matt.pathPointIndex + step + path.points.length) % path.points.length;
-      matt.pathRoamTarget = path.points[matt.pathPointIndex];
+      if (Math.random() < 0.34) {
+        reacquireMattPathTarget(matt, path);
+      } else {
+        matt.pathRoamTarget = chooseSpawnRoamTarget(currentSpawnArea);
+      }
     } else {
-      matt.pathRoamMode = Math.random() < 0.48 ? "offpath" : "path";
-      matt.pathRoamTarget =
-        matt.pathRoamMode === "offpath"
-          ? choosePathRoamTarget(matt, path)
-          : path.points[Math.floor(Math.random() * path.points.length)];
+      if (currentSpawnArea && Math.random() < 0.38) {
+        matt.pathRoamMode = "spawn";
+        matt.spawnAreaId = currentSpawnArea.id;
+        matt.pathRoamTarget = chooseSpawnRoamTarget(currentSpawnArea);
+      } else {
+        if (Math.random() < 0.36) {
+          matt.pathPauseTimer = 0.45 + Math.random() * 1.6;
+        }
+
+        setMattPathTarget(matt, path, getNextMattPathPointIndex(matt, path));
+      }
     }
 
     return false;
   }
 
-  const roamSpeed = config.wanderSpeed * (matt.pathRoamMode === "offpath" ? 0.72 : 1);
+  const roamSpeed = config.wanderSpeed * (matt.pathRoamMode === "spawn" ? 0.78 : 1);
   const moveX = dx / distance;
   const moveY = dy / distance;
   matt.x = clamp(matt.x + moveX * roamSpeed * dt, 0, getMapWidth());
@@ -6571,12 +6646,18 @@ function updateWildDogmatt(dogmatt, dt) {
 
   dogmatt.hitCooldown = Math.max(0, dogmatt.hitCooldown - dt);
   dogmatt.hitReactionTimer = Math.max(0, (dogmatt.hitReactionTimer || 0) - dt);
+  dogmatt.pathPanicTimer = Math.max(0, (dogmatt.pathPanicTimer || 0) - dt);
 
-  if (!dogmatt.caught && dogmatt.hitReactionTimer <= 0 && updateMattAttack(dogmatt, config, distance, dt)) {
+  if (dogmatt.pathPanicTimer > 0) {
+    const moveX = dx / distance;
+    const moveY = dy / distance;
+    dogmatt.x = clamp(dogmatt.x + moveX * config.fleeSpeed * dt, 0, getMapWidth());
+    dogmatt.y = clamp(dogmatt.y + moveY * config.fleeSpeed * dt, 0, getMapHeight());
+    dogmatt.direction = moveX < 0 ? "left" : "right";
+    moving = true;
+  } else if (!dogmatt.caught && dogmatt.hitReactionTimer <= 0 && updateMattAttack(dogmatt, config, distance, dt)) {
     return;
-  }
-
-  if (distance < config.fleeRadius) {
+  } else if (distance < config.fleeRadius) {
     const moveX = dx / distance;
     const moveY = dy / distance;
     dogmatt.x = clamp(dogmatt.x + moveX * config.fleeSpeed * dt, 0, getMapWidth());
@@ -7070,6 +7151,8 @@ function hitDogmatt(dogmatt) {
   const captureHitThreshold = getCaptureHitThreshold();
   dogmatt.hitCooldown = 0.25;
   dogmatt.hitReactionTimer = 0.55;
+  dogmatt.pathPanicTimer = Math.max(dogmatt.pathPanicTimer || 0, 2.2);
+  dogmatt.pathRoamTarget = null;
   dogmatt.hitCount += 1;
   dogmatt.frameIndex = 0;
   dogmatt.frameTimer = 0;
