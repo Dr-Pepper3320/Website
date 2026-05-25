@@ -175,6 +175,8 @@ const PLAYER = {
   damageInvulnerableTime: 0.85,
   trailSpacing: 11,
   maxTrailPoints: 260,
+  idleFlourishMin: 5,
+  idleFlourishMax: 10,
 };
 
 const DOGMATT = {
@@ -1234,18 +1236,11 @@ function numberedFrames(path, count) {
 
 const ASSETS = {
   ivan: {
-    idle: ["assets/ivan/idle/1.png"],
-    walking: [
-      "assets/ivan/walking/1.png",
-      "assets/ivan/walking/2.png",
-      "assets/ivan/walking/3.png",
-    ],
-    whipping: [
-      "assets/ivan/whipping/1.png",
-      "assets/ivan/whipping/2.png",
-      "assets/ivan/whipping/3.png",
-      "assets/ivan/whipping/4.png",
-    ],
+    idle: numberedFrames("assets/ivan/idle", 12),
+    breathing: numberedFrames("assets/ivan/breathing", 12),
+    walking: numberedFrames("assets/ivan/walking", 7),
+    sprinting: numberedFrames("assets/ivan/sprinting", 8),
+    whipping: numberedFrames("assets/ivan/whipping", 5),
   },
   dogmatt: {
     idle: ["assets/matts/dogmatt/idle/1.png"],
@@ -1389,9 +1384,10 @@ const state = {
     facingY: 1,
     moving: false,
     trail: [],
-    action: "idle",
+    action: "breathing",
     frameTimer: 0,
     frameIndex: 0,
+    idleFlourishTimer: PLAYER.idleFlourishMin,
     attackTimer: 0,
     health: PLAYER.maxHealth,
     stamina: PLAYER.maxStamina,
@@ -1415,7 +1411,9 @@ const images = {
   worldMaps: {},
   ivan: {
     idle: [],
+    breathing: [],
     walking: [],
+    sprinting: [],
     whipping: [],
   },
   dogmatt: {
@@ -5920,6 +5918,59 @@ function pruneTileCache() {
   }
 }
 
+function getIvanFrames(action) {
+  return images.ivan[action] || images.ivan.breathing || images.ivan.idle || [];
+}
+
+function schedulePlayerIdleFlourish(player) {
+  player.idleFlourishTimer = randomBetween(PLAYER.idleFlourishMin, PLAYER.idleFlourishMax);
+}
+
+function updatePlayerRestAnimation(player, dt) {
+  const breathingFrames = getIvanFrames("breathing");
+  const idleFrames = getIvanFrames("idle");
+  const restAction = breathingFrames.length > 0 ? "breathing" : "idle";
+
+  if (player.action === "idle" && idleFrames.length > 1) {
+    player.frameTimer += dt;
+    if (player.frameTimer >= 0.095) {
+      player.frameTimer = 0;
+      if (player.frameIndex < idleFrames.length - 1) {
+        player.frameIndex += 1;
+      } else {
+        setAction(player, restAction);
+        schedulePlayerIdleFlourish(player);
+      }
+    }
+    return;
+  }
+
+  if (player.action !== restAction) {
+    setAction(player, restAction);
+    schedulePlayerIdleFlourish(player);
+  }
+
+  player.idleFlourishTimer -= dt;
+  if (player.idleFlourishTimer <= 0 && idleFrames.length > 1) {
+    setAction(player, "idle");
+    return;
+  }
+
+  if (breathingFrames.length > 0) {
+    advanceAnimation(player, breathingFrames.length, 0.13, dt);
+  }
+}
+
+function getPlayerFrameDuration(action) {
+  if (action === "whipping" || action === "sprinting") {
+    return 0.075;
+  }
+  if (action === "walking") {
+    return 0.105;
+  }
+  return 0.13;
+}
+
 function updatePlayer(dt) {
   const player = state.player;
   const maxHealth = getPlayerMaxHealth();
@@ -5931,8 +5982,7 @@ function updatePlayer(dt) {
   if (state.dev.enabled || isShopOpen() || (state.arena.active && state.arena.phase !== "idle")) {
     player.moving = false;
     player.stamina = Math.min(maxStamina, player.stamina + PLAYER.staminaRegen * dt);
-    setAction(player, "idle");
-    advanceAnimation(player, images.ivan[player.action].length, 0.13, dt);
+    updatePlayerRestAnimation(player, dt);
     updatePlayerTrail();
     updatePlayerStatusHud();
     return;
@@ -5980,16 +6030,19 @@ function updatePlayer(dt) {
   if (player.attackTimer > 0) {
     player.attackTimer = Math.max(0, player.attackTimer - dt);
     setAction(player, "whipping");
+  } else if (moving) {
+    setAction(player, sprinting ? "sprinting" : "walking");
   } else {
-    setAction(player, moving ? "walking" : "idle");
+    updatePlayerRestAnimation(player, dt);
+    updatePlayerTrail();
+    updatePlayerStatusHud();
+    return;
   }
 
-  if (!moving && player.action === "idle") {
-    player.frameIndex = 0;
+  const frames = getIvanFrames(player.action);
+  if (frames.length > 0) {
+    advanceAnimation(player, frames.length, getPlayerFrameDuration(player.action), dt);
   }
-
-  const frameDuration = player.action === "whipping" ? 0.075 : 0.13;
-  advanceAnimation(player, images.ivan[player.action].length, frameDuration, dt);
   updatePlayerTrail();
   updatePlayerStatusHud();
 }
@@ -6857,7 +6910,10 @@ function drawPlayerShadow() {
 
 function drawPlayer() {
   const player = state.player;
-  const frames = images.ivan[player.action];
+  const frames = getIvanFrames(player.action);
+  if (!frames.length) {
+    return;
+  }
   const sprite = frames[player.frameIndex % frames.length];
   const scale = getPlayerRenderScale();
   const screenX = Math.round(player.x - state.camera.x);
@@ -7836,9 +7892,10 @@ async function startGameForProfile(profileId) {
   const start = getMapCenter(state.currentWorld);
   state.player.x = start.x;
   state.player.y = start.y;
-  state.player.action = "idle";
+  state.player.action = "breathing";
   state.player.frameIndex = 0;
   state.player.frameTimer = 0;
+  schedulePlayerIdleFlourish(state.player);
   state.player.moving = false;
   state.player.health = getPlayerMaxHealth();
   state.player.stamina = getPlayerMaxStamina();
