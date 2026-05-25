@@ -41,6 +41,7 @@ const devWorld = document.querySelector("#dev-world");
 const devTools = document.querySelector("#dev-tools");
 const devNpc = document.querySelector("#dev-npc");
 const devNodeTarget = document.querySelector("#dev-node-target");
+const devNodeName = document.querySelector("#dev-node-name");
 const devSave = document.querySelector("#dev-save");
 const devNewLine = document.querySelector("#dev-new-line");
 const devRespawn = document.querySelector("#dev-respawn");
@@ -1652,6 +1653,7 @@ const state = {
     activeWallId: null,
     activePathId: null,
     activeNpcPathId: null,
+    activeNodeId: null,
     selectedNpcId: "scott",
     panelReady: false,
   },
@@ -2308,6 +2310,10 @@ function normalizePath(path, prefix = "path") {
   };
 }
 
+function normalizeNodeName(name) {
+  return typeof name === "string" ? name.trim().slice(0, 40) : "";
+}
+
 function normalizeWall(wall) {
   if (Array.isArray(wall?.points)) {
     return {
@@ -2551,6 +2557,7 @@ function normalizeNode(node, worldId) {
     y: nodeWasOffMap ? center.y : clamp(node.y, 0, map.height),
     radius: Number.isFinite(node?.radius) ? node.radius : 82,
     target: WORLD_IDS.includes(target) ? target : DEFAULT_WORLD_ID,
+    name: normalizeNodeName(node?.name),
   };
 }
 
@@ -4919,6 +4926,10 @@ function getWorldLabel(id) {
   return WORLD_LABELS[id] || id;
 }
 
+function getNodeLabel(node) {
+  return normalizeNodeName(node?.name) || getWorldLabel(node?.target);
+}
+
 function updateWorldLabel() {
   if (worldLabel) {
     worldLabel.textContent = `World: ${getWorldLabel(state.currentWorld)}`;
@@ -4993,6 +5004,7 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
   state.dev.activePathId = null;
   state.dev.activeNpcPathId = null;
   state.dev.activeWallId = null;
+  state.dev.activeNodeId = null;
 
   if (movePlayer) {
     const spawnPoint = getTransitionSpawnPoint(id, fromWorldId);
@@ -5321,6 +5333,17 @@ function initDevPanel() {
     devNodeTarget.value = state.currentWorld === DEFAULT_WORLD_ID ? "town" : DEFAULT_WORLD_ID;
   }
 
+  devNodeName?.addEventListener("input", () => {
+    const world = getWorld();
+    const node = world.nodes.find((candidate) => candidate.id === state.dev.activeNodeId);
+
+    if (node) {
+      node.name = normalizeNodeName(devNodeName.value);
+      saveWorlds();
+      setDevStatus(`Node renamed to ${getNodeLabel(node)}.`);
+    }
+  });
+
   if (devNpc) {
     devNpc.innerHTML = NPC_IDS.map(
       (id) => `<option value="${id}">${NPC_DEFS[id].name}</option>`,
@@ -5388,6 +5411,10 @@ function setDevTool(tool) {
     state.dev.activeWallId = null;
   }
 
+  if (tool !== "node") {
+    state.dev.activeNodeId = null;
+  }
+
   if (devTools) {
     for (const button of devTools.querySelectorAll("[data-tool]")) {
       button.classList.toggle("active", button.dataset.tool === tool);
@@ -5401,6 +5428,8 @@ function setDevTool(tool) {
         ? " Click points for the selected NPC route. New Line starts another route."
         : tool === "npc"
           ? " Click to place the selected NPC."
+          : tool === "node"
+            ? " Type a node name, choose its target, then click the map."
           : "";
   setDevStatus(`${getWorldLabel(state.currentWorld)}: ${tool} tool selected.${extra}`);
 }
@@ -5688,15 +5717,36 @@ function handleDevPointerDown(event) {
 
   if (state.dev.tool === "node") {
     const target = devNodeTarget?.value || "town";
-    world.nodes.push({
+    const name = normalizeNodeName(devNodeName?.value);
+    const existingNode = world.nodes.find(
+      (candidate) => Math.hypot(candidate.x - point.x, candidate.y - point.y) <= candidate.radius + 30,
+    );
+
+    if (existingNode) {
+      existingNode.target = target;
+      existingNode.name = name;
+      state.dev.activeNodeId = existingNode.id;
+      if (devNodeName) {
+        devNodeName.value = existingNode.name;
+      }
+      saveWorlds();
+      setDevStatus(`${getNodeLabel(existingNode)} node updated. Target: ${getWorldLabel(target)}.`);
+      return;
+    }
+
+    const node = {
       id: createId("node"),
       x: point.x,
       y: point.y,
       radius: 82,
       target,
-    });
+      name,
+    };
+
+    world.nodes.push(node);
+    state.dev.activeNodeId = node.id;
     saveWorlds();
-    setDevStatus(`Node to ${getWorldLabel(target)} added.`);
+    setDevStatus(`${getNodeLabel(node)} node added. Target: ${getWorldLabel(target)}.`);
     return;
   }
 
@@ -7669,7 +7719,7 @@ function drawWorldNodes() {
       ctx.fillStyle = "#f7f1d0";
       ctx.font = "800 18px Inter, system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(`E: ${getWorldLabel(node.target)}`, node.x, node.y - node.radius - 14);
+      ctx.fillText(`E: ${getNodeLabel(node)}`, node.x, node.y - node.radius - 14);
     }
   }
 
@@ -7816,7 +7866,7 @@ function drawWorldEditorObjects() {
     const labelSize = Math.max(46, Math.min(170, getMapWidth() * 0.014));
     ctx.font = `800 ${labelSize}px Inter, system-ui, sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText(getWorldLabel(node.target), node.x, node.y + labelSize * 0.18);
+    ctx.fillText(getNodeLabel(node), node.x, node.y + labelSize * 0.18);
   }
 
   if (state.dev.dragging) {

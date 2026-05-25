@@ -659,12 +659,14 @@ canvas {
 }
 
 .dev-panel select,
+.dev-panel input,
 .dev-panel textarea,
 .dev-panel button {
   font: inherit;
 }
 
 .dev-panel select,
+.dev-panel input,
 .dev-panel textarea {
   width: 100%;
   border: 1px solid rgba(235, 240, 219, 0.2);
@@ -674,6 +676,11 @@ canvas {
 }
 
 .dev-panel select {
+  min-height: 32px;
+  padding: 0 8px;
+}
+
+.dev-panel input {
   min-height: 32px;
   padding: 0 8px;
 }
