@@ -1,6 +1,6 @@
 window.DEFAULT_WORLD_DATA = {
   "version": 1,
-  "currentWorld": "treeworld",
+  "currentWorld": "town",
   "worlds": {
     "mainworld": {
       "id": "mainworld",
@@ -5277,6 +5277,23 @@ window.DEFAULT_WORLD_DATA = {
           "y": 4251.665433012583,
           "radius": 82,
           "target": "town_blacksmith"
+        },
+        {
+          "id": "node-mplkncue-uzzk25",
+          "x": 2460.39970392302,
+          "y": 675.0555144337528,
+          "radius": 82,
+          "target": "mainworld",
+          "name": "Northern Wilds",
+          "locked": true
+        },
+        {
+          "id": "node-mplkvcoq-ayqdbh",
+          "x": 5924.500370096225,
+          "y": 6578.830495928942,
+          "radius": 82,
+          "target": "town_itemshop",
+          "name": "Item Shop"
         }
       ]
     },
@@ -9796,6 +9813,29 @@ window.DEFAULT_WORLD_DATA = {
           "x": 1339,
           "y": 2140,
           "radius": 95,
+          "target": "town"
+        }
+      ]
+    },
+    "town_itemshop": {
+      "id": "town_itemshop",
+      "walls": [],
+      "spawnAreas": [],
+      "paths": [],
+      "npcPaths": [],
+      "npcs": [
+        {
+          "id": "logan",
+          "x": 3800,
+          "y": 3180
+        }
+      ],
+      "nodes": [
+        {
+          "id": "node-itemshop-to-town",
+          "x": 3800,
+          "y": 5480,
+          "radius": 120,
           "target": "town"
         }
       ]
@@ -15839,6 +15879,81 @@ window.DEFAULT_WORLD_DATA = {
           "y": 5431.532198371577,
           "radius": 82,
           "target": "mainworld"
+        },
+        {
+          "id": "node-mplkp1uj-3j2inr",
+          "x": 584.6039970392302,
+          "y": 515.1739452257588,
+          "radius": 82,
+          "target": "water_tree",
+          "name": "Water Tree"
+        },
+        {
+          "id": "node-mplkq0pt-9bpmfb",
+          "x": 2112.361213915618,
+          "y": 4552.183567727609,
+          "radius": 82,
+          "target": "water_hut",
+          "name": "Water Hut"
+        },
+        {
+          "id": "node-mplkqfe9-4aafb1",
+          "x": 7010.954848260548,
+          "y": 3388.60103626943,
+          "radius": 82,
+          "target": "water_cove",
+          "name": "Water Cove"
+        }
+      ]
+    },
+    "water_tree": {
+      "id": "water_tree",
+      "walls": [],
+      "spawnAreas": [],
+      "paths": [],
+      "npcPaths": [],
+      "npcs": [],
+      "nodes": [
+        {
+          "id": "node-water-tree-to-waterworld",
+          "x": 1080,
+          "y": 1940,
+          "radius": 120,
+          "target": "purplewaterworld"
+        }
+      ]
+    },
+    "water_hut": {
+      "id": "water_hut",
+      "walls": [],
+      "spawnAreas": [],
+      "paths": [],
+      "npcPaths": [],
+      "npcs": [],
+      "nodes": [
+        {
+          "id": "node-water-hut-to-waterworld",
+          "x": 1080,
+          "y": 1940,
+          "radius": 120,
+          "target": "purplewaterworld"
+        }
+      ]
+    },
+    "water_cove": {
+      "id": "water_cove",
+      "walls": [],
+      "spawnAreas": [],
+      "paths": [],
+      "npcPaths": [],
+      "npcs": [],
+      "nodes": [
+        {
+          "id": "node-water-cove-to-waterworld",
+          "x": 1080,
+          "y": 1940,
+          "radius": 120,
+          "target": "purplewaterworld"
         }
       ]
     },
@@ -25388,6 +25503,81 @@ window.DEFAULT_WORLD_DATA = {
           "y": 5564.766839378239,
           "radius": 82,
           "target": "mainworld"
+        },
+        {
+          "id": "node-mplkr96r-1u2rha",
+          "x": 842.1909696521095,
+          "y": 994.8186528497409,
+          "radius": 82,
+          "target": "grass_tree",
+          "name": "Grass Tree"
+        },
+        {
+          "id": "node-mplksae0-6h6yx9",
+          "x": 6078.312361213915,
+          "y": 2442.635085122132,
+          "radius": 82,
+          "target": "grass_camp",
+          "name": "Grass Camp"
+        },
+        {
+          "id": "node-mplksv63-ryq8f7",
+          "x": 6207.105847520355,
+          "y": 359.7335307179867,
+          "radius": 82,
+          "target": "grass_cave",
+          "name": "Grass Cave"
+        }
+      ]
+    },
+    "grass_tree": {
+      "id": "grass_tree",
+      "walls": [],
+      "spawnAreas": [],
+      "paths": [],
+      "npcPaths": [],
+      "npcs": [],
+      "nodes": [
+        {
+          "id": "node-grass-tree-to-grassworld",
+          "x": 336,
+          "y": 502,
+          "radius": 90,
+          "target": "treeworld"
+        }
+      ]
+    },
+    "grass_camp": {
+      "id": "grass_camp",
+      "walls": [],
+      "spawnAreas": [],
+      "paths": [],
+      "npcPaths": [],
+      "npcs": [],
+      "nodes": [
+        {
+          "id": "node-grass-camp-to-grassworld",
+          "x": 336,
+          "y": 502,
+          "radius": 90,
+          "target": "treeworld"
+        }
+      ]
+    },
+    "grass_cave": {
+      "id": "grass_cave",
+      "walls": [],
+      "spawnAreas": [],
+      "paths": [],
+      "npcPaths": [],
+      "npcs": [],
+      "nodes": [
+        {
+          "id": "node-grass-cave-to-grassworld",
+          "x": 336,
+          "y": 502,
+          "radius": 90,
+          "target": "treeworld"
         }
       ]
     },

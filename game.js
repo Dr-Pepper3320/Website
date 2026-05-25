@@ -110,7 +110,7 @@ const WORLD_MAPS = {
     width: 5600,
     height: 4000,
     type: "image",
-    image: "assets/maps/town/buildings/bricksinn/bricksinn.jfif",
+    image: "assets/maps/town/buildings/bricksinn/bricksinn.png",
     fill: "#1f1710",
   },
   town_mattstore: {
@@ -119,6 +119,13 @@ const WORLD_MAPS = {
     type: "image",
     image: "assets/maps/town/buildings/mattstore/interior.jfif",
     fill: "#171b19",
+  },
+  town_itemshop: {
+    width: 7600,
+    height: 6000,
+    type: "image",
+    image: "assets/maps/town/buildings/itemshop/my-project-page-1.jfif",
+    fill: "#191915",
   },
   fireworld: {
     width: 2508,
@@ -132,6 +139,27 @@ const WORLD_MAPS = {
     height: 6000,
     type: "image",
     image: "assets/maps/water/waterworld.jfif",
+    fill: "#102a35",
+  },
+  water_tree: {
+    width: 2160,
+    height: 2160,
+    type: "image",
+    image: "assets/maps/water/watertree.jfif",
+    fill: "#102a35",
+  },
+  water_hut: {
+    width: 2160,
+    height: 2160,
+    type: "image",
+    image: "assets/maps/water/waterhut.jfif",
+    fill: "#102a35",
+  },
+  water_cove: {
+    width: 2160,
+    height: 2160,
+    type: "image",
+    image: "assets/maps/water/watercove.jfif",
     fill: "#102a35",
   },
   temple: {
@@ -153,6 +181,27 @@ const WORLD_MAPS = {
     height: 6000,
     type: "image",
     image: "assets/maps/grass/grassworld.jfif",
+    fill: "#172515",
+  },
+  grass_tree: {
+    width: 672,
+    height: 560,
+    type: "image",
+    image: "assets/maps/grass/grasstree.jfif",
+    fill: "#172515",
+  },
+  grass_camp: {
+    width: 672,
+    height: 560,
+    type: "image",
+    image: "assets/maps/grass/grasscamp.jfif",
+    fill: "#172515",
+  },
+  grass_cave: {
+    width: 672,
+    height: 560,
+    type: "image",
+    image: "assets/maps/grass/grasscave.jfif",
     fill: "#172515",
   },
   home: {
@@ -363,6 +412,13 @@ const NPC_DEFS = {
     homeWorld: "town_inn",
     x: 2860,
     y: 2120,
+  },
+  logan: {
+    id: "logan",
+    name: "Logan",
+    homeWorld: "town_itemshop",
+    x: 3800,
+    y: 3180,
   },
 };
 
@@ -691,6 +747,11 @@ const SHOP_DEFS = {
     greeting: "Brick keeps travelers supplied.",
     buy: ["inn_meal", "hearty_stew", "coffee_flask", "river_tea", "inn_elixir", "camp_brush", "focus_mint", "trail_map", "room_key", "health_potion", "stamina_tonic"],
   },
+  logan: {
+    title: "Logan's Item Shop",
+    greeting: "Logan keeps the shelves stocked for long roads and bad weather.",
+    buy: ["health_potion", "greater_health_potion", "stamina_tonic", "matt_snack", "capture_net", "calming_flute", "camp_brush", "focus_mint", "trail_map"],
+  },
 };
 
 const NPC_DIALOGUE = {
@@ -787,6 +848,30 @@ const NPC_DIALOGUE = {
         label: "Home",
         text:
           "Home is not the safest map. It is the place you can find again. That is why I keep maps even when they disagree with each other.",
+      },
+    ],
+  },
+  logan: {
+    intro:
+      "Logan keeps the item shop neat enough to find bandages in the dark. He claims every good expedition starts with checking your pockets twice.",
+    topics: [
+      {
+        id: "supplies",
+        label: "Supplies",
+        text:
+          "Potions keep you standing, snacks keep Matts listening, and a trail map keeps the road from pretending it never met you.",
+      },
+      {
+        id: "town",
+        label: "Town Trade",
+        text:
+          "Town looks quiet from the street, but every counter here knows something. Brick hears rumors, Tom hears steel, and I hear empty bags.",
+      },
+      {
+        id: "wilds",
+        label: "Northern Wilds",
+        text:
+          "The northern road is still sealed. When it opens, bring warmth, patience, and more supplies than pride says you need.",
       },
     ],
   },
@@ -1424,11 +1509,18 @@ const WORLD_IDS = [
   "town_inn",
   "town_inn_rooms",
   "town_mattstore",
+  "town_itemshop",
   "fireworld",
   "purplewaterworld",
+  "water_tree",
+  "water_hut",
+  "water_cove",
   "temple",
   "tomb",
   "treeworld",
+  "grass_tree",
+  "grass_camp",
+  "grass_cave",
   "home",
 ];
 
@@ -1441,11 +1533,18 @@ const WORLD_LABELS = {
   town_inn: "Brick's Inn",
   town_inn_rooms: "Inn Rooms",
   town_mattstore: "Matt Store",
+  town_itemshop: "Item Shop",
   fireworld: "Fireworld",
   purplewaterworld: "Water World",
+  water_tree: "Water Tree",
+  water_hut: "Water Hut",
+  water_cove: "Water Cove",
   temple: "Temple",
   tomb: "Tomb",
   treeworld: "Grass World",
+  grass_tree: "Grass Tree",
+  grass_camp: "Grass Camp",
+  grass_cave: "Grass Cave",
   home: "Home",
 };
 
@@ -1458,11 +1557,18 @@ const WORLD_TINTS = {
   town_inn: "rgba(255, 210, 126, 0.05)",
   town_inn_rooms: "rgba(255, 210, 126, 0.05)",
   town_mattstore: "rgba(150, 240, 200, 0.05)",
+  town_itemshop: "rgba(255, 230, 150, 0.05)",
   fireworld: "rgba(224, 70, 38, 0.16)",
   purplewaterworld: "rgba(52, 170, 218, 0.14)",
+  water_tree: "rgba(52, 170, 218, 0.12)",
+  water_hut: "rgba(52, 170, 218, 0.12)",
+  water_cove: "rgba(52, 170, 218, 0.12)",
   temple: "rgba(235, 205, 132, 0.11)",
   tomb: "rgba(80, 92, 104, 0.18)",
   treeworld: "rgba(86, 178, 76, 0.13)",
+  grass_tree: "rgba(86, 178, 76, 0.11)",
+  grass_camp: "rgba(86, 178, 76, 0.11)",
+  grass_cave: "rgba(86, 178, 76, 0.11)",
   home: "rgba(247, 221, 152, 0.1)",
 };
 
@@ -1548,6 +1654,11 @@ const ASSETS = {
       idle: ["assets/maps/town/characters/brickinn/idle/main.png"],
       idleSpecial: numberedFrames("assets/maps/town/characters/brickinn/idle/drink", 11),
       walking: numberedFrames("assets/maps/town/characters/brickinn/walk", 5),
+    },
+    logan: {
+      idle: ["assets/maps/town/characters/loganstore/idle/main.png"],
+      idleSpecial: numberedFrames("assets/maps/town/characters/loganstore/idle", 12),
+      walking: numberedFrames("assets/maps/town/characters/loganstore/walking", 7),
     },
   },
 };
@@ -2394,7 +2505,7 @@ function ensureNode(world, id, x, y, target, radius = 82) {
   }
 }
 
-function upsertNodeByTarget(world, id, x, y, target, radius = 82) {
+function upsertNodeByTarget(world, id, x, y, target, radius = 82, extra = {}) {
   if (!world) {
     return;
   }
@@ -2405,13 +2516,38 @@ function upsertNodeByTarget(world, id, x, y, target, radius = 82) {
 
   const existing = world.nodes.find((node) => node.id === id || node.target === target);
   if (existing) {
-    Object.assign(existing, { id, x, y, radius, target });
+    Object.assign(existing, { id, x, y, radius, target, ...extra });
   } else {
-    world.nodes.push({ id, x, y, radius, target });
+    world.nodes.push({ id, x, y, radius, target, ...extra });
   }
 }
 
+function removeNodesByTarget(world, target) {
+  if (!world || !Array.isArray(world.nodes)) {
+    return;
+  }
+
+  world.nodes = world.nodes.filter((node) => node.target !== target);
+}
+
 function applyCoreWorldFixups(worlds) {
+  upsertNodeByTarget(
+    worlds.town,
+    "node-mplkvcoq-ayqdbh",
+    5924.500370096225,
+    6578.830495928942,
+    "town_itemshop",
+    82,
+    { name: "Item Shop" },
+  );
+  const northernWildsNode = worlds.town?.nodes?.find((node) => node.id === "node-mplkncue-uzzk25");
+  if (northernWildsNode) {
+    northernWildsNode.locked = true;
+  }
+  upsertNodeByTarget(worlds.town_itemshop, "node-itemshop-to-town", 3800, 5480, "town", 120);
+  if (worlds.town_itemshop) {
+    ensureNpc(worlds.town_itemshop, "logan", 3800, 3180);
+  }
   upsertNodeByTarget(
     worlds.purplewaterworld,
     "node-mphqjey8-q6qlfc",
@@ -2420,12 +2556,78 @@ function applyCoreWorldFixups(worlds) {
     DEFAULT_WORLD_ID,
   );
   upsertNodeByTarget(
+    worlds.purplewaterworld,
+    "node-mplkp1uj-3j2inr",
+    584.6039970392302,
+    515.1739452257588,
+    "water_tree",
+    82,
+    { name: "Water Tree" },
+  );
+  upsertNodeByTarget(
+    worlds.purplewaterworld,
+    "node-mplkq0pt-9bpmfb",
+    2112.361213915618,
+    4552.183567727609,
+    "water_hut",
+    82,
+    { name: "Water Hut" },
+  );
+  upsertNodeByTarget(
+    worlds.purplewaterworld,
+    "node-mplkqfe9-4aafb1",
+    7010.954848260548,
+    3388.60103626943,
+    "water_cove",
+    82,
+    { name: "Water Cove" },
+  );
+  removeNodesByTarget(worlds.water_tree, DEFAULT_WORLD_ID);
+  removeNodesByTarget(worlds.water_hut, DEFAULT_WORLD_ID);
+  removeNodesByTarget(worlds.water_cove, DEFAULT_WORLD_ID);
+  upsertNodeByTarget(worlds.water_tree, "node-water-tree-to-waterworld", 1080, 1940, "purplewaterworld", 120);
+  upsertNodeByTarget(worlds.water_hut, "node-water-hut-to-waterworld", 1080, 1940, "purplewaterworld", 120);
+  upsertNodeByTarget(worlds.water_cove, "node-water-cove-to-waterworld", 1080, 1940, "purplewaterworld", 120);
+  upsertNodeByTarget(
     worlds.treeworld,
     "node-mphql4r8-37rdm8",
     3191.5618060695783,
     5564.766839378239,
     DEFAULT_WORLD_ID,
   );
+  upsertNodeByTarget(
+    worlds.treeworld,
+    "node-mplkr96r-1u2rha",
+    842.1909696521095,
+    994.8186528497409,
+    "grass_tree",
+    82,
+    { name: "Grass Tree" },
+  );
+  upsertNodeByTarget(
+    worlds.treeworld,
+    "node-mplksae0-6h6yx9",
+    6078.312361213915,
+    2442.635085122132,
+    "grass_camp",
+    82,
+    { name: "Grass Camp" },
+  );
+  upsertNodeByTarget(
+    worlds.treeworld,
+    "node-mplksv63-ryq8f7",
+    6207.105847520355,
+    359.7335307179867,
+    "grass_cave",
+    82,
+    { name: "Grass Cave" },
+  );
+  removeNodesByTarget(worlds.grass_tree, DEFAULT_WORLD_ID);
+  removeNodesByTarget(worlds.grass_camp, DEFAULT_WORLD_ID);
+  removeNodesByTarget(worlds.grass_cave, DEFAULT_WORLD_ID);
+  upsertNodeByTarget(worlds.grass_tree, "node-grass-tree-to-grassworld", 336, 502, "treeworld", 90);
+  upsertNodeByTarget(worlds.grass_camp, "node-grass-camp-to-grassworld", 336, 502, "treeworld", 90);
+  upsertNodeByTarget(worlds.grass_cave, "node-grass-cave-to-grassworld", 336, 502, "treeworld", 90);
 }
 
 function ensureNpc(world, npcId, x, y) {
@@ -2456,6 +2658,7 @@ function addDefaultTownStructure(worlds, sourceWorlds = null) {
   maybeNode("town", "node-town-to-blacksmith", 2400, 2670, "town_blacksmith", 110);
   maybeNode("town", "node-town-to-inn", 3560, 4460, "town_inn", 110);
   maybeNode("town", "node-town-to-mattstore", 5200, 3840, "town_mattstore", 110);
+  maybeNode("town", "node-mplkvcoq-ayqdbh", 5924.500370096225, 6578.830495928942, "town_itemshop", 82);
 
   maybeNode("town_arena_entrance", "node-arena-entry-to-town", 760, 3560, "town", 110);
   maybeNode("town_arena_entrance", "node-arena-entry-to-arena", 4750, 2030, "town_arena", 130);
@@ -2465,11 +2668,13 @@ function addDefaultTownStructure(worlds, sourceWorlds = null) {
   maybeNode("town_inn", "node-inn-to-rooms", 4920, 1520, "town_inn_rooms", 110);
   maybeNode("town_inn_rooms", "node-rooms-to-inn", 2800, 3620, "town_inn", 120);
   maybeNode("town_mattstore", "node-mattstore-to-town", 1339, 2140, "town", 95);
+  maybeNode("town_itemshop", "node-itemshop-to-town", 3800, 5480, "town", 120);
 
   maybeNpc("town_arena_entrance", "scott", 2820, 2200);
   maybeNpc("town_mattstore", "ty", 1360, 1160);
   maybeNpc("town_blacksmith", "tom", 2780, 2140);
   maybeNpc("town_inn", "brick", 2860, 2120);
+  maybeNpc("town_itemshop", "logan", 3800, 3180);
 }
 
 const DEFAULT_NODE_IDS = new Set([
@@ -2478,6 +2683,7 @@ const DEFAULT_NODE_IDS = new Set([
   "node-town-to-blacksmith",
   "node-town-to-inn",
   "node-town-to-mattstore",
+  "node-mplkvcoq-ayqdbh",
   "node-arena-entry-to-town",
   "node-arena-entry-to-arena",
   "node-arena-to-entry",
@@ -2486,6 +2692,7 @@ const DEFAULT_NODE_IDS = new Set([
   "node-inn-to-rooms",
   "node-rooms-to-inn",
   "node-mattstore-to-town",
+  "node-itemshop-to-town",
 ]);
 
 function removeDuplicateDefaultNodes(worlds) {
@@ -2558,6 +2765,7 @@ function normalizeNode(node, worldId) {
     radius: Number.isFinite(node?.radius) ? node.radius : 82,
     target: WORLD_IDS.includes(target) ? target : DEFAULT_WORLD_ID,
     name: normalizeNodeName(node?.name),
+    locked: Boolean(node?.locked),
   };
 }
 
@@ -7673,6 +7881,11 @@ function tryEnterNode() {
     return false;
   }
 
+  if (node.locked) {
+    setGameMessage(`${getNodeLabel(node)} is locked for now.`);
+    return false;
+  }
+
   if (state.currentWorld === "town_arena_entrance" && node.target === "town_arena") {
     if (!hasItem("arena_ticket")) {
       setGameMessage("Scott sells arena tickets. Buy one before entering.");
@@ -7705,9 +7918,22 @@ function drawWorldNodes() {
 
   for (const node of getWorld().nodes) {
     const active = node === nearbyNode;
+    const locked = Boolean(node.locked);
     ctx.globalAlpha = active ? 0.88 : 0.38;
-    ctx.fillStyle = active ? "rgba(143, 243, 197, 0.25)" : "rgba(150, 108, 255, 0.2)";
-    ctx.strokeStyle = active ? "rgba(143, 243, 197, 0.95)" : "rgba(210, 188, 255, 0.72)";
+    ctx.fillStyle = locked
+      ? active
+        ? "rgba(170, 170, 170, 0.22)"
+        : "rgba(120, 120, 120, 0.16)"
+      : active
+        ? "rgba(143, 243, 197, 0.25)"
+        : "rgba(150, 108, 255, 0.2)";
+    ctx.strokeStyle = locked
+      ? active
+        ? "rgba(230, 230, 230, 0.82)"
+        : "rgba(190, 190, 190, 0.55)"
+      : active
+        ? "rgba(143, 243, 197, 0.95)"
+        : "rgba(210, 188, 255, 0.72)";
     ctx.lineWidth = active ? 4 : 2;
     ctx.beginPath();
     ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
@@ -7719,7 +7945,7 @@ function drawWorldNodes() {
       ctx.fillStyle = "#f7f1d0";
       ctx.font = "800 18px Inter, system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(`E: ${getNodeLabel(node)}`, node.x, node.y - node.radius - 14);
+      ctx.fillText(locked ? `${getNodeLabel(node)} locked` : `E: ${getNodeLabel(node)}`, node.x, node.y - node.radius - 14);
     }
   }
 
