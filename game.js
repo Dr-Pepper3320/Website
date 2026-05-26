@@ -72,6 +72,10 @@ const MAIN_MAP = {
 };
 
 const DEFAULT_WORLD_ID = "mainworld";
+const INN_RECOVERY_WORLD_ID = "town_inn";
+const INN_RECOVERY_POINT = { x: 2860, y: 2500 };
+const INN_RECOVERY_MESSAGE =
+  "Brick: Easy now. You limped back here and passed out. I nursed you back to health. Stay a minute before chasing trouble again.";
 const WORLD_MAPS = {
   mainworld: {
     ...MAIN_MAP,
@@ -487,7 +491,91 @@ const PRIME_GRASS_MATT_ATTACKS = [
   },
 ];
 
+const PRIME_FIRE_MATT_ATTACKS = [
+  {
+    id: "fire_breath",
+    name: "Fire Breath",
+    action: "fireBreath",
+    effect: "fireBreath",
+    hitShape: "cone",
+    attackDamage: 32,
+    attackRadius: 760,
+    attackWindup: 0.42,
+    attackCooldown: 2.05,
+    coneArc: Math.PI * 0.58,
+    staminaDamage: 16,
+    knockback: 78,
+    screenShake: 12,
+  },
+  {
+    id: "tail_swipe",
+    name: "Tail Swipe",
+    action: "tailSwipe",
+    effect: "tailFireWall",
+    hitShape: "cone",
+    attackDamage: 34,
+    attackRadius: 520,
+    attackWindup: 0.38,
+    attackCooldown: 2.25,
+    coneArc: Math.PI * 0.95,
+    staminaDamage: 18,
+    knockback: 120,
+    screenShake: 15,
+  },
+  {
+    id: "ember_claw",
+    name: "Ember Claw",
+    action: "swipe",
+    effect: "emberSwipe",
+    hitShape: "circle",
+    attackDamage: 28,
+    attackRadius: 260,
+    attackWindup: 0.24,
+    attackCooldown: 1.5,
+    staminaDamage: 9,
+    knockback: 58,
+    screenShake: 9,
+  },
+  {
+    id: "magma_roar",
+    name: "Magma Roar",
+    action: "fireBreath",
+    effect: "magmaRoar",
+    hitShape: "circle",
+    attackDamage: 38,
+    attackRadius: 620,
+    attackWindup: 0.68,
+    attackCooldown: 3.15,
+    staminaDamage: 22,
+    knockback: 150,
+    screenShake: 20,
+  },
+];
+
 const WORLD_BOSS_MATTS = {
+  fireworld: {
+    id: "prime-fire-matt",
+    name: "Prime Fire Matt",
+    type: "firematt",
+    assetKey: "primefirematt",
+    x: 1254,
+    y: 1254,
+    scale: 4.4,
+    levelMin: 15,
+    levelMax: 16,
+    captureDifficulty: 4.6,
+    damageScale: 1.58,
+    aggroRadius: 860,
+    walkSpeed: 128,
+    preferredDistance: 360,
+    closeDistance: 210,
+    preBattleRoam: true,
+    introAction: "spawn",
+    introFrameDuration: 0.095,
+    introMessage: "Prime Fire Matt erupts from the fireworld.",
+    requiresCaptured: { type: "firematt", count: 10 },
+    attacks: PRIME_FIRE_MATT_ATTACKS,
+  },
   grass_tree: {
     id: "prime-grass-matt",
     name: "Prime Grass Matt",
@@ -495,8 +583,14 @@ const WORLD_BOSS_MATTS = {
     assetKey: "primegrassmatt",
     x: 3800,
     y: 3000,
-    scale: 2.2,
+    scale: 4.4,
     aggroRadius: 900,
+    walkSpeed: 122,
+    preferredDistance: 380,
+    closeDistance: 240,
+    musicTrack: PRIME_GRASS_MATT_MUSIC,
+    musicMode: "primeGrassMatt",
+    suppressNormalSpawns: true,
     attacks: PRIME_GRASS_MATT_ATTACKS,
   },
 };
@@ -1598,7 +1692,7 @@ const MUSIC_TRACKS = Array.isArray(window.GAME_MUSIC_TRACKS) && window.GAME_MUSI
 const MOBILE_WORLD_SCALE = 0.5;
 
 const PARTICLES = {
-  max: 260,
+  max: 360,
   ambientRate: 0.16,
 };
 
@@ -1820,6 +1914,14 @@ const ASSETS = {
     rootSnare: numberedFrames("assets/maps/grass/characters/primematt/attack/rootsnare", 8),
     canopyQuake: numberedFrames("assets/maps/grass/characters/primematt/attack/canopyquake", 12),
   },
+  primefirematt: {
+    idle: numberedFrames("assets/maps/fire/firemattprime/idle", 12),
+    walking: numberedFrames("assets/maps/fire/firemattprime/walking", 12),
+    spawn: numberedFrames("assets/maps/fire/firemattprime/spawn", 11),
+    fireBreath: numberedFrames("assets/maps/fire/firemattprime/attack/firebreath", 11),
+    swipe: numberedFrames("assets/maps/fire/firemattprime/attack/swipe", 7),
+    tailSwipe: numberedFrames("assets/maps/fire/firemattprime/attack/tailswipe", 12),
+  },
   watermatt: {
     idle: ["assets/matts/watermatt/idle/1.png"],
     walking: numberedFrames("assets/matts/watermatt/walking", 12),
@@ -1913,6 +2015,7 @@ const state = {
   coins: STARTING_COINS,
   inventory: {},
   missions: {},
+  captureStats: { byType: {} },
   playerProgress: { level: 1, xp: 0, skillPoints: 0, skills: {} },
   arenaStats: { wins: 0, losses: 0, streak: 0, bestStreak: 0, rankPoints: 0 },
   friendshipCare: {},
@@ -1949,6 +2052,7 @@ const state = {
   particles: [],
   screenShake: 0,
   camera: { x: 0, y: 0 },
+  cameraFocus: null,
   player: {
     x: WORLD_MAPS[DEFAULT_WORLD_ID].width / 2,
     y: WORLD_MAPS[DEFAULT_WORLD_ID].height / 2,
@@ -2027,6 +2131,14 @@ const images = {
     thornFan: [],
     rootSnare: [],
     canopyQuake: [],
+  },
+  primefirematt: {
+    idle: [],
+    walking: [],
+    spawn: [],
+    fireBreath: [],
+    swipe: [],
+    tailSwipe: [],
   },
   watermatt: {
     idle: [],
@@ -2107,6 +2219,7 @@ async function loadAssets() {
     firemattFrames,
     grassmattFrames,
     primegrassmattFrames,
+    primefiremattFrames,
     watermattFrames,
     rockmattFrames,
     mysticmattFrames,
@@ -2121,6 +2234,7 @@ async function loadAssets() {
     loadAnimationSet(ASSETS.firematt, FIREMATT.width, FIREMATT.height),
     loadAnimationSet(ASSETS.grassmatt, GRASSMATT.width, GRASSMATT.height),
     loadAnimationSet(ASSETS.primegrassmatt, GRASSMATT.width, GRASSMATT.height),
+    loadAnimationSet(ASSETS.primefirematt, FIREMATT.width, FIREMATT.height),
     loadAnimationSet(ASSETS.watermatt, WATERMATT.width, WATERMATT.height),
     loadAnimationSet(ASSETS.rockmatt, ROCKMATT.width, ROCKMATT.height),
     loadAnimationSet(ASSETS.mysticmatt, MYSTICMATT.width, MYSTICMATT.height),
@@ -2141,6 +2255,7 @@ async function loadAssets() {
   Object.assign(images.firematt, firemattFrames);
   Object.assign(images.grassmatt, grassmattFrames);
   Object.assign(images.primegrassmatt, primegrassmattFrames);
+  Object.assign(images.primefirematt, primefiremattFrames);
   Object.assign(images.watermatt, watermattFrames);
   Object.assign(images.rockmatt, rockmattFrames);
   Object.assign(images.mysticmatt, mysticmattFrames);
@@ -2530,6 +2645,15 @@ function playNextMusicTrack() {
 function startPrimeGrassMattMusic() {
   ensureAudio();
   playMusicTrack(PRIME_GRASS_MATT_MUSIC, { loop: true, volume: 0.48, mode: "primeGrassMatt" });
+}
+
+function startBossMusic(matt) {
+  if (!matt?.musicTrack) {
+    return;
+  }
+
+  ensureAudio();
+  playMusicTrack(matt.musicTrack, { loop: true, volume: matt.musicVolume || 0.48, mode: matt.musicMode || "bossMatt" });
 }
 
 function resumeAmbientMusicFromPrimeGrassMatt() {
@@ -3177,6 +3301,30 @@ function normalizeMissions(missions) {
   return normalized;
 }
 
+function normalizeCaptureStats(stats) {
+  const byType = {};
+
+  if (stats?.byType && typeof stats.byType === "object") {
+    Object.keys(MATT_CONFIGS).forEach((type) => {
+      const count = Math.max(0, Math.floor(Number(stats.byType[type]) || 0));
+      if (count > 0) {
+        byType[type] = count;
+      }
+    });
+  }
+
+  state.capturedParty.forEach((matt) => {
+    if (!matt?.type || !MATT_CONFIGS[matt.type]) {
+      return;
+    }
+
+    const partyCount = state.capturedParty.filter((candidate) => candidate.type === matt.type).length;
+    byType[matt.type] = Math.max(byType[matt.type] || 0, partyCount);
+  });
+
+  return { byType };
+}
+
 function normalizeArenaStats(stats) {
   return {
     wins: Math.max(0, Math.floor(Number(stats?.wins) || 0)),
@@ -3231,6 +3379,7 @@ function loadEconomy() {
       state.coins = Math.max(0, Math.floor(Number(data.coins) || 0));
       state.inventory = normalizeInventory(data.inventory);
       state.missions = normalizeMissions(data.missions);
+      state.captureStats = normalizeCaptureStats(data.captureStats);
       state.playerProgress = normalizePlayerProgress(data.playerProgress);
       state.arenaStats = normalizeArenaStats(data.arenaStats);
       state.friendshipCare = normalizeFriendshipCare(data.friendshipCare);
@@ -3243,6 +3392,7 @@ function loadEconomy() {
   state.coins = STARTING_COINS;
   state.inventory = {};
   state.missions = {};
+  state.captureStats = normalizeCaptureStats();
   state.playerProgress = normalizePlayerProgress();
   state.arenaStats = normalizeArenaStats();
   state.friendshipCare = {};
@@ -3257,6 +3407,7 @@ function saveEconomy() {
         coins: state.coins,
         inventory: state.inventory,
         missions: state.missions,
+        captureStats: state.captureStats,
         playerProgress: state.playerProgress,
         arenaStats: state.arenaStats,
         friendshipCare: state.friendshipCare,
@@ -3811,8 +3962,10 @@ function attachCapturedParty(wildMatts) {
 
 function clearCapturedParty() {
   state.capturedParty = [];
+  state.captureStats = { byType: {} };
   try {
     localStorage.setItem(getMattProgressStorageKey(), JSON.stringify({ version: 2, party: [] }));
+    saveEconomy();
   } catch (error) {
     console.warn("Could not clear captured Matt party.", error);
   }
@@ -4098,6 +4251,26 @@ function isMissionComplete(mission) {
 
 function getCapturedMattTypeCount(type) {
   return state.capturedParty.filter((matt) => matt.type === type).length;
+}
+
+function getCapturedMattTotal(type) {
+  const tracked = Math.max(0, Math.floor(Number(state.captureStats?.byType?.[type]) || 0));
+  return Math.max(tracked, getCapturedMattTypeCount(type));
+}
+
+function recordCapturedMattType(type) {
+  if (!type || !MATT_CONFIGS[type]) {
+    return;
+  }
+
+  if (!state.captureStats || typeof state.captureStats !== "object") {
+    state.captureStats = { byType: {} };
+  }
+  if (!state.captureStats.byType || typeof state.captureStats.byType !== "object") {
+    state.captureStats.byType = {};
+  }
+
+  state.captureStats.byType[type] = getCapturedMattTotal(type) + 1;
 }
 
 function canCompleteMission(mission) {
@@ -6165,7 +6338,7 @@ function setDevStatus(message) {
   }
 }
 
-function setGameMessage(message) {
+function setGameMessage(message, duration = 2200) {
   if (shopMessage) {
     shopMessage.textContent = message;
   }
@@ -6179,7 +6352,7 @@ function setGameMessage(message) {
   window.clearTimeout(state.toastTimer);
   state.toastTimer = window.setTimeout(() => {
     gameToast.hidden = true;
-  }, 2200);
+  }, duration);
 }
 
 function getWorldLabel(id) {
@@ -6261,6 +6434,7 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
 
   closeShop();
   closePauseMenu();
+  state.cameraFocus = null;
   state.currentWorld = id;
   state.lastPreloadKey = "";
   state.dev.activePathId = null;
@@ -7166,8 +7340,21 @@ function syncCamera() {
   const viewHeight = getCameraViewHeight();
   const maxX = Math.max(0, getMapWidth() - viewWidth);
   const maxY = Math.max(0, getMapHeight() - viewHeight);
-  state.camera.x = clamp(state.player.x - viewWidth / 2, 0, maxX);
-  state.camera.y = clamp(state.player.y - viewHeight / 2, 0, maxY);
+  let target = state.player;
+
+  if (state.cameraFocus?.type === "matt") {
+    const focusedMatt = state.dogmatts.find((matt) => matt.id === state.cameraFocus.id);
+    if (focusedMatt && !focusedMatt.caught) {
+      const config = getMattConfig(focusedMatt.type);
+      const scale = getInnActorScale() * (Number(focusedMatt.scale) || 1);
+      target = { x: focusedMatt.x, y: focusedMatt.y - config.height * scale * 0.32 };
+    } else {
+      state.cameraFocus = null;
+    }
+  }
+
+  state.camera.x = clamp(target.x - viewWidth / 2, 0, maxX);
+  state.camera.y = clamp(target.y - viewHeight / 2, 0, maxY);
 }
 
 function seedPlayerTrail() {
@@ -7323,14 +7510,38 @@ function scheduleMysticMattSpecialIdle(matt, random = Math.random) {
   matt.mysticFloatTimer = 0;
 }
 
+function isBossCaptured(worldId, boss) {
+  return state.capturedParty.some((matt) => matt.sourceWorld === worldId && (matt.originalId || matt.id) === boss.id);
+}
+
+function hasWorldBossRequirement(boss) {
+  return !boss?.requiresCaptured || getCapturedMattTotal(boss.requiresCaptured.type) >= boss.requiresCaptured.count;
+}
+
 function createBossMatt(worldId, profile, random = Math.random) {
   const boss = WORLD_BOSS_MATTS[worldId];
   if (!boss) {
     return null;
   }
 
+  if (isBossCaptured(worldId, boss)) {
+    return null;
+  }
+
+  if (!hasWorldBossRequirement(boss)) {
+    return null;
+  }
+
   const config = getMattConfig(boss.type);
-  const level = rollWildMattLevel(profile, random);
+  const bossProfile = {
+    ...profile,
+    levelMin: boss.levelMin ?? profile.levelMin,
+    levelMax: boss.levelMax ?? profile.levelMax,
+    captureDifficulty: boss.captureDifficulty ?? profile.captureDifficulty,
+    damageScale: boss.damageScale ?? profile.damageScale,
+  };
+  const level = rollWildMattLevel(bossProfile, random);
+  const hasIntro = Boolean(boss.introAction);
   const matt = {
     id: boss.id,
     originalId: boss.id,
@@ -7342,17 +7553,17 @@ function createBossMatt(worldId, profile, random = Math.random) {
     width: config.width,
     height: config.height,
     scale: boss.scale || 1,
-    action: "idle",
+    action: hasIntro ? boss.introAction : "idle",
     frameTimer: 0,
     frameIndex: 0,
     direction: "left",
     level,
     xp: 0,
     friendship: 0,
-    captureDifficulty: profile.captureDifficulty,
+    captureDifficulty: bossProfile.captureDifficulty,
     captureChance: 0,
     captureHitsRequired: 0,
-    damageScale: profile.damageScale,
+    damageScale: bossProfile.damageScale,
     hitCount: 0,
     hitCooldown: 0,
     hitReactionTimer: 0,
@@ -7363,6 +7574,19 @@ function createBossMatt(worldId, profile, random = Math.random) {
     caught: false,
     boss: true,
     rooted: true,
+    bossWalkSpeed: boss.walkSpeed || config.wanderSpeed,
+    bossPreferredDistance: boss.preferredDistance || 360,
+    bossCloseDistance: boss.closeDistance || 220,
+    bossMoveTimer: 0,
+    bossOrbitDirection: random() < 0.5 ? -1 : 1,
+    preBattleRoam: Boolean(boss.preBattleRoam),
+    introPlaying: hasIntro,
+    introAction: boss.introAction || "",
+    introFrameDuration: boss.introFrameDuration || 0.1,
+    introMessage: boss.introMessage || "",
+    musicTrack: boss.musicTrack || "",
+    musicMode: boss.musicMode || "",
+    musicVolume: boss.musicVolume || 0,
     awakened: false,
     aggroRadius: boss.aggroRadius || config.noticeRadius,
     attacks: boss.attacks || [],
@@ -7377,7 +7601,31 @@ function createBossMatt(worldId, profile, random = Math.random) {
   };
   matt.captureChance = getWildMattCaptureChance(matt);
   matt.captureHitsRequired = getWildMattCaptureHits(matt);
+  if (matt.introPlaying) {
+    state.cameraFocus = { type: "matt", id: matt.id };
+    if (matt.introMessage) {
+      setGameMessage(matt.introMessage, 2600);
+    }
+  }
   return matt;
+}
+
+function finishBossIntro(matt) {
+  if (!matt?.introPlaying) {
+    return;
+  }
+
+  matt.introPlaying = false;
+  matt.frameTimer = 0;
+  matt.frameIndex = 0;
+  setAction(matt, matt.preBattleRoam ? "walking" : "idle");
+  if (state.cameraFocus?.type === "matt" && state.cameraFocus.id === matt.id) {
+    state.cameraFocus = null;
+  }
+}
+
+function isBossIntroPlaying() {
+  return state.dogmatts.some((matt) => matt.introPlaying);
 }
 
 function awakenBossMatt(matt) {
@@ -7385,11 +7633,13 @@ function awakenBossMatt(matt) {
     return;
   }
 
+  finishBossIntro(matt);
   matt.awakened = true;
   matt.attackCooldown = 0.25;
   matt.activeAttack = null;
   matt.attackTarget = null;
-  startPrimeGrassMattMusic();
+  setAction(matt, "walking");
+  startBossMusic(matt);
   setGameMessage(`${matt.name || "The boss"} wakes up.`);
 }
 
@@ -7412,10 +7662,16 @@ function spawnDogmatts() {
   const mapWidth = getMapWidth();
   const mapHeight = getMapHeight();
   const margin = Math.min(600, Math.max(80, Math.min(mapWidth, mapHeight) * 0.12));
+  const boss = WORLD_BOSS_MATTS[state.currentWorld];
   const bossMatt = createBossMatt(state.currentWorld, profile, random);
 
   if (bossMatt) {
     state.dogmatts = attachCapturedParty([bossMatt]);
+    return;
+  }
+
+  if (boss?.suppressNormalSpawns) {
+    state.dogmatts = attachCapturedParty([]);
     return;
   }
 
@@ -7496,6 +7752,20 @@ function spawnDogmatts() {
   }
 
   state.dogmatts = attachCapturedParty(dogmatts);
+}
+
+function trySpawnUnlockedWorldBoss(capturedMatt) {
+  const boss = WORLD_BOSS_MATTS[state.currentWorld];
+  if (!boss || capturedMatt?.boss || !hasWorldBossRequirement(boss) || isBossCaptured(state.currentWorld, boss)) {
+    return false;
+  }
+
+  if (state.dogmatts.some((matt) => matt.boss && !matt.caught)) {
+    return false;
+  }
+
+  spawnDogmatts();
+  return true;
 }
 
 function spawnNpcs() {
@@ -7723,7 +7993,7 @@ function updatePlayer(dt) {
   player.stamina = clamp(player.stamina ?? maxStamina, 0, maxStamina);
   player.damageCooldown = Math.max(0, (player.damageCooldown || 0) - dt);
 
-  if (state.dev.enabled || isShopOpen() || isPauseMenuOpen() || (state.arena.active && state.arena.phase !== "idle")) {
+  if (state.dev.enabled || isShopOpen() || isPauseMenuOpen() || isBossIntroPlaying() || (state.arena.active && state.arena.phase !== "idle")) {
     player.moving = false;
     player.stamina = Math.min(maxStamina, player.stamina + getPlayerStaminaRegen() * dt);
     updatePlayerRestAnimation(player, dt);
@@ -7807,7 +8077,7 @@ function getMattHitAction(matt) {
   }
 
   if (matt.boss && !frameSet.hit) {
-    return "idle";
+    return matt.awakened && frameSet.walking?.length > 0 ? "walking" : "idle";
   }
 
   if (frameSet.hit && frameSet.hit.length > 0) {
@@ -7828,21 +8098,34 @@ function facePlayer(matt) {
 function knockOutPlayer() {
   const maxHealth = getPlayerMaxHealth();
   const maxStamina = getPlayerMaxStamina();
-  const center = getMapCenter(state.currentWorld);
-  state.player.x = center.x;
-  state.player.y = center.y;
+
+  keys.clear();
+  touchInput.sprint = false;
+  resetTouchJoystick();
+
+  if (state.currentWorld !== INN_RECOVERY_WORLD_ID) {
+    setWorld(INN_RECOVERY_WORLD_ID, false);
+  }
+
+  state.player.x = clamp(INN_RECOVERY_POINT.x, 0, getMapWidth());
+  state.player.y = clamp(INN_RECOVERY_POINT.y, 0, getMapHeight());
   state.player.health = maxHealth;
   state.player.stamina = maxStamina;
   state.player.damageCooldown = PLAYER.damageInvulnerableTime;
+  state.player.attackTimer = 0;
+  state.player.moving = false;
+  setAction(state.player, "breathing");
   seedPlayerTrail();
+  syncCamera();
   addScreenShake(12);
-  setGameMessage("Ivan got knocked back to a safe spot.");
+  setGameMessage(INN_RECOVERY_MESSAGE, 7200);
   updatePlayerStatusHud();
+  draw();
 }
 
 function damagePlayer(amount, sourceMatt) {
   if (state.player.damageCooldown > 0 || state.player.health <= 0) {
-    return;
+    return "ignored";
   }
 
   const damage = Math.max(1, Math.round(amount * (1 - getArmorDamageReduction())));
@@ -7854,7 +8137,10 @@ function damagePlayer(amount, sourceMatt) {
 
   if (state.player.health <= 0) {
     knockOutPlayer();
+    return "defeated";
   }
+
+  return "damaged";
 }
 
 function drainPlayerStamina(amount) {
@@ -7926,6 +8212,123 @@ function spawnPrimeAttackEffect(matt, attack) {
   const target = getPrimeAttackTarget(matt);
   const originX = matt.x;
   const originY = matt.y - 60 * (Number(matt.scale) || 1);
+
+  if (attack.effect === "fireBreath") {
+    const centerAngle = Math.atan2(target.y - matt.y, target.x - matt.x);
+    const arc = attack.coneArc || Math.PI * 0.55;
+    for (let i = 0; i < 34; i += 1) {
+      const angle = centerAngle - arc / 2 + arc * Math.random();
+      const speed = randomBetween(360, 780);
+      const reach = randomBetween(46, 112);
+      addParticle({
+        type: "spark",
+        x: originX + Math.cos(angle) * reach,
+        y: originY + Math.sin(angle) * reach,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - randomBetween(20, 90),
+        gravity: randomBetween(60, 180),
+        life: randomBetween(0.32, 0.68),
+        size: randomBetween(12, 28),
+        color: Math.random() < 0.45 ? "rgba(255, 224, 104, 0.96)" : "rgba(255, 82, 43, 0.95)",
+      });
+    }
+    addParticle({
+      type: "beam",
+      x: originX,
+      y: originY,
+      x2: target.x,
+      y2: target.y - 34,
+      life: 0.22,
+      size: 58,
+      color: "rgba(255, 94, 42, 0.88)",
+    });
+    addScreenShake(attack.screenShake || 10);
+    return;
+  }
+
+  if (attack.effect === "tailFireWall") {
+    const centerAngle = Math.atan2(target.y - matt.y, target.x - matt.x);
+    const perp = centerAngle + Math.PI / 2;
+    const wallCenterX = matt.x + Math.cos(centerAngle) * 285;
+    const wallCenterY = matt.y + Math.sin(centerAngle) * 285;
+    const wallHalf = 340;
+    addParticle({
+      type: "beam",
+      x: wallCenterX + Math.cos(perp) * wallHalf,
+      y: wallCenterY + Math.sin(perp) * wallHalf,
+      x2: wallCenterX - Math.cos(perp) * wallHalf,
+      y2: wallCenterY - Math.sin(perp) * wallHalf,
+      life: 0.44,
+      size: 82,
+      color: "rgba(255, 110, 35, 0.92)",
+    });
+    for (let i = 0; i < 28; i += 1) {
+      const offset = randomBetween(-wallHalf, wallHalf);
+      addParticle({
+        type: "spark",
+        x: wallCenterX + Math.cos(perp) * offset,
+        y: wallCenterY + Math.sin(perp) * offset,
+        vx: Math.cos(centerAngle) * randomBetween(70, 210),
+        vy: Math.sin(centerAngle) * randomBetween(70, 210) - randomBetween(110, 250),
+        gravity: 360,
+        life: randomBetween(0.36, 0.74),
+        size: randomBetween(10, 24),
+        color: Math.random() < 0.5 ? "rgba(255, 205, 82, 0.96)" : "rgba(255, 64, 35, 0.95)",
+      });
+    }
+    addScreenShake(attack.screenShake || 12);
+    return;
+  }
+
+  if (attack.effect === "emberSwipe") {
+    const centerAngle = Math.atan2(target.y - matt.y, target.x - matt.x);
+    for (let i = 0; i < 5; i += 1) {
+      addParticle({
+        type: "slash",
+        x: originX + Math.cos(centerAngle) * (80 + i * 18),
+        y: matt.y - 44 + Math.sin(centerAngle) * (80 + i * 18),
+        vx: Math.cos(centerAngle) * randomBetween(120, 240),
+        vy: Math.sin(centerAngle) * randomBetween(120, 240) - 30,
+        life: 0.22 + i * 0.025,
+        size: 48 + i * 8,
+        color: "rgba(255, 160, 58, 0.94)",
+        rotation: centerAngle + (i - 2) * 0.18,
+      });
+    }
+    addScreenShake(attack.screenShake || 8);
+    return;
+  }
+
+  if (attack.effect === "magmaRoar") {
+    for (let i = 0; i < 5; i += 1) {
+      addParticle({
+        type: "ring",
+        x: matt.x,
+        y: matt.y,
+        vx: 0,
+        vy: 0,
+        life: 0.52 + i * 0.07,
+        size: 92 + i * 68,
+        color: i % 2 === 0 ? "rgba(255, 95, 45, 0.88)" : "rgba(255, 214, 91, 0.78)",
+      });
+    }
+    for (let i = 0; i < 30; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      addParticle({
+        type: "spark",
+        x: matt.x + Math.cos(angle) * randomBetween(36, 160),
+        y: matt.y + Math.sin(angle) * randomBetween(20, 120),
+        vx: Math.cos(angle) * randomBetween(180, 460),
+        vy: Math.sin(angle) * randomBetween(180, 460) - randomBetween(120, 260),
+        gravity: 420,
+        life: randomBetween(0.42, 0.86),
+        size: randomBetween(8, 22),
+        color: "rgba(255, 104, 42, 0.94)",
+      });
+    }
+    addScreenShake(attack.screenShake || 16);
+    return;
+  }
 
   if (attack.effect === "sporeBurst") {
     const count = attack.projectileCount || 16;
@@ -8046,7 +8449,9 @@ function applyMattAttackImpact(matt, attack) {
     return;
   }
 
-  damagePlayer(getWildMattAttackDamage(matt, attack), matt);
+  if (damagePlayer(getWildMattAttackDamage(matt, attack), matt) === "defeated") {
+    return;
+  }
   drainPlayerStamina(attack.staminaDamage || 0);
   knockPlayerAwayFrom(matt, attack.knockback || 0);
 }
@@ -8143,7 +8548,7 @@ function setWildMattBaseAction(matt, action, dt) {
     return;
   }
 
-  if (matt.type === "firematt") {
+  if (matt.type === "firematt" && !matt.boss) {
     if (isFiremattSpecialIdle(matt.action)) {
       return;
     }
@@ -8262,6 +8667,98 @@ function updateMattPathRoam(matt, path, config, dt) {
   return true;
 }
 
+function updateAwakenedBossMovement(matt, config, distance, dt) {
+  if (!matt.boss || !matt.awakened || matt.attackTimer > 0) {
+    return false;
+  }
+
+  matt.bossMoveTimer = Math.max(0, (matt.bossMoveTimer || 0) - dt);
+  if (matt.bossMoveTimer <= 0) {
+    matt.bossOrbitDirection = Math.random() < 0.5 ? -1 : 1;
+    matt.bossMoveTimer = randomBetween(1.6, 3.4);
+  }
+
+  const safeDistance = distance || 1;
+  const toPlayerX = (state.player.x - matt.x) / safeDistance;
+  const toPlayerY = (state.player.y - matt.y) / safeDistance;
+  const orbitDirection = matt.bossOrbitDirection || 1;
+  const tangentX = -toPlayerY * orbitDirection;
+  const tangentY = toPlayerX * orbitDirection;
+  const preferredDistance = matt.bossPreferredDistance || 360;
+  const closeDistance = matt.bossCloseDistance || 220;
+  let moveX = tangentX;
+  let moveY = tangentY;
+
+  if (safeDistance > preferredDistance) {
+    moveX = toPlayerX * 0.88 + tangentX * 0.28;
+    moveY = toPlayerY * 0.88 + tangentY * 0.28;
+  } else if (safeDistance < closeDistance) {
+    moveX = -toPlayerX * 0.72 + tangentX * 0.54;
+    moveY = -toPlayerY * 0.72 + tangentY * 0.54;
+  }
+
+  const magnitude = Math.hypot(moveX, moveY) || 1;
+  const speed = matt.bossWalkSpeed || config.wanderSpeed;
+  const beforeX = matt.x;
+  const beforeY = matt.y;
+  moveWithWalls(matt, (moveX / magnitude) * speed * dt, (moveY / magnitude) * speed * dt, Math.max(36, config.width * 0.42));
+
+  const moved = Math.hypot(matt.x - beforeX, matt.y - beforeY) > 0.5;
+  if (!moved) {
+    matt.bossOrbitDirection *= -1;
+  } else {
+    matt.direction = matt.x < beforeX ? "left" : "right";
+  }
+
+  setWildMattBaseAction(matt, "walking", dt);
+  return moved;
+}
+
+function updateDormantBossRoam(matt, config, distance, dt) {
+  if (!matt.boss || !matt.preBattleRoam || matt.awakened) {
+    return false;
+  }
+
+  if (distance <= (matt.aggroRadius || config.noticeRadius)) {
+    facePlayer(matt);
+  }
+
+  if (matt.pathPauseTimer > 0) {
+    matt.pathPauseTimer = Math.max(0, matt.pathPauseTimer - dt);
+    setAction(matt, "idle");
+    return false;
+  }
+
+  matt.wanderTimer = Math.max(0, (matt.wanderTimer || 0) - dt);
+  if (matt.wanderTimer <= 0) {
+    if (Math.random() < 0.34) {
+      matt.pathPauseTimer = randomBetween(0.85, 1.8);
+      setAction(matt, "idle");
+      return false;
+    }
+
+    const playerAngle = Math.atan2(state.player.y - matt.y, state.player.x - matt.x);
+    matt.wanderAngle = Math.random() < 0.55 ? playerAngle + randomBetween(-1.25, 1.25) : Math.random() * Math.PI * 2;
+    matt.wanderTimer = randomBetween(1.1, 2.7);
+  }
+
+  const moveX = Math.cos(matt.wanderAngle || 0);
+  const moveY = Math.sin(matt.wanderAngle || 0);
+  const beforeX = matt.x;
+  const beforeY = matt.y;
+  moveWithWalls(matt, moveX * (matt.bossWalkSpeed || config.wanderSpeed) * 0.68 * dt, moveY * (matt.bossWalkSpeed || config.wanderSpeed) * 0.68 * dt, Math.max(34, config.width * 0.4));
+  if (Math.hypot(matt.x - beforeX, matt.y - beforeY) <= 0.5) {
+    matt.wanderAngle = (matt.wanderAngle || 0) + Math.PI * 0.65;
+    matt.wanderTimer = 0.4;
+    setAction(matt, "idle");
+    return false;
+  }
+
+  matt.direction = matt.x < beforeX ? "left" : "right";
+  setAction(matt, "walking");
+  return true;
+}
+
 function updateWildDogmatt(dogmatt, dt) {
   const config = getMattConfig(dogmatt.type);
   const player = state.player;
@@ -8274,8 +8771,21 @@ function updateWildDogmatt(dogmatt, dt) {
   dogmatt.hitReactionTimer = Math.max(0, (dogmatt.hitReactionTimer || 0) - dt);
   dogmatt.pathPanicTimer = Math.max(0, (dogmatt.pathPanicTimer || 0) - dt);
 
+  if (dogmatt.introPlaying) {
+    setAction(dogmatt, dogmatt.introAction || "spawn");
+    return;
+  }
+
   if (dogmatt.rooted) {
     if (!dogmatt.awakened) {
+      if (updateDormantBossRoam(dogmatt, config, distance, dt)) {
+        return;
+      }
+
+      if (dogmatt.boss && dogmatt.preBattleRoam && dogmatt.pathPauseTimer > 0) {
+        return;
+      }
+
       setWildMattBaseAction(dogmatt, "idle", dt);
       return;
     }
@@ -8291,7 +8801,8 @@ function updateWildDogmatt(dogmatt, dt) {
     if (dogmatt.hitReactionTimer > 0) {
       setAction(dogmatt, getMattHitAction(dogmatt));
     } else {
-      setWildMattBaseAction(dogmatt, "idle", dt);
+      updateAwakenedBossMovement(dogmatt, config, distance, dt);
+      setWildMattBaseAction(dogmatt, dogmatt.boss ? "walking" : "idle", dt);
     }
     return;
   }
@@ -8382,6 +8893,22 @@ function advanceMattAnimation(matt, dt) {
   if (matt.caught && matt.caughtAnimationPaused) {
     matt.frameIndex = clamp(Math.floor(matt.frameIndex || 0), 0, frames.length - 1);
     matt.frameTimer = 0;
+    return;
+  }
+
+  if (matt.introPlaying) {
+    matt.frameTimer += dt;
+
+    if (matt.frameTimer >= (matt.introFrameDuration || 0.1)) {
+      matt.frameTimer = 0;
+
+      if (matt.frameIndex < frames.length - 1) {
+        matt.frameIndex += 1;
+      } else {
+        finishBossIntro(matt);
+      }
+    }
+
     return;
   }
 
@@ -8863,6 +9390,7 @@ function hitDogmatt(dogmatt) {
     dogmatt.partyId = makeCapturedPartyId(dogmatt);
     dogmatt.friendship = Math.max(dogmatt.friendship || 0, 14 + (snackUsed ? 4 : 0) + (netUsed ? 2 : 0) + fluteBonus);
     setAction(dogmatt, "caught");
+    recordCapturedMattType(dogmatt.type);
     state.capturedParty.push(serializeCapturedMatt(dogmatt));
     state.capturedParty = state.capturedParty.slice(0, MATT_PARTY_LIMIT);
     if (dogmatt.boss) {
@@ -8879,7 +9407,9 @@ function hitDogmatt(dogmatt) {
       `Captured Lv ${getMattLevel(dogmatt)} ${dogmatt.name || MATT_LABELS[dogmatt.type] || "Matt"} (${Math.round(captureChance * 100)}%). Ivan XP +${ivanProgress.gained}${ivanProgress.leveled ? `, Lv ${ivanProgress.level}` : ""}.`,
     );
     updateCaughtHud(countCaughtMatts());
+    saveEconomy();
     saveCapturedParty();
+    trySpawnUnlockedWorldBoss(dogmatt);
     return;
   }
 
@@ -9069,6 +9599,43 @@ function drawDogmattShadow(dogmatt) {
   ctx.restore();
 }
 
+function drawWorldBossHealthBar(dogmatt, screenX, screenY, config, scale) {
+  const maxHealth = Math.max(1, dogmatt.captureHitsRequired || getWildMattCaptureHits(dogmatt));
+  const currentHealth = clamp(maxHealth - (dogmatt.hitCount || 0), 0, maxHealth);
+  const ratio = currentHealth / maxHealth;
+  const width = 230;
+  const height = 32;
+  const x = clamp(Math.round(screenX - width / 2), 12, Math.max(12, canvas.clientWidth - width - 12));
+  const rawY = Math.round(screenY - config.height * scale - 48);
+  const y = clamp(rawY, 18, Math.max(18, canvas.clientHeight - height - 18));
+  const fillColor = dogmatt.assetKey === "primefirematt" ? "#ff6f3e" : "#8ff36b";
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "rgba(7, 10, 9, 0.76)";
+  ctx.strokeStyle = "rgba(255, 238, 143, 0.38)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(0, 0, width, height, 7);
+  } else {
+    ctx.rect(0, 0, width, height);
+  }
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#fff8cc";
+  ctx.font = "900 12px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`${dogmatt.name} Lv ${getMattLevel(dogmatt)}`, width / 2, 13);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.13)";
+  ctx.fillRect(12, 20, width - 24, 7);
+  ctx.fillStyle = fillColor;
+  ctx.fillRect(12, 20, (width - 24) * ratio, 7);
+  ctx.restore();
+}
+
 function drawDogmatt(dogmatt) {
   const config = getMattConfig(dogmatt.type);
   const frames = getMattFrames(dogmatt);
@@ -9093,7 +9660,9 @@ function drawDogmatt(dogmatt) {
   ctx.drawImage(sprite, -config.width / 2, -config.height + config.footOffset);
   ctx.restore();
 
-  if (!dogmatt.caught && !dogmatt.arenaBattler) {
+  if (!dogmatt.caught && !dogmatt.arenaBattler && dogmatt.boss) {
+    drawWorldBossHealthBar(dogmatt, screenX, screenY, config, scale);
+  } else if (!dogmatt.caught && !dogmatt.arenaBattler) {
     const difficulty = Math.max(1, Number(dogmatt.captureDifficulty) || 1);
     const label = dogmatt.boss ? `${dogmatt.name} Lv ${getMattLevel(dogmatt)}` : `Lv ${getMattLevel(dogmatt)}`;
     ctx.save();
@@ -9780,7 +10349,7 @@ function bindTouchButton(button, onPress, onRelease) {
 }
 
 function triggerWhip() {
-  if (!state.ready || state.dev.enabled || isShopOpen() || isPauseMenuOpen() || (state.arena.active && state.arena.phase !== "idle")) {
+  if (!state.ready || state.dev.enabled || isShopOpen() || isPauseMenuOpen() || isBossIntroPlaying() || (state.arena.active && state.arena.phase !== "idle")) {
     return;
   }
 
@@ -9853,6 +10422,11 @@ window.addEventListener("keydown", (event) => {
   }
 
   if (state.arena.active && state.arena.phase !== "idle") {
+    event.preventDefault();
+    return;
+  }
+
+  if (isBossIntroPlaying()) {
     event.preventDefault();
     return;
   }
@@ -9945,7 +10519,7 @@ window.addEventListener("blur", () => {
 });
 
 canvas.addEventListener("pointerdown", (event) => {
-  if (isPauseMenuOpen()) {
+  if (isPauseMenuOpen() || isBossIntroPlaying()) {
     event.preventDefault();
     return;
   }
@@ -10182,6 +10756,7 @@ async function startGameForProfile(profileId) {
   state.npcs = [];
   state.particles = [];
   state.screenShake = 0;
+  state.cameraFocus = null;
   resetArenaBattle(false);
 
   const start = getMapCenter(state.currentWorld);
