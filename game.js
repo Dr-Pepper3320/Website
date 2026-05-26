@@ -387,6 +387,16 @@ const MATT_CONFIGS = {
   mysticmatt: MYSTICMATT,
 };
 
+const FOLLOWER_ASSIST = {
+  searchRadius: 760,
+  leashRadius: 980,
+  attackRange: 138,
+  strikeCooldown: 1.15,
+  bondCooldown: 8,
+  bondFriendship: 1,
+  bondXp: 7,
+};
+
 const WORLD_MATT_TYPES = {
   mainworld: "dogmatt",
   fireworld: "firematt",
@@ -967,6 +977,9 @@ const SHOP_DEFS = {
 
 const NPC_DIALOGUE = {
   scott: {
+    speaker: "Scott",
+    role: "Arena captain",
+    mood: "measured, competitive, and watching your stance",
     intro:
       "Scott keeps one boot on the arena gate and one eye on the old roads. He says the arena was built to teach Matts restraint before the worlds split apart.",
     topics: [
@@ -991,14 +1004,36 @@ const NPC_DIALOGUE = {
     ],
   },
   ty: {
+    speaker: "Ty",
+    role: "Matt handler",
+    mood: "careful, patient, and always counting paw prints",
     intro:
       "Ty smells faintly of grain, rainwater, and ink. Every Matt he buys or sells gets marked in a careful ledger full of little paw prints.",
+    services: ["Tame captured Matts", "Rename bonded Matts", "Set an active follower"],
     topics: [
       {
         id: "matts",
         label: "Matt Care",
         text:
           "Do not think of Matts as loot. Feed them, travel with them, let them win sometimes. Friendship changes how they stand in the arena.",
+      },
+      {
+        id: "followers",
+        label: "Followers",
+        text:
+          "A follower is not just a Matt walking behind you. I watch how it answers your voice, give it a name, and teach it where to stand when a fight turns ugly.",
+      },
+      {
+        id: "naming",
+        label: "Naming",
+        text:
+          "Names matter. A wild Matt hears a command. A named Matt hears a person. Keep the name short, say it often, and it will start looking for you before the road does.",
+      },
+      {
+        id: "battle_bonds",
+        label: "Battle Bonds",
+        text:
+          "When a tamed Matt helps you in the field, its bond grows fast. It will not finish a capture for you, but it can stagger a wild Matt and keep pressure off your feet.",
       },
       {
         id: "store",
@@ -1015,6 +1050,9 @@ const NPC_DIALOGUE = {
     ],
   },
   tom: {
+    speaker: "Tom",
+    role: "Blacksmith",
+    mood: "blunt, warm, and smelling of forge smoke",
     intro:
       "Tom's blacksmith shop sounds like a heartbeat. Every tool on his wall has a notch from some traveler who came back changed.",
     topics: [
@@ -1039,6 +1077,9 @@ const NPC_DIALOGUE = {
     ],
   },
   brick: {
+    speaker: "Brick",
+    role: "Innkeeper",
+    mood: "steady, watchful, and already pouring another cup",
     intro:
       "Brick runs the inn like a lighthouse. His counter is covered in cups, maps, and rumors from people who swear the worlds move when nobody is looking.",
     topics: [
@@ -1063,6 +1104,9 @@ const NPC_DIALOGUE = {
     ],
   },
   logan: {
+    speaker: "Logan",
+    role: "Item keeper",
+    mood: "quick, practical, and impossible to understock",
     intro:
       "Logan keeps the item shop neat enough to find bandages in the dark. He claims every good expedition starts with checking your pockets twice.",
     topics: [
@@ -3772,6 +3816,81 @@ function makeCapturedPartyId(matt) {
   return matt.partyId || `${matt.sourceWorld || state.currentWorld}:${matt.originalId || matt.id}`;
 }
 
+function sanitizeMattName(name) {
+  return String(name || "")
+    .replace(/[^\w\s'.-]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 20);
+}
+
+function getCapturedMattDisplayName(matt) {
+  return sanitizeMattName(matt?.name) || MATT_LABELS[matt?.type] || "Captured Matt";
+}
+
+function getFollowerStatusLine(matt) {
+  if (!matt?.tamed) {
+    return "Untamed. Bring this Matt to Ty to make it a follower.";
+  }
+
+  const role = matt.follower ? "Active follower" : "Tamed follower";
+  return `${role} | ${getFriendshipLine(matt)} | Lv ${getMattLevel(matt)}`;
+}
+
+function normalizeFollowerSelection(party) {
+  let activeFollowerFound = false;
+  return party.map((matt) => {
+    const tamed = Boolean(matt.tamed);
+    const follower = tamed && Boolean(matt.follower) && !activeFollowerFound;
+
+    if (follower) {
+      activeFollowerFound = true;
+    }
+
+    return { ...matt, tamed, follower };
+  });
+}
+
+function syncCapturedMattRuntime(updated) {
+  if (!updated || !Array.isArray(state.dogmatts)) {
+    return;
+  }
+
+  state.dogmatts.forEach((candidate) => {
+    if (candidate.partyId === updated.partyId) {
+      candidate.name = updated.name || "";
+      candidate.tamed = Boolean(updated.tamed);
+      candidate.follower = Boolean(updated.follower);
+      candidate.level = updated.level;
+      candidate.xp = updated.xp;
+      candidate.friendship = updated.friendship;
+    } else if (updated.follower && candidate.caught) {
+      candidate.follower = false;
+    }
+  });
+}
+
+function updateCapturedMattById(partyId, updater) {
+  const partyIndex = state.capturedParty.findIndex((matt) => matt.partyId === partyId);
+  if (partyIndex === -1) {
+    return null;
+  }
+
+  const nextParty = state.capturedParty.map((matt, index) => {
+    if (index !== partyIndex) {
+      return matt;
+    }
+
+    return normalizeCapturedPartyMember({ ...matt, ...updater(matt) }, index);
+  });
+  state.capturedParty = normalizeFollowerSelection(nextParty.filter(Boolean)).slice(0, MATT_PARTY_LIMIT);
+  const updated = state.capturedParty.find((matt) => matt.partyId === partyId);
+  state.capturedParty.forEach(syncCapturedMattRuntime);
+  saveCapturedParty();
+  updateCaughtHud(countCaughtMatts());
+  return updated;
+}
+
 function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
   if (!matt || !MATT_CONFIGS[matt.type]) {
     return null;
@@ -3783,6 +3902,7 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
   const xp = Math.max(0, Math.floor(Number(matt.xp) || 0));
   const friendship = clamp(Math.floor(Number(matt.friendship) || 0), 0, 100);
   const captureDifficulty = Math.max(1, Number(matt.captureDifficulty) || 1);
+  const tamed = Boolean(matt.tamed);
 
   return {
     partyId: matt.partyId || `${sourceWorld}:${originalId}`,
@@ -3790,6 +3910,9 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
     originalId,
     sourceWorld,
     type: matt.type,
+    name: sanitizeMattName(matt.name),
+    tamed,
+    follower: tamed && Boolean(matt.follower),
     x: Number.isFinite(matt.x) ? matt.x : state.player.x,
     y: Number.isFinite(matt.y) ? matt.y : state.player.y,
     action: "caught",
@@ -3843,7 +3966,7 @@ function loadCapturedParty() {
       });
     }
 
-    return party.slice(0, MATT_PARTY_LIMIT);
+    return normalizeFollowerSelection(party.slice(0, MATT_PARTY_LIMIT));
   } catch (error) {
     console.warn("Could not load captured Matt party.", error);
     return [];
@@ -3898,6 +4021,8 @@ function syncCapturedPartyFromActiveMatts() {
 function saveCapturedParty() {
   try {
     syncCapturedPartyFromActiveMatts();
+    state.capturedParty = normalizeFollowerSelection(state.capturedParty).slice(0, MATT_PARTY_LIMIT);
+    state.capturedParty.forEach(syncCapturedMattRuntime);
     localStorage.setItem(
       getMattProgressStorageKey(),
       JSON.stringify({ version: 2, party: state.capturedParty }),
@@ -3917,6 +4042,9 @@ function hydrateCapturedMatt(saved, caughtIndex) {
     partyId: saved.partyId,
     sourceWorld: saved.sourceWorld || state.currentWorld,
     type: saved.type,
+    name: sanitizeMattName(saved.name),
+    tamed: Boolean(saved.tamed),
+    follower: Boolean(saved.tamed && saved.follower),
     x: target.x,
     y: target.y,
     width: config.width,
@@ -4210,9 +4338,23 @@ function getShopTabLabel(tab) {
     buy: "Buy",
     sell: "Sell",
     inventory: "Bag",
+    followers: "Followers",
     bond: "Bond",
     skills: "Skills",
   }[tab] || tab;
+}
+
+function getShopTabs(shop) {
+  if (!shop) {
+    return ["inventory", "bond", "skills"];
+  }
+
+  const tabs = ["talk", "mission", "buy", "sell", "inventory"];
+  if (state.activeShopId === "ty") {
+    tabs.push("followers");
+  }
+  tabs.push("bond", "skills");
+  return tabs;
 }
 
 function renderTalk(parent, shopId) {
@@ -4223,22 +4365,79 @@ function renderTalk(parent, shopId) {
   }
 
   const topic = dialogue.topics.find((candidate) => candidate.id === state.activeDialogueTopic);
+  const speaker = dialogue.speaker || shopId;
+  const title = dialogue.role || getShopDef(shopId)?.title || "Traveler";
+  const activeFollower = state.capturedParty.find((matt) => matt.follower);
+  const scene = document.createElement("section");
+  scene.className = "dialogue-scene";
+
+  const speakerCard = document.createElement("aside");
+  speakerCard.className = "dialogue-speaker";
+  const portrait = document.createElement("div");
+  portrait.className = "dialogue-portrait";
+  portrait.textContent = speaker.slice(0, 1).toUpperCase();
+  const speakerName = document.createElement("strong");
+  speakerName.textContent = speaker;
+  const role = document.createElement("span");
+  role.textContent = title;
+  const mood = document.createElement("em");
+  mood.textContent = dialogue.mood || "listening";
+  speakerCard.append(portrait, speakerName, role, mood);
+
+  if (Array.isArray(dialogue.services) && dialogue.services.length > 0) {
+    const services = document.createElement("ul");
+    dialogue.services.slice(0, 4).forEach((service) => {
+      const item = document.createElement("li");
+      item.textContent = service;
+      services.append(item);
+    });
+    speakerCard.append(services);
+  }
+
+  const conversation = document.createElement("div");
+  conversation.className = "dialogue-conversation";
+  const line = document.createElement("p");
+  line.className = "dialogue-line";
+  line.textContent = topic ? topic.text : dialogue.intro;
+  conversation.append(line);
+
+  if (shopId === "ty") {
+    const note = document.createElement("p");
+    note.className = "dialogue-note";
+    note.textContent = activeFollower
+      ? `${getCapturedMattDisplayName(activeFollower)} is currently your active follower.`
+      : "Ty can tame one captured Matt into an active follower.";
+    conversation.append(note);
+  }
+
+  const choices = document.createElement("div");
+  choices.className = "dialogue-choices";
+
   if (topic) {
-    appendShopTextCard(parent, topic.label, topic.text, makeShopButton("Back", "talk-back"));
-    appendShopTextCard(parent, "Work", "Ask what they need from the wild roads.", makeShopButton("Mission", "shop-tab", "mission"));
-    appendShopTextCard(parent, "Trade", "Open their goods and services.", makeShopButton("Buy", "shop-tab", "buy"));
+    choices.append(
+      makeShopButton("Back", "talk-back"),
+      makeShopButton("Mission", "shop-tab", "mission"),
+      makeShopButton("Trade", "shop-tab", "buy"),
+    );
+    if (shopId === "ty") {
+      choices.append(makeShopButton("Followers", "shop-tab", "followers"));
+    }
+    conversation.append(choices);
+    scene.append(speakerCard, conversation);
+    parent.append(scene);
     return;
   }
 
-  appendShopTextCard(parent, shopTitle?.textContent || "Talk", dialogue.intro);
   dialogue.topics.forEach((candidate) => {
-    appendShopTextCard(
-      parent,
-      candidate.label,
-      "Ask about this.",
-      makeShopButton("Ask", "talk-topic", candidate.id),
-    );
+    choices.append(makeShopButton(candidate.label, "talk-topic", candidate.id));
   });
+  choices.append(makeShopButton("Mission", "shop-tab", "mission"), makeShopButton("Trade", "shop-tab", "buy"));
+  if (shopId === "ty") {
+    choices.append(makeShopButton("Followers", "shop-tab", "followers"));
+  }
+  conversation.append(choices);
+  scene.append(speakerCard, conversation);
+  parent.append(scene);
 }
 
 function getMissionDef(shopId = state.activeShopId) {
@@ -4487,6 +4686,157 @@ function sparWithMatt(partyId) {
   );
 }
 
+function promptForMattName(matt, message = "Name this Matt") {
+  const currentName = getCapturedMattDisplayName(matt);
+  const entered = window.prompt(`${message}:`, currentName);
+  if (entered === null) {
+    return "";
+  }
+
+  return sanitizeMattName(entered) || currentName;
+}
+
+function tameCapturedMatt(partyId) {
+  if (state.activeShopId !== "ty") {
+    renderActiveOverlay("Ty needs to do the taming work.");
+    return;
+  }
+
+  const matt = state.capturedParty.find((candidate) => candidate.partyId === partyId);
+  if (!matt) {
+    renderActiveOverlay("That Matt is no longer in your party.");
+    return;
+  }
+
+  const name = promptForMattName(matt, "Ty asks what name this Matt should learn");
+  if (!name) {
+    renderActiveOverlay("Ty waits until you have a name ready.");
+    return;
+  }
+
+  const updated = updateCapturedMattById(partyId, (current) => ({
+    name,
+    tamed: true,
+    follower: true,
+    friendship: Math.max(current.friendship || 0, 24),
+    xp: current.xp || 0,
+  }));
+
+  renderActiveOverlay(
+    updated
+      ? `Ty tamed ${getCapturedMattDisplayName(updated)}. They are now your active follower.`
+      : "Ty could not find that Matt.",
+  );
+}
+
+function renameCapturedMatt(partyId) {
+  const matt = state.capturedParty.find((candidate) => candidate.partyId === partyId);
+  if (!matt) {
+    renderActiveOverlay("That Matt is no longer in your party.");
+    return;
+  }
+
+  if (!matt.tamed && state.activeShopId !== "ty") {
+    renderActiveOverlay("Take this Matt to Ty before renaming it.");
+    return;
+  }
+
+  const name = promptForMattName(matt, "Choose a new Matt name");
+  if (!name) {
+    return;
+  }
+
+  const updated = updateCapturedMattById(partyId, () => ({ name }));
+  renderActiveOverlay(updated ? `${getCapturedMattDisplayName(updated)} knows their name now.` : "That Matt is no longer in your party.");
+}
+
+function setActiveFollower(partyId) {
+  const matt = state.capturedParty.find((candidate) => candidate.partyId === partyId);
+  if (!matt) {
+    renderActiveOverlay("That Matt is no longer in your party.");
+    return;
+  }
+
+  if (!matt.tamed) {
+    renderActiveOverlay("Ty needs to tame that Matt before it can fight as a follower.");
+    return;
+  }
+
+  state.capturedParty = state.capturedParty.map((candidate) => ({
+    ...candidate,
+    follower: candidate.partyId === partyId,
+  }));
+  state.capturedParty.forEach(syncCapturedMattRuntime);
+  saveCapturedParty();
+  renderActiveOverlay(`${getCapturedMattDisplayName(matt)} is now your active follower.`);
+}
+
+function clearActiveFollower(partyId = "") {
+  const matt = state.capturedParty.find((candidate) => candidate.partyId === partyId);
+  state.capturedParty = state.capturedParty.map((candidate) => ({ ...candidate, follower: false }));
+  state.capturedParty.forEach(syncCapturedMattRuntime);
+  saveCapturedParty();
+  renderActiveOverlay(
+    matt
+      ? `${getCapturedMattDisplayName(matt)} is resting from follower duty.`
+      : "Your follower is resting.",
+  );
+}
+
+function renderFollowerActions(parent, matt, makeButton) {
+  const actions = document.createElement("div");
+  actions.className = "follower-actions";
+
+  if (!matt.tamed) {
+    actions.append(makeButton("Tame", "tame-matt", matt.partyId, state.activeShopId !== "ty"));
+  } else {
+    actions.append(
+      makeButton("Follow", "set-follower", matt.partyId, matt.follower),
+      makeButton("Rest", "clear-follower", matt.partyId, !matt.follower),
+      makeButton("Rename", "rename-matt", matt.partyId),
+    );
+  }
+
+  parent.append(actions);
+}
+
+function renderFollowers(parent) {
+  if (state.activeShopId !== "ty") {
+    appendEmptyShopMessage(parent, "Only Ty can manage Matt followers.");
+    return;
+  }
+
+  if (state.capturedParty.length === 0) {
+    appendEmptyShopMessage(parent, "Capture a Matt, then bring it to Ty to tame it as a follower.");
+    return;
+  }
+
+  appendShopTextCard(
+    parent,
+    "Follower Stable",
+    "Ty can tame one active follower at a time. Tamed followers help in overworld fights, earn bond and XP, and can be renamed here.",
+  );
+
+  state.capturedParty.forEach((matt) => {
+    const row = document.createElement("article");
+    row.className = `shop-item follower-item${matt.follower ? " active" : ""}`;
+
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = getCapturedMattDisplayName(matt);
+    const detail = document.createElement("span");
+    detail.textContent = `${getFollowerStatusLine(matt)} | ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)}`;
+    info.append(title, detail);
+
+    const status = document.createElement("em");
+    status.textContent = matt.follower ? "Active" : matt.tamed ? "Tamed" : "Wild";
+
+    row.append(info, status);
+    renderFollowerActions(row, matt, makeShopButton);
+    parent.append(row);
+  });
+}
+
 function renderBond(parent) {
   if (state.capturedParty.length === 0) {
     appendEmptyShopMessage(parent, "Capture or adopt a Matt before working on friendship.");
@@ -4505,9 +4855,9 @@ function renderBond(parent) {
 
     const info = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = matt.name || MATT_LABELS[matt.type] || "Captured Matt";
+    title.textContent = getCapturedMattDisplayName(matt);
     const detail = document.createElement("span");
-    detail.textContent = `Lv ${getMattLevel(matt)} | XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | ${getFriendshipLine(matt)}. ${getFriendshipBonusLine(matt)}`;
+    detail.textContent = `Lv ${getMattLevel(matt)} | XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | ${getFollowerStatusLine(matt)}. ${getFriendshipBonusLine(matt)}`;
     info.append(title, detail);
 
     row.append(
@@ -4584,9 +4934,9 @@ function appendCapturedMattRows(parent) {
 
     const info = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = matt.name || MATT_LABELS[matt.type] || "Captured Matt";
+    title.textContent = getCapturedMattDisplayName(matt);
     const detail = document.createElement("span");
-    detail.textContent = `Lv ${getMattLevel(matt)} | ${getFriendshipLine(matt)}. ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)} capture. Ty pays ${value} coins.`;
+    detail.textContent = `Lv ${getMattLevel(matt)} | ${getFollowerStatusLine(matt)}. ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)} capture. Ty pays ${value} coins.`;
     info.append(title, detail);
 
     const owned = document.createElement("em");
@@ -4608,7 +4958,7 @@ function renderShop(message = "") {
 
   if (shopTabs) {
     shopTabs.innerHTML = "";
-    const tabs = shop ? ["talk", "mission", "buy", "sell", "inventory", "bond", "skills"] : ["inventory", "bond", "skills"];
+    const tabs = getShopTabs(shop);
     tabs.forEach((tab) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -4639,6 +4989,8 @@ function renderShop(message = "") {
       entries.forEach(([itemId]) => appendItemRow(shopList, itemId, "sell"));
       appendCapturedMattRows(shopList);
     }
+  } else if (state.shopTab === "followers") {
+    renderFollowers(shopList);
   } else if (state.shopTab === "bond") {
     renderBond(shopList);
   } else if (state.shopTab === "skills") {
@@ -4795,8 +5147,8 @@ function renderPauseCharacter(parent) {
     state.capturedParty.forEach((matt) => {
       appendMenuRow(
         table,
-        matt.name || MATT_LABELS[matt.type] || "Captured Matt",
-        `Lv ${getMattLevel(matt)} | ${getFriendshipLine(matt)} | ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)}`,
+        getCapturedMattDisplayName(matt),
+        `${getFollowerStatusLine(matt)} | ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)}`,
         `${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))}`,
       );
     });
@@ -4955,7 +5307,12 @@ function renderPauseJournal(parent) {
   );
 
   Object.values(NPC_DIALOGUE).forEach((dialogue) => {
-    const card = appendMenuCard(grid, dialogue.title || "Journal", dialogue.intro, "wide");
+    const card = appendMenuCard(grid, dialogue.speaker || dialogue.title || "Journal", `${dialogue.role || "Town voice"} | ${dialogue.intro}`, "wide");
+    if (Array.isArray(dialogue.services) && dialogue.services.length > 0) {
+      const serviceLine = document.createElement("p");
+      serviceLine.textContent = `Services: ${dialogue.services.join(", ")}`;
+      card.append(serviceLine);
+    }
     dialogue.topics.slice(0, 3).forEach((topic) => {
       const line = document.createElement("p");
       line.textContent = `${topic.label}: ${topic.text}`;
@@ -5001,8 +5358,8 @@ function renderPauseParty(parent) {
   state.capturedParty.forEach((matt) => {
     const card = appendMenuCard(
       grid,
-      matt.name || MATT_LABELS[matt.type] || "Captured Matt",
-      `Lv ${getMattLevel(matt)} | XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | ${getFriendshipLine(matt)}. ${getFriendshipBonusLine(matt)}`,
+      getCapturedMattDisplayName(matt),
+      `XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | ${getFollowerStatusLine(matt)}. ${getFriendshipBonusLine(matt)}`,
       "full",
     );
     const actions = document.createElement("div");
@@ -5014,6 +5371,13 @@ function renderPauseParty(parent) {
       makeMenuButton("Mint", "bond-mint", matt.partyId, getItemCount("focus_mint") <= 0 || (matt.friendship || 0) >= 100),
       makeMenuButton("Spar", "bond-spar", matt.partyId, state.player.stamina < 25),
     );
+    if (matt.tamed) {
+      actions.append(
+        makeMenuButton("Follow", "set-follower", matt.partyId, matt.follower),
+        makeMenuButton("Rest", "clear-follower", matt.partyId, !matt.follower),
+        makeMenuButton("Rename", "rename-matt", matt.partyId),
+      );
+    }
     card.append(actions);
   });
 }
@@ -5316,7 +5680,7 @@ function renderArenaSelect(message = "Choose your Matt for the arena.") {
 
       const info = document.createElement("div");
       const title = document.createElement("strong");
-      title.textContent = matt.name || MATT_LABELS[matt.type] || "Captured Matt";
+      title.textContent = getCapturedMattDisplayName(matt);
       const detail = document.createElement("span");
       const unlocked = getArenaAbilities(matt.type).filter((ability) => isArenaAbilityUnlocked(ability, matt)).length;
       detail.textContent = `Lv ${getMattLevel(matt)} | XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | ${getFriendshipLine(matt)} | ${unlocked}/${getArenaAbilities(matt.type).length} abilities. ${getFriendshipBonusLine(matt)}`;
@@ -6329,7 +6693,7 @@ function sellCapturedMatt(partyId) {
   saveEconomy();
   updateCaughtHud(countCaughtMatts());
   updateEconomyHud();
-  renderShop(`Ty bought ${matt.name || "a Matt"} for ${value} coins.`);
+  renderShop(`Ty bought ${getCapturedMattDisplayName(matt)} for ${value} coins.`);
 }
 
 function setDevStatus(message) {
@@ -8858,8 +9222,190 @@ function updateWildDogmatt(dogmatt, dt) {
   }
 }
 
+function getFollowerMoveAction(matt) {
+  const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || {};
+  return frameSet.walking?.length > 0 ? "walking" : "caught";
+}
+
+function getFollowerAttackAction(matt) {
+  const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || {};
+  return frameSet.attack?.length > 0 ? "attack" : "caught";
+}
+
+function isFollowerCombatTarget(target) {
+  if (!target || target.caught || target.arenaBattler || target.arenaOpponent || target.introPlaying) {
+    return false;
+  }
+
+  return Boolean(target.awakened || target.hitCount > 0 || target.hitReactionTimer > 0 || target.attackTimer > 0);
+}
+
+function getFollowerCombatTarget(follower) {
+  if (!follower?.tamed || !follower.follower || state.arena.active || isShopOpen() || isPauseMenuOpen()) {
+    return null;
+  }
+
+  let bestTarget = null;
+  let bestScore = Infinity;
+
+  for (const target of state.dogmatts) {
+    if (target === follower || !isFollowerCombatTarget(target)) {
+      continue;
+    }
+
+    const playerDistance = Math.hypot(target.x - state.player.x, target.y - state.player.y);
+    const followerDistance = Math.hypot(target.x - follower.x, target.y - follower.y);
+    const searchRadius = target.boss ? FOLLOWER_ASSIST.leashRadius : FOLLOWER_ASSIST.searchRadius;
+
+    if (playerDistance > searchRadius && followerDistance > FOLLOWER_ASSIST.leashRadius) {
+      continue;
+    }
+
+    const score = followerDistance + playerDistance * 0.35 - (target.boss ? 220 : 0);
+    if (score < bestScore) {
+      bestScore = score;
+      bestTarget = target;
+    }
+  }
+
+  return bestTarget;
+}
+
+function spawnFollowerStrikeEffect(follower, target) {
+  const colors = {
+    dogmatt: "rgba(255, 214, 128, 0.9)",
+    firematt: "rgba(255, 112, 72, 0.92)",
+    grassmatt: "rgba(132, 255, 105, 0.92)",
+    watermatt: "rgba(104, 207, 255, 0.92)",
+    rockmatt: "rgba(220, 190, 132, 0.92)",
+    mysticmatt: "rgba(204, 153, 255, 0.92)",
+  };
+  const color = colors[follower.type] || "rgba(255, 238, 143, 0.92)";
+  const angle = Math.atan2(target.y - follower.y, target.x - follower.x);
+
+  addParticle({
+    type: "beam",
+    x: follower.x,
+    y: follower.y - 44,
+    x2: target.x,
+    y2: target.y - 54,
+    life: 0.18,
+    size: 14,
+    color,
+  });
+  addParticle({
+    type: "ring",
+    x: target.x,
+    y: target.y - 34,
+    vx: 0,
+    vy: 0,
+    life: 0.28,
+    size: 44,
+    color,
+  });
+
+  for (let i = 0; i < 10; i += 1) {
+    const spread = angle + randomBetween(-0.9, 0.9);
+    addParticle({
+      type: "slash",
+      x: target.x + Math.cos(spread) * randomBetween(4, 22),
+      y: target.y - randomBetween(24, 76) + Math.sin(spread) * 12,
+      vx: Math.cos(spread) * randomBetween(70, 190),
+      vy: Math.sin(spread) * randomBetween(70, 190),
+      life: randomBetween(0.14, 0.26),
+      size: randomBetween(12, 28),
+      color,
+      rotation: spread,
+      spin: randomBetween(-5, 5),
+    });
+  }
+}
+
+function rewardFollowerAssistBond(follower) {
+  if (!follower.partyId || follower.assistBondTimer > 0) {
+    return;
+  }
+
+  follower.assistBondTimer = FOLLOWER_ASSIST.bondCooldown;
+  const result = applyCapturedMattProgress(follower.partyId, {
+    friendship: FOLLOWER_ASSIST.bondFriendship,
+    xp: FOLLOWER_ASSIST.bondXp,
+  });
+
+  if (result?.leveled) {
+    setGameMessage(`${getCapturedMattDisplayName(result.matt)} grew to Lv ${result.matt.level} by fighting beside Ivan.`);
+  }
+}
+
+function followerStrikeTarget(follower, target) {
+  const captureHitThreshold = getCaptureHitThreshold(target);
+  const previousHits = Math.max(0, Math.floor(Number(target.hitCount) || 0));
+  const progressed = previousHits < captureHitThreshold - 1;
+  target.hitCount = Math.min(captureHitThreshold - 1, previousHits + 1);
+  target.hitCooldown = Math.max(target.hitCooldown || 0, 0.18);
+  target.hitReactionTimer = Math.max(target.hitReactionTimer || 0, 0.34);
+  target.pathPanicTimer = target.rooted ? 0 : Math.max(target.pathPanicTimer || 0, 1.8);
+  target.pathRoamTarget = null;
+  target.frameIndex = 0;
+  target.frameTimer = 0;
+  setAction(target, getMattHitAction(target));
+  spawnFollowerStrikeEffect(follower, target);
+  spawnHitEffect(target, Math.max(1, target.hitCount));
+  addScreenShake(target.boss ? 7 : 3);
+  if (progressed) {
+    rewardFollowerAssistBond(follower);
+  }
+
+  follower.assistMessageTimer = Math.max(0, follower.assistMessageTimer || 0);
+  if (follower.assistMessageTimer <= 0) {
+    follower.assistMessageTimer = 3.8;
+    setGameMessage(
+      progressed
+        ? `${getCapturedMattDisplayName(follower)} helped stagger ${target.name || MATT_LABELS[target.type] || "the Matt"}.`
+        : `${target.name || MATT_LABELS[target.type] || "That Matt"} is ready for Ivan's capture strike.`,
+    );
+  }
+}
+
+function updateCombatFollower(follower, target, config, dt) {
+  follower.assistCooldown = Math.max(0, (follower.assistCooldown || 0) - dt);
+  follower.assistBondTimer = Math.max(0, (follower.assistBondTimer || 0) - dt);
+  follower.assistMessageTimer = Math.max(0, (follower.assistMessageTimer || 0) - dt);
+
+  const dx = target.x - follower.x;
+  const dy = target.y - follower.y;
+  const distance = Math.hypot(dx, dy) || 1;
+
+  if (distance > FOLLOWER_ASSIST.attackRange) {
+    const speed = Math.min((config.followSpeed + 210) * dt, distance - FOLLOWER_ASSIST.attackRange + 18);
+    follower.x = clamp(follower.x + (dx / distance) * speed, 0, getMapWidth());
+    follower.y = clamp(follower.y + (dy / distance) * speed, 0, getMapHeight());
+    follower.direction = dx < 0 ? "left" : "right";
+    follower.caughtAnimationPaused = false;
+    setAction(follower, getFollowerMoveAction(follower));
+    return true;
+  }
+
+  follower.direction = dx < 0 ? "left" : "right";
+  follower.caughtAnimationPaused = false;
+  if (follower.assistCooldown <= 0) {
+    follower.assistCooldown = FOLLOWER_ASSIST.strikeCooldown;
+    followerStrikeTarget(follower, target);
+    setAction(follower, getFollowerAttackAction(follower));
+  } else {
+    setAction(follower, "caught");
+  }
+
+  return true;
+}
+
 function updateCaughtDogmatt(dogmatt, dt, caughtIndex) {
   const config = getMattConfig(dogmatt.type);
+  const combatTarget = getFollowerCombatTarget(dogmatt);
+  if (combatTarget && updateCombatFollower(dogmatt, combatTarget, config, dt)) {
+    return;
+  }
+
   const target = getFollowTarget(caughtIndex, config);
   const dx = target.x - dogmatt.x;
   const dy = target.y - dogmatt.y;
@@ -9636,6 +10182,46 @@ function drawWorldBossHealthBar(dogmatt, screenX, screenY, config, scale) {
   ctx.restore();
 }
 
+function drawFollowerBadge(dogmatt, screenX, screenY, config, scale) {
+  const name = getCapturedMattDisplayName(dogmatt);
+  const width = 164;
+  const height = 28;
+  const x = Math.round(screenX - width / 2);
+  const y = Math.round(screenY - config.height * scale - 34);
+  const bondRatio = clamp((dogmatt.friendship || 0) / 100, 0, 1);
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "rgba(7, 10, 9, 0.72)";
+  ctx.strokeStyle = "rgba(121, 241, 185, 0.52)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(0, 0, width, height, 7);
+  } else {
+    ctx.rect(0, 0, width, height);
+  }
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#fff8cc";
+  ctx.font = "800 11px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`${name} | Follower`, width / 2, 12);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.13)";
+  ctx.fillRect(10, 19, width - 20, 5);
+  ctx.fillStyle = "#79f1b9";
+  ctx.fillRect(10, 19, (width - 20) * bondRatio, 5);
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(121, 241, 185, 0.68)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.ellipse(screenX, screenY + 6, config.width * scale * 0.28, config.height * scale * 0.08, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawDogmatt(dogmatt) {
   const config = getMattConfig(dogmatt.type);
   const frames = getMattFrames(dogmatt);
@@ -9660,7 +10246,9 @@ function drawDogmatt(dogmatt) {
   ctx.drawImage(sprite, -config.width / 2, -config.height + config.footOffset);
   ctx.restore();
 
-  if (!dogmatt.caught && !dogmatt.arenaBattler && dogmatt.boss) {
+  if (dogmatt.caught && dogmatt.follower && !dogmatt.arenaBattler) {
+    drawFollowerBadge(dogmatt, screenX, screenY, config, scale);
+  } else if (!dogmatt.caught && !dogmatt.arenaBattler && dogmatt.boss) {
     drawWorldBossHealthBar(dogmatt, screenX, screenY, config, scale);
   } else if (!dogmatt.caught && !dogmatt.arenaBattler) {
     const difficulty = Math.max(1, Number(dogmatt.captureDifficulty) || 1);
@@ -10609,6 +11197,12 @@ pauseMenuContent?.addEventListener("click", (event) => {
     useBondItemOnMatt(id, "focus_mint", 8, 18);
   } else if (action === "bond-spar") {
     sparWithMatt(id);
+  } else if (action === "set-follower") {
+    setActiveFollower(id);
+  } else if (action === "clear-follower") {
+    clearActiveFollower(id);
+  } else if (action === "rename-matt") {
+    renameCapturedMatt(id);
   } else if (action === "learn-skill") {
     unlockSkill(id);
   } else if (action === "reset-skills") {
@@ -10672,6 +11266,14 @@ shopList?.addEventListener("click", (event) => {
     useBondItemOnMatt(id, "focus_mint", 8, 18);
   } else if (action === "bond-spar") {
     sparWithMatt(id);
+  } else if (action === "tame-matt") {
+    tameCapturedMatt(id);
+  } else if (action === "set-follower") {
+    setActiveFollower(id);
+  } else if (action === "clear-follower") {
+    clearActiveFollower(id);
+  } else if (action === "rename-matt") {
+    renameCapturedMatt(id);
   } else if (action === "learn-skill") {
     unlockSkill(id);
   } else if (action === "reset-skills") {
