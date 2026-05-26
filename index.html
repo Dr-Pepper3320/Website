@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Ivan Monster Hunt</title>
-    <link rel="stylesheet" href="styles.css?v=arena-friendship-overhaul" />
+    <link rel="stylesheet" href="styles.css?v=player-pause-menu" />
   </head>
   <body>
     <main class="game-shell">
@@ -65,7 +65,7 @@
           <span>I</span>
           <span>Shift</span>
           <span>Space</span>
-          <button id="inventory-button" type="button">Inventory</button>
+          <button id="inventory-button" type="button">Menu</button>
           <button id="profile-menu" type="button">Profiles</button>
         </div>
       </section>
@@ -83,6 +83,23 @@
           <div class="shop-tabs" id="shop-tabs"></div>
           <div class="shop-list" id="shop-list"></div>
           <p id="shop-message"></p>
+        </div>
+      </section>
+
+      <section class="pause-menu" id="pause-menu" aria-label="Player menu" hidden>
+        <div class="pause-menu-panel">
+          <header class="pause-menu-header">
+            <div>
+              <span id="pause-menu-kicker">Ivan Monster Hunt</span>
+              <strong id="pause-menu-title">Character</strong>
+              <em id="pause-menu-subtitle">World: Main World</em>
+            </div>
+            <button id="pause-menu-close" type="button" aria-label="Close player menu">Close</button>
+          </header>
+
+          <nav class="pause-menu-tabs" id="pause-menu-tabs" aria-label="Player menu tabs"></nav>
+          <div class="pause-menu-content" id="pause-menu-content"></div>
+          <p class="pause-menu-message" id="pause-menu-message"></p>
         </div>
       </section>
 
@@ -153,7 +170,7 @@
         </div>
 
         <div class="touch-actions">
-          <button class="touch-button inventory" id="touch-inventory" type="button">BAG</button>
+          <button class="touch-button inventory" id="touch-inventory" type="button">MENU</button>
           <button class="touch-button sprint" id="touch-sprint" type="button">RUN</button>
           <button class="touch-button whip" id="touch-whip" type="button">WHIP</button>
         </div>
@@ -165,6 +182,6 @@
 
     <script src="assets/worlds/default-worlds.js?v=treeworld-pathing-bundle"></script>
     <script src="assets/music/music-tracks.js?v=arena-friendship-overhaul"></script>
-    <script src="game.js?v=player-level-skill-tree"></script>
+    <script src="game.js?v=player-pause-menu"></script>
   </body>
 </html>

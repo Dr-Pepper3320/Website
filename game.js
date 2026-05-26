@@ -25,6 +25,13 @@ const shopClose = document.querySelector("#shop-close");
 const shopTabs = document.querySelector("#shop-tabs");
 const shopList = document.querySelector("#shop-list");
 const shopMessage = document.querySelector("#shop-message");
+const pauseMenu = document.querySelector("#pause-menu");
+const pauseMenuClose = document.querySelector("#pause-menu-close");
+const pauseMenuTabs = document.querySelector("#pause-menu-tabs");
+const pauseMenuTitle = document.querySelector("#pause-menu-title");
+const pauseMenuSubtitle = document.querySelector("#pause-menu-subtitle");
+const pauseMenuContent = document.querySelector("#pause-menu-content");
+const pauseMenuMessage = document.querySelector("#pause-menu-message");
 const arenaBattleUi = document.querySelector("#arena-battle-ui");
 const arenaBattleTitle = document.querySelector("#arena-battle-title");
 const arenaBattleStats = document.querySelector("#arena-battle-stats");
@@ -185,22 +192,22 @@ const WORLD_MAPS = {
     fill: "#172515",
   },
   grass_tree: {
-    width: 672,
-    height: 560,
+    width: 7600,
+    height: 6000,
     type: "image",
     image: "assets/maps/grass/grasstree.jfif",
     fill: "#172515",
   },
   grass_camp: {
-    width: 672,
-    height: 560,
+    width: 7600,
+    height: 6000,
     type: "image",
     image: "assets/maps/grass/grasscamp.jfif",
     fill: "#172515",
   },
   grass_cave: {
-    width: 672,
-    height: 560,
+    width: 7600,
+    height: 6000,
     type: "image",
     image: "assets/maps/grass/grasscave.jfif",
     fill: "#172515",
@@ -379,10 +386,7 @@ const MATT_CONFIGS = {
 const WORLD_MATT_TYPES = {
   mainworld: "dogmatt",
   fireworld: "firematt",
-  treeworld: "grassmatt",
   grass_tree: "grassmatt",
-  grass_camp: "grassmatt",
-  grass_cave: "grassmatt",
   purplewaterworld: "watermatt",
   water_tree: "watermatt",
   water_hut: "watermatt",
@@ -394,16 +398,107 @@ const WORLD_MATT_TYPES = {
 const WORLD_ENCOUNTER_PROFILES = {
   mainworld: { levelMin: 1, levelMax: 3, captureDifficulty: 1, damageScale: 0.85, count: 20 },
   fireworld: { levelMin: 4, levelMax: 8, captureDifficulty: 2.3, damageScale: 1.08, count: 10 },
-  treeworld: { levelMin: 2, levelMax: 6, captureDifficulty: 1.7, damageScale: 0.96, count: 14 },
-  grass_tree: { levelMin: 4, levelMax: 8, captureDifficulty: 2, damageScale: 1.02, count: 4 },
-  grass_camp: { levelMin: 6, levelMax: 10, captureDifficulty: 2.4, damageScale: 1.08, count: 5 },
-  grass_cave: { levelMin: 9, levelMax: 14, captureDifficulty: 3.2, damageScale: 1.2, count: 6, eliteChance: 0.12 },
+  grass_tree: { levelMin: 12, levelMax: 12, captureDifficulty: 4.2, damageScale: 1.45, count: 1 },
   purplewaterworld: { levelMin: 3, levelMax: 7, captureDifficulty: 2, damageScale: 1.02, count: 14 },
   water_tree: { levelMin: 5, levelMax: 9, captureDifficulty: 2.4, damageScale: 1.08, count: 5 },
   water_hut: { levelMin: 7, levelMax: 11, captureDifficulty: 2.8, damageScale: 1.14, count: 5 },
   water_cove: { levelMin: 10, levelMax: 15, captureDifficulty: 3.4, damageScale: 1.25, count: 6, eliteChance: 0.14 },
   tomb: { levelMin: 7, levelMax: 12, captureDifficulty: 3.1, damageScale: 1.22, count: 12, eliteChance: 0.1 },
   temple: { levelMin: 8, levelMax: 14, captureDifficulty: 3.5, damageScale: 1.2, count: 10, eliteChance: 0.16 },
+};
+
+const PRIME_GRASS_MATT_MUSIC = "assets/maps/grass/music/Steel Lightning Choir.mp3";
+
+const PRIME_GRASS_MATT_ATTACKS = [
+  {
+    id: "vine_hammer",
+    name: "Vine Hammer",
+    action: "vineHammer",
+    effect: "vineHammer",
+    hitShape: "circle",
+    attackDamage: 28,
+    attackRadius: 225,
+    attackWindup: 0.34,
+    attackCooldown: 1.65,
+    staminaDamage: 8,
+    knockback: 70,
+    screenShake: 12,
+  },
+  {
+    id: "spore_burst",
+    name: "Spore Burst",
+    action: "sporeBurst",
+    effect: "sporeBurst",
+    hitShape: "circle",
+    attackDamage: 22,
+    attackRadius: 430,
+    attackWindup: 0.42,
+    attackCooldown: 2.15,
+    projectileCount: 18,
+    projectileSpeed: 610,
+    staminaDamage: 12,
+    screenShake: 9,
+  },
+  {
+    id: "thorn_fan",
+    name: "Thorn Fan",
+    action: "thornFan",
+    effect: "thornFan",
+    hitShape: "cone",
+    attackDamage: 26,
+    attackRadius: 660,
+    attackWindup: 0.3,
+    attackCooldown: 1.95,
+    projectileCount: 9,
+    projectileSpeed: 700,
+    coneArc: Math.PI * 0.72,
+    staminaDamage: 10,
+    knockback: 55,
+    screenShake: 10,
+  },
+  {
+    id: "root_snare",
+    name: "Root Snare",
+    action: "rootSnare",
+    effect: "rootSnare",
+    hitShape: "beam",
+    attackDamage: 27,
+    attackRadius: 900,
+    attackWindup: 0.5,
+    attackCooldown: 2.5,
+    beamWidth: 82,
+    staminaDamage: 22,
+    knockback: 90,
+    screenShake: 12,
+  },
+  {
+    id: "canopy_quake",
+    name: "Canopy Quake",
+    action: "canopyQuake",
+    effect: "canopyQuake",
+    hitShape: "circle",
+    attackDamage: 36,
+    attackRadius: 720,
+    attackWindup: 0.72,
+    attackCooldown: 3.35,
+    staminaDamage: 20,
+    knockback: 150,
+    screenShake: 20,
+  },
+];
+
+const WORLD_BOSS_MATTS = {
+  grass_tree: {
+    id: "prime-grass-matt",
+    name: "Prime Grass Matt",
+    type: "grassmatt",
+    assetKey: "primegrassmatt",
+    x: 3800,
+    y: 3000,
+    scale: 2.2,
+    aggroRadius: 900,
+    attacks: PRIME_GRASS_MATT_ATTACKS,
+  },
 };
 
 const NPC_DEFS = {
@@ -1595,6 +1690,16 @@ const WORLD_TINTS = {
   home: "rgba(247, 221, 152, 0.1)",
 };
 
+const PAUSE_MENU_TABS = [
+  { id: "character", label: "Character", title: "Character" },
+  { id: "skills", label: "Skills", title: "Skill Tree" },
+  { id: "inventory", label: "Inventory", title: "Inventory" },
+  { id: "map", label: "Map", title: "Map" },
+  { id: "journal", label: "Journal", title: "Journal" },
+  { id: "missions", label: "Missions", title: "Missions" },
+  { id: "party", label: "Party", title: "Party" },
+];
+
 const PLAYER_SKILLS = {
   trail_runner: {
     id: "trail_runner",
@@ -1706,6 +1811,15 @@ const ASSETS = {
     caught: numberedFrames("assets/matts/grassmatt/caught", 6),
     attack: numberedFrames("assets/matts/grassmatt/attack", 11),
   },
+  primegrassmatt: {
+    idle: numberedFrames("assets/maps/grass/characters/primematt/idle", 4),
+    walking: numberedFrames("assets/maps/grass/characters/primematt/walking", 12),
+    vineHammer: numberedFrames("assets/maps/grass/characters/primematt/attack/vinehammer", 11),
+    sporeBurst: numberedFrames("assets/maps/grass/characters/primematt/attack/sporeburst", 7),
+    thornFan: numberedFrames("assets/maps/grass/characters/primematt/attack/thornfan", 8),
+    rootSnare: numberedFrames("assets/maps/grass/characters/primematt/attack/rootsnare", 8),
+    canopyQuake: numberedFrames("assets/maps/grass/characters/primematt/attack/canopyquake", 12),
+  },
   watermatt: {
     idle: ["assets/matts/watermatt/idle/1.png"],
     walking: numberedFrames("assets/matts/watermatt/walking", 12),
@@ -1757,6 +1871,11 @@ const ASSETS = {
   },
 };
 
+const EFFECT_ASSETS = {
+  primeSporeThorn: "assets/maps/grass/characters/primematt/attack/sporeburst/thorn.png",
+  primeThornFan: "assets/maps/grass/characters/primematt/attack/thornfan/thorn.png",
+};
+
 // Drop future monster image paths/positions here when the other monster PNGs are ready.
 const MONSTERS = [
   { id: "monster-2", name: "Monster 2", image: "", x: 0, y: 0, caught: false },
@@ -1800,6 +1919,7 @@ const state = {
   friendshipWalkTimer: 0,
   activeShopId: "",
   shopTab: "buy",
+  pauseMenuTab: "character",
   activeDialogueTopic: "",
   arena: {
     active: false,
@@ -1899,6 +2019,15 @@ const images = {
     caught: [],
     attack: [],
   },
+  primegrassmatt: {
+    idle: [],
+    walking: [],
+    vineHammer: [],
+    sporeBurst: [],
+    thornFan: [],
+    rootSnare: [],
+    canopyQuake: [],
+  },
   watermatt: {
     idle: [],
     walking: [],
@@ -1920,6 +2049,7 @@ const images = {
     caught: [],
     attack: [],
   },
+  effects: {},
   npcs: {},
 };
 
@@ -1931,6 +2061,7 @@ const audio = {
   musicElement: null,
   musicStarted: false,
   currentTrack: "",
+  musicMode: "ambient",
 };
 
 function loadImage(src) {
@@ -1975,9 +2106,11 @@ async function loadAssets() {
     dogmattFrames,
     firemattFrames,
     grassmattFrames,
+    primegrassmattFrames,
     watermattFrames,
     rockmattFrames,
     mysticmattFrames,
+    effectImages,
     npcFrames,
   ] = await Promise.all([
     Promise.all(
@@ -1987,9 +2120,13 @@ async function loadAssets() {
     loadAnimationSet(ASSETS.dogmatt, DOGMATT.width, DOGMATT.height),
     loadAnimationSet(ASSETS.firematt, FIREMATT.width, FIREMATT.height),
     loadAnimationSet(ASSETS.grassmatt, GRASSMATT.width, GRASSMATT.height),
+    loadAnimationSet(ASSETS.primegrassmatt, GRASSMATT.width, GRASSMATT.height),
     loadAnimationSet(ASSETS.watermatt, WATERMATT.width, WATERMATT.height),
     loadAnimationSet(ASSETS.rockmatt, ROCKMATT.width, ROCKMATT.height),
     loadAnimationSet(ASSETS.mysticmatt, MYSTICMATT.width, MYSTICMATT.height),
+    Promise.all(
+      Object.entries(EFFECT_ASSETS).map(async ([id, path]) => [id, await loadImage(path)]),
+    ),
     Promise.all(
       Object.entries(ASSETS.npcs).map(async ([id, assetSet]) => [
         id,
@@ -2003,9 +2140,11 @@ async function loadAssets() {
   Object.assign(images.dogmatt, dogmattFrames);
   Object.assign(images.firematt, firemattFrames);
   Object.assign(images.grassmatt, grassmattFrames);
+  Object.assign(images.primegrassmatt, primegrassmattFrames);
   Object.assign(images.watermatt, watermattFrames);
   Object.assign(images.rockmatt, rockmattFrames);
   Object.assign(images.mysticmatt, mysticmattFrames);
+  images.effects = Object.fromEntries(effectImages);
   images.npcs = Object.fromEntries(npcFrames);
 }
 
@@ -2336,19 +2475,35 @@ function chooseNextMusicTrack() {
   return choices[Math.floor(Math.random() * choices.length)];
 }
 
-function playNextMusicTrack() {
-  const track = chooseNextMusicTrack();
+function playMusicTrack(track, { loop = false, volume = 0.34, mode = "ambient" } = {}) {
   if (!track) {
     audio.musicStarted = false;
     return;
   }
 
+  if (audio.musicElement && audio.currentTrack === track && audio.musicMode === mode) {
+    audio.musicElement.loop = loop;
+    audio.musicElement.volume = volume;
+    return;
+  }
+
+  if (audio.musicElement) {
+    audio.musicElement.pause();
+    audio.musicElement.removeAttribute("src");
+    audio.musicElement.load();
+  }
+
   audio.currentTrack = track;
+  audio.musicMode = mode;
+  audio.musicStarted = true;
+
   const music = new Audio(track);
-  music.loop = false;
-  music.volume = 0.34;
+  music.loop = loop;
+  music.volume = volume;
   music.preload = "auto";
-  music.addEventListener("ended", playNextMusicTrack, { once: true });
+  if (!loop) {
+    music.addEventListener("ended", playNextMusicTrack, { once: true });
+  }
   audio.musicElement = music;
 
   const playResult = music.play();
@@ -2356,9 +2511,35 @@ function playNextMusicTrack() {
     playResult.catch((error) => {
       audio.musicStarted = false;
       audio.currentTrack = "";
+      audio.musicMode = "ambient";
       console.warn("Could not start music.", error);
     });
   }
+}
+
+function playNextMusicTrack() {
+  const track = chooseNextMusicTrack();
+  if (!track) {
+    audio.musicStarted = false;
+    return;
+  }
+
+  playMusicTrack(track);
+}
+
+function startPrimeGrassMattMusic() {
+  ensureAudio();
+  playMusicTrack(PRIME_GRASS_MATT_MUSIC, { loop: true, volume: 0.48, mode: "primeGrassMatt" });
+}
+
+function resumeAmbientMusicFromPrimeGrassMatt() {
+  if (audio.musicMode !== "primeGrassMatt") {
+    return;
+  }
+
+  audio.musicStarted = false;
+  audio.musicMode = "ambient";
+  startMusic();
 }
 
 function playWhipSound() {
@@ -2720,9 +2901,9 @@ function applyCoreWorldFixups(worlds) {
   removeNodesByTarget(worlds.grass_tree, DEFAULT_WORLD_ID);
   removeNodesByTarget(worlds.grass_camp, DEFAULT_WORLD_ID);
   removeNodesByTarget(worlds.grass_cave, DEFAULT_WORLD_ID);
-  upsertNodeByTarget(worlds.grass_tree, "node-grass-tree-to-grassworld", 336, 502, "treeworld", 90);
-  upsertNodeByTarget(worlds.grass_camp, "node-grass-camp-to-grassworld", 336, 502, "treeworld", 90);
-  upsertNodeByTarget(worlds.grass_cave, "node-grass-cave-to-grassworld", 336, 502, "treeworld", 90);
+  upsertNodeByTarget(worlds.grass_tree, "node-grass-tree-to-grassworld", 3800, 5480, "treeworld", 120);
+  upsertNodeByTarget(worlds.grass_camp, "node-grass-camp-to-grassworld", 3800, 5480, "treeworld", 120);
+  upsertNodeByTarget(worlds.grass_cave, "node-grass-cave-to-grassworld", 3800, 5480, "treeworld", 120);
 }
 
 function ensureNpc(world, npcId, x, y) {
@@ -3204,7 +3385,7 @@ function unlockSkill(skillId) {
   const check = canUnlockSkill(skillId);
   const skill = PLAYER_SKILLS[skillId];
   if (!check.ok || !skill) {
-    renderShop(check.reason || "That skill cannot be learned yet.");
+    renderActiveOverlay(check.reason || "That skill cannot be learned yet.");
     return;
   }
 
@@ -3221,13 +3402,13 @@ function unlockSkill(skillId) {
   updateEconomyHud();
   updatePlayerProgressHud();
   updatePlayerStatusHud();
-  renderShop(`${skill.name} increased to rank ${getSkillRank(skillId)}.`);
+  renderActiveOverlay(`${skill.name} increased to rank ${getSkillRank(skillId)}.`);
 }
 
 function resetPlayerSkills() {
   const spent = getSpentSkillPoints();
   if (spent <= 0) {
-    renderShop("No learned skills to reset.");
+    renderActiveOverlay("No learned skills to reset.");
     return;
   }
 
@@ -3238,7 +3419,7 @@ function resetPlayerSkills() {
   updateEconomyHud();
   updatePlayerProgressHud();
   updatePlayerStatusHud();
-  renderShop(`Skills reset. Refunded ${spent} skill point${spent === 1 ? "" : "s"}.`);
+  renderActiveOverlay(`Skills reset. Refunded ${spent} skill point${spent === 1 ? "" : "s"}.`);
 }
 
 function getPlayerMaxHealth() {
@@ -3365,12 +3546,23 @@ function rollWildMattLevel(profile, random = Math.random) {
 function getWildMattCaptureHits(matt) {
   const level = getMattLevel(matt);
   const difficulty = Number(matt?.captureDifficulty) || 1;
+  if (matt?.boss) {
+    const underLevelPenalty = Math.max(0, 10 - getPlayerLevel());
+    return clamp(Math.round(9 + difficulty + level / 4 + underLevelPenalty * 1.15), 12, 24);
+  }
+
   return clamp(Math.round(2 + difficulty + level / 9), 3, 8);
 }
 
 function getWildMattCaptureChance(matt) {
   const level = getMattLevel(matt);
   const difficulty = Number(matt?.captureDifficulty) || 1;
+  if (matt?.boss) {
+    const underLevelPenalty = Math.max(0, 10 - getPlayerLevel()) * 0.035;
+    const base = 0.72 - difficulty * 0.055 - level * 0.009 - underLevelPenalty;
+    return clamp(base, 0.12, 0.72);
+  }
+
   const base = 0.98 - difficulty * 0.07 - level * 0.012;
   return clamp(base, 0.34, 0.94);
 }
@@ -3725,6 +3917,7 @@ function openShop(shopId) {
     return false;
   }
 
+  closePauseMenu();
   state.activeShopId = shopId;
   state.shopTab = "talk";
   state.activeDialogueTopic = "";
@@ -3738,13 +3931,7 @@ function openInventory() {
     return;
   }
 
-  state.activeShopId = "";
-  state.shopTab = "inventory";
-  state.activeDialogueTopic = "";
-  if (shopOverlay) {
-    shopOverlay.hidden = false;
-  }
-  renderShop("Inventory opened.");
+  openPauseMenu("inventory", "Inventory opened.");
 }
 
 function closeShop() {
@@ -3967,7 +4154,7 @@ function renderMission(parent, shopId) {
 function completeMission(missionId) {
   const mission = Object.values(NPC_MISSIONS).find((candidate) => candidate.id === missionId);
   if (!canCompleteMission(mission)) {
-    renderShop("You still need the requested Matts in your party.");
+    renderActiveOverlay("You still need the requested Matts in your party.");
     return;
   }
 
@@ -3978,7 +4165,7 @@ function completeMission(missionId) {
   updateEconomyHud();
   updatePlayerStatusHud();
   awardPlayerXp(90 + (mission.rewardCoins || 0), "mission work");
-  renderShop(mission.completeText);
+  renderActiveOverlay(mission.completeText);
 }
 
 function getFriendshipRank(friendship = 0) {
@@ -4073,33 +4260,33 @@ function canCareForMatt(matt) {
 function careForMatt(partyId) {
   const matt = state.capturedParty.find((candidate) => candidate.partyId === partyId);
   if (!canCareForMatt(matt)) {
-    renderShop("That Matt has already had focused care today.");
+    renderActiveOverlay("That Matt has already had focused care today.");
     return;
   }
 
   state.friendshipCare[partyId] = getCareDay();
   const result = applyCapturedMattProgress(partyId, { friendship: 4 });
   saveEconomy();
-  renderShop(`${getArenaMattName(result?.matt || matt)} settles in. Friendship +${result?.friendshipGain || 0}.`);
+  renderActiveOverlay(`${getArenaMattName(result?.matt || matt)} settles in. Friendship +${result?.friendshipGain || 0}.`);
 }
 
 function useBondItemOnMatt(partyId, itemId, friendship, xp = 0) {
   const item = ITEM_DEFS[itemId];
   if (!item || getItemCount(itemId) <= 0) {
-    renderShop("You do not have that bond item.");
+    renderActiveOverlay("You do not have that bond item.");
     return;
   }
 
   const result = applyCapturedMattProgress(partyId, { friendship, xp });
   if (!result) {
-    renderShop("That Matt is no longer in your party.");
+    renderActiveOverlay("That Matt is no longer in your party.");
     return;
   }
 
   removeItem(itemId);
   saveEconomy();
   updateEconomyHud();
-  renderShop(
+  renderActiveOverlay(
     `${getArenaMattName(result.matt)} enjoyed ${item.name}. Friendship +${result.friendshipGain}${xp ? `, XP +${result.xpGain}` : ""}.`,
   );
 }
@@ -4107,20 +4294,20 @@ function useBondItemOnMatt(partyId, itemId, friendship, xp = 0) {
 function sparWithMatt(partyId) {
   const staminaCost = 25;
   if (state.player.stamina < staminaCost) {
-    renderShop("Ivan is too tired to spar right now.");
+    renderActiveOverlay("Ivan is too tired to spar right now.");
     return;
   }
 
   const result = applyCapturedMattProgress(partyId, { friendship: 3, xp: 16 });
   if (!result) {
-    renderShop("That Matt is no longer in your party.");
+    renderActiveOverlay("That Matt is no longer in your party.");
     return;
   }
 
   state.player.stamina = Math.max(0, state.player.stamina - staminaCost);
   const ivanProgress = awardPlayerXp(12 + getPlayerLevel(), "sparring");
   updatePlayerStatusHud();
-  renderShop(
+  renderActiveOverlay(
     result.leveled
       ? `${getArenaMattName(result.matt)} sparred hard and reached Lv ${result.matt.level}. Ivan XP +${ivanProgress.gained}.`
       : `${getArenaMattName(result.matt)} sparred with Ivan. XP +${result.xpGain}, friendship +${result.friendshipGain}. Ivan XP +${ivanProgress.gained}.`,
@@ -4294,6 +4481,446 @@ function renderShop(message = "") {
 
   if (shopMessage) {
     shopMessage.textContent = message || "";
+  }
+}
+
+function isPauseMenuOpen() {
+  return Boolean(pauseMenu && !pauseMenu.hidden);
+}
+
+function renderActiveOverlay(message = "") {
+  if (isPauseMenuOpen()) {
+    renderPauseMenu(message);
+  } else {
+    renderShop(message);
+  }
+}
+
+function makeMenuButton(label, action, id, disabled = false) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = label;
+  button.dataset.action = action;
+  if (id !== undefined && id !== null) {
+    button.dataset.id = id;
+  }
+  button.disabled = disabled;
+  return button;
+}
+
+function appendMenuEmpty(parent, message) {
+  const empty = document.createElement("p");
+  empty.className = "menu-empty";
+  empty.textContent = message;
+  parent.append(empty);
+}
+
+function appendMenuCard(parent, titleText, detailText = "", className = "") {
+  const card = document.createElement("article");
+  card.className = `menu-card ${className}`.trim();
+  const title = document.createElement("strong");
+  title.textContent = titleText;
+  card.append(title);
+  if (detailText) {
+    const detail = document.createElement("span");
+    detail.textContent = detailText;
+    card.append(detail);
+  }
+  parent.append(card);
+  return card;
+}
+
+function appendMenuStat(parent, label, value, detail = "", ratio = null) {
+  const stat = document.createElement("article");
+  stat.className = "menu-stat";
+  const title = document.createElement("strong");
+  title.textContent = label;
+  const amount = document.createElement("em");
+  amount.textContent = value;
+  stat.append(title, amount);
+
+  if (Number.isFinite(ratio)) {
+    const meter = document.createElement("i");
+    meter.className = "menu-meter";
+    const fill = document.createElement("b");
+    fill.style.width = `${clamp(ratio * 100, 0, 100)}%`;
+    meter.append(fill);
+    stat.append(meter);
+  }
+
+  if (detail) {
+    const small = document.createElement("span");
+    small.textContent = detail;
+    stat.append(small);
+  }
+
+  parent.append(stat);
+}
+
+function appendMenuRow(parent, titleText, detailText, metaText = "", action = null, className = "") {
+  const row = document.createElement("article");
+  row.className = `menu-row ${className}`.trim();
+  const info = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = titleText;
+  const detail = document.createElement("span");
+  detail.textContent = detailText;
+  info.append(title, detail);
+  const meta = document.createElement("em");
+  meta.textContent = metaText;
+  row.append(info, meta);
+  if (action) {
+    row.append(action);
+  }
+  parent.append(row);
+  return row;
+}
+
+function createMenuGrid(parent) {
+  const grid = document.createElement("div");
+  grid.className = "menu-grid";
+  parent.append(grid);
+  return grid;
+}
+
+function renderPauseCharacter(parent) {
+  const grid = createMenuGrid(parent);
+  const maxHealth = getPlayerMaxHealth();
+  const maxStamina = getPlayerMaxStamina();
+  const level = getPlayerLevel();
+  const xp = Math.max(0, Math.floor(Number(state.playerProgress?.xp) || 0));
+  const nextXp = level >= MAX_PLAYER_LEVEL ? 1 : getPlayerXpToNext(level);
+
+  const stats = appendMenuCard(grid, "Ivan", `${getWorldLabel(state.currentWorld)} | ${timeLabel?.textContent || ""}`, "full compact");
+  const statGrid = document.createElement("div");
+  statGrid.className = "menu-stat-grid";
+  appendMenuStat(statGrid, "Level", String(level), `${xp}/${nextXp} XP`, level >= MAX_PLAYER_LEVEL ? 1 : xp / nextXp);
+  appendMenuStat(statGrid, "Health", `${Math.ceil(state.player.health)}/${maxHealth}`, "", state.player.health / maxHealth);
+  appendMenuStat(statGrid, "Stamina", `${Math.ceil(state.player.stamina)}/${maxStamina}`, "", state.player.stamina / maxStamina);
+  appendMenuStat(statGrid, "Coins", String(state.coins), `${getPlayerSkillPoints()} skill point${getPlayerSkillPoints() === 1 ? "" : "s"}`);
+  stats.append(statGrid);
+
+  appendMenuCard(
+    grid,
+    "Hunter",
+    `Walk ${Math.round(getPlayerWalkSpeed())} | Sprint ${Math.round(getPlayerSprintSpeed())} | Whip reach ${Math.round(getWhipAttackRange())}`,
+    "wide",
+  );
+  appendMenuCard(
+    grid,
+    "Protection",
+    `${Math.round(getArmorDamageReduction() * 100)}% damage reduction | Max party ${MATT_PARTY_LIMIT}`,
+    "compact",
+  );
+
+  const party = appendMenuCard(grid, "Party", "", "full");
+  if (state.capturedParty.length === 0) {
+    appendMenuEmpty(party, "No Matts traveling with Ivan.");
+  } else {
+    const table = document.createElement("div");
+    table.className = "menu-table";
+    state.capturedParty.forEach((matt) => {
+      appendMenuRow(
+        table,
+        matt.name || MATT_LABELS[matt.type] || "Captured Matt",
+        `Lv ${getMattLevel(matt)} | ${getFriendshipLine(matt)} | ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)}`,
+        `${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))}`,
+      );
+    });
+    party.append(table);
+  }
+}
+
+function renderPauseInventory(parent) {
+  const grid = createMenuGrid(parent);
+  const card = appendMenuCard(grid, "Pack", `${getInventoryEntries().length} item type${getInventoryEntries().length === 1 ? "" : "s"}`, "full");
+  const table = document.createElement("div");
+  table.className = "menu-table";
+  const entries = getInventoryEntries();
+
+  if (entries.length === 0) {
+    appendMenuEmpty(card, "Your pack is empty.");
+    return;
+  }
+
+  entries.forEach(([itemId]) => {
+    const item = ITEM_DEFS[itemId];
+    const count = getItemCount(itemId);
+    const action = item.bondOnly
+      ? makeMenuButton("Party", "pause-tab", "party", state.capturedParty.length === 0)
+      : item.use
+        ? makeMenuButton("Use", "use-item", itemId, count <= 0)
+        : null;
+    appendMenuRow(table, item.name, item.description, `x${count}`, action);
+  });
+  card.append(table);
+}
+
+function renderPauseSkills(parent) {
+  const grid = createMenuGrid(parent);
+  const level = getPlayerLevel();
+  const xp = Math.max(0, Math.floor(Number(state.playerProgress?.xp) || 0));
+  const next = level >= MAX_PLAYER_LEVEL ? "MAX" : `${xp}/${getPlayerXpToNext(level)} XP`;
+  const summary = appendMenuCard(
+    grid,
+    `Ivan Lv ${level}`,
+    `${next}. Skill points: ${getPlayerSkillPoints()}. Skills spent: ${getSpentSkillPoints()}.`,
+    "full compact",
+  );
+  summary.append(makeMenuButton("Reset", "reset-skills", null, getSpentSkillPoints() <= 0));
+
+  let currentBranch = "";
+  Object.values(PLAYER_SKILLS).forEach((skill) => {
+    if (skill.branch !== currentBranch) {
+      currentBranch = skill.branch;
+      const heading = document.createElement("h3");
+      heading.className = "menu-branch";
+      heading.textContent = currentBranch;
+      grid.append(heading);
+    }
+
+    const rank = getSkillRank(skill.id);
+    const check = canUnlockSkill(skill.id);
+    const requirement = getSkillRequirementText(skill);
+    const label = rank >= skill.maxRank ? "Max" : getPlayerSkillPoints() <= 0 ? "No SP" : check.ok ? "Learn" : "Locked";
+    const rowClass = rank >= skill.maxRank ? "menu-skill maxed" : check.ok ? "menu-skill" : "menu-skill locked";
+    appendMenuRow(
+      grid,
+      skill.name,
+      `Rank ${rank}/${skill.maxRank}. ${skill.description} ${skill.perRank}${requirement ? `. Requires ${requirement}` : ""}.`,
+      rank >= skill.maxRank ? "Max" : `${rank}/${skill.maxRank}`,
+      makeMenuButton(label, "learn-skill", skill.id, !check.ok),
+      rowClass,
+    );
+  });
+}
+
+function drawPauseMap(canvas) {
+  const map = getWorldMapConfig();
+  const width = canvas.width;
+  const height = canvas.height;
+  const mapRatio = map.width / Math.max(1, map.height);
+  const canvasRatio = width / Math.max(1, height);
+  const drawWidth = canvasRatio > mapRatio ? height * mapRatio : width;
+  const drawHeight = canvasRatio > mapRatio ? height : width / mapRatio;
+  const offsetX = (width - drawWidth) / 2;
+  const offsetY = (height - drawHeight) / 2;
+  const scaleX = drawWidth / map.width;
+  const scaleY = drawHeight / map.height;
+  const mapCtx = canvas.getContext("2d");
+
+  mapCtx.clearRect(0, 0, width, height);
+  mapCtx.fillStyle = map.fill || "#18201d";
+  mapCtx.fillRect(0, 0, width, height);
+
+  const image = images.worldMaps[state.currentWorld];
+  if (image) {
+    mapCtx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+  }
+
+  mapCtx.fillStyle = WORLD_TINTS[state.currentWorld] || "rgba(255, 255, 255, 0.04)";
+  mapCtx.fillRect(offsetX, offsetY, drawWidth, drawHeight);
+
+  const drawDot = (x, y, radius, fill, stroke = "rgba(8, 13, 12, 0.78)") => {
+    mapCtx.beginPath();
+    mapCtx.arc(offsetX + x * scaleX, offsetY + y * scaleY, radius, 0, Math.PI * 2);
+    mapCtx.fillStyle = fill;
+    mapCtx.strokeStyle = stroke;
+    mapCtx.lineWidth = 2;
+    mapCtx.fill();
+    mapCtx.stroke();
+  };
+
+  getWorld().nodes.forEach((node) => drawDot(node.x, node.y, 5, node.locked ? "#ff7a5c" : "#8bd3ff"));
+  state.npcs.forEach((npc) => drawDot(npc.x, npc.y, 4, "#a0d8ff"));
+  state.dogmatts.forEach((matt) => drawDot(matt.x, matt.y, matt.boss ? 7 : 4, matt.caught ? "#79f1b9" : "#9cec6e"));
+  drawDot(state.player.x, state.player.y, 7, "#fff0a8", "rgba(8, 13, 12, 0.92)");
+}
+
+function renderPauseMap(parent) {
+  const grid = createMenuGrid(parent);
+  const mapCard = appendMenuCard(grid, getWorldLabel(state.currentWorld), `${Math.round(getMapWidth())} x ${Math.round(getMapHeight())}`, "menu-map-wrap");
+  const canvasEl = document.createElement("canvas");
+  canvasEl.className = "menu-map-canvas";
+  canvasEl.width = 900;
+  canvasEl.height = 560;
+  mapCard.append(canvasEl);
+  const legend = document.createElement("div");
+  legend.className = "menu-map-legend";
+  [
+    ["#fff0a8", "Ivan"],
+    ["#9cec6e", "Matts"],
+    ["#8bd3ff", "Nodes"],
+    ["#a0d8ff", "NPCs"],
+  ].forEach(([color, label]) => {
+    const item = document.createElement("span");
+    const dot = document.createElement("i");
+    dot.style.background = color;
+    item.append(dot, document.createTextNode(label));
+    legend.append(item);
+  });
+  mapCard.append(legend);
+
+  appendMenuCard(
+    grid,
+    "World",
+    `${state.npcs.length} NPC${state.npcs.length === 1 ? "" : "s"} | ${state.dogmatts.filter((matt) => !matt.caught).length} wild Matt${state.dogmatts.filter((matt) => !matt.caught).length === 1 ? "" : "s"}`,
+    "compact",
+  );
+  appendMenuCard(grid, "Position", `${Math.round(state.player.x)}, ${Math.round(state.player.y)}`, "compact");
+  appendMenuCard(grid, "Connections", getWorld().nodes.map((node) => getWorldLabel(node.target)).join(", ") || "None", "compact");
+  window.requestAnimationFrame(() => drawPauseMap(canvasEl));
+}
+
+function renderPauseJournal(parent) {
+  const grid = createMenuGrid(parent);
+  appendMenuCard(
+    grid,
+    state.profileName || "Ivan",
+    `${timeLabel?.textContent || ""} | ${getWorldLabel(state.currentWorld)} | Arena ${getArenaRankTitle()}`,
+    "full",
+  );
+
+  Object.values(NPC_DIALOGUE).forEach((dialogue) => {
+    const card = appendMenuCard(grid, dialogue.title || "Journal", dialogue.intro, "wide");
+    dialogue.topics.slice(0, 3).forEach((topic) => {
+      const line = document.createElement("p");
+      line.textContent = `${topic.label}: ${topic.text}`;
+      card.append(line);
+    });
+  });
+}
+
+function getMissionProgressText(mission) {
+  return mission.requirements
+    .map((requirement) => {
+      const count = Math.min(getCapturedMattTypeCount(requirement.type), requirement.count);
+      return `${MATT_LABELS[requirement.type] || "Matt"} ${count}/${requirement.count}`;
+    })
+    .join(", ");
+}
+
+function renderPauseMissions(parent) {
+  const grid = createMenuGrid(parent);
+  Object.values(NPC_MISSIONS).forEach((mission) => {
+    const completed = isMissionComplete(mission);
+    const ready = canCompleteMission(mission);
+    const status = completed ? "Complete" : ready ? "Ready" : "Active";
+    const action = !completed && ready ? makeMenuButton("Turn In", "complete-mission", mission.id) : null;
+    appendMenuRow(
+      grid,
+      mission.title,
+      `${mission.briefing} Reward: ${getMissionRewardText(mission)}. ${getMissionProgressText(mission)}.`,
+      status,
+      action,
+      "full",
+    );
+  });
+}
+
+function renderPauseParty(parent) {
+  const grid = createMenuGrid(parent);
+  if (state.capturedParty.length === 0) {
+    appendMenuCard(grid, "Party", "No Matts traveling with Ivan.", "full");
+    return;
+  }
+
+  state.capturedParty.forEach((matt) => {
+    const card = appendMenuCard(
+      grid,
+      matt.name || MATT_LABELS[matt.type] || "Captured Matt",
+      `Lv ${getMattLevel(matt)} | XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | ${getFriendshipLine(matt)}. ${getFriendshipBonusLine(matt)}`,
+      "full",
+    );
+    const actions = document.createElement("div");
+    actions.className = "menu-actions";
+    actions.append(
+      makeMenuButton("Care", "bond-care", matt.partyId, !canCareForMatt(matt)),
+      makeMenuButton("Treat", "bond-treat", matt.partyId, getItemCount("matt_treat") <= 0 || (matt.friendship || 0) >= 100),
+      makeMenuButton("Brush", "bond-brush", matt.partyId, getItemCount("camp_brush") <= 0 || (matt.friendship || 0) >= 100),
+      makeMenuButton("Mint", "bond-mint", matt.partyId, getItemCount("focus_mint") <= 0 || (matt.friendship || 0) >= 100),
+      makeMenuButton("Spar", "bond-spar", matt.partyId, state.player.stamina < 25),
+    );
+    card.append(actions);
+  });
+}
+
+function renderPauseMenu(message = "") {
+  if (!pauseMenuContent) {
+    return;
+  }
+
+  const tabDef = PAUSE_MENU_TABS.find((tab) => tab.id === state.pauseMenuTab) || PAUSE_MENU_TABS[0];
+  state.pauseMenuTab = tabDef.id;
+  updateEconomyHud();
+  updatePlayerProgressHud();
+  updatePlayerStatusHud();
+
+  if (pauseMenuTitle) {
+    pauseMenuTitle.textContent = tabDef.title;
+  }
+  if (pauseMenuSubtitle) {
+    pauseMenuSubtitle.textContent = `${getWorldLabel(state.currentWorld)} | Ivan Lv ${getPlayerLevel()} | Coins ${state.coins}`;
+  }
+  if (pauseMenuTabs) {
+    pauseMenuTabs.innerHTML = "";
+    PAUSE_MENU_TABS.forEach((tab) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = tab.label;
+      button.dataset.tab = tab.id;
+      button.classList.toggle("active", tab.id === state.pauseMenuTab);
+      pauseMenuTabs.append(button);
+    });
+  }
+
+  pauseMenuContent.innerHTML = "";
+
+  if (tabDef.id === "character") {
+    renderPauseCharacter(pauseMenuContent);
+  } else if (tabDef.id === "skills") {
+    renderPauseSkills(pauseMenuContent);
+  } else if (tabDef.id === "inventory") {
+    renderPauseInventory(pauseMenuContent);
+  } else if (tabDef.id === "map") {
+    renderPauseMap(pauseMenuContent);
+  } else if (tabDef.id === "journal") {
+    renderPauseJournal(pauseMenuContent);
+  } else if (tabDef.id === "missions") {
+    renderPauseMissions(pauseMenuContent);
+  } else if (tabDef.id === "party") {
+    renderPauseParty(pauseMenuContent);
+  }
+
+  if (pauseMenuMessage) {
+    pauseMenuMessage.textContent = message || "";
+  }
+}
+
+function openPauseMenu(tab = state.pauseMenuTab || "character", message = "") {
+  if (!pauseMenu || (state.arena.active && state.arena.phase !== "idle")) {
+    return;
+  }
+
+  closeShop();
+  state.pauseMenuTab = PAUSE_MENU_TABS.some((candidate) => candidate.id === tab) ? tab : "character";
+  pauseMenu.hidden = false;
+  document.body.classList.add("pause-open");
+  keys.clear();
+  touchInput.sprint = false;
+  resetTouchJoystick();
+  renderPauseMenu(message);
+}
+
+function closePauseMenu() {
+  if (!pauseMenu) {
+    return;
+  }
+
+  pauseMenu.hidden = true;
+  document.body.classList.remove("pause-open");
+  if (pauseMenuMessage) {
+    pauseMenuMessage.textContent = "";
   }
 }
 
@@ -5458,8 +6085,13 @@ function useInventoryItem(itemId) {
   }
 
   if (item.bondOnly) {
-    state.shopTab = "bond";
-    renderShop(`${item.name} works best when used with a specific Matt.`);
+    if (isPauseMenuOpen()) {
+      state.pauseMenuTab = "party";
+      renderPauseMenu(`${item.name} works best when used with a specific Matt.`);
+    } else {
+      state.shopTab = "bond";
+      renderShop(`${item.name} works best when used with a specific Matt.`);
+    }
     return;
   }
 
@@ -5493,7 +6125,7 @@ function useInventoryItem(itemId) {
   }
 
   if (!used) {
-    renderShop(`${item.name} is not needed right now.`);
+    renderActiveOverlay(`${item.name} is not needed right now.`);
     return;
   }
 
@@ -5501,7 +6133,7 @@ function useInventoryItem(itemId) {
   saveEconomy();
   updateEconomyHud();
   updatePlayerStatusHud();
-  renderShop(`Used ${item.name}.`);
+  renderActiveOverlay(`Used ${item.name}.`);
 }
 
 function sellCapturedMatt(partyId) {
@@ -5621,12 +6253,14 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
     return;
   }
 
+  const previousWorld = state.currentWorld;
   if (state.ready) {
     saveCapturedParty();
     saveEconomy();
   }
 
   closeShop();
+  closePauseMenu();
   state.currentWorld = id;
   state.lastPreloadKey = "";
   state.dev.activePathId = null;
@@ -5663,6 +6297,10 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
     syncCamera();
     preloadNearbyTiles(2);
     draw();
+  }
+
+  if (previousWorld === "grass_tree" && id !== "grass_tree") {
+    resumeAmbientMusicFromPrimeGrassMatt();
   }
 }
 
@@ -6685,6 +7323,76 @@ function scheduleMysticMattSpecialIdle(matt, random = Math.random) {
   matt.mysticFloatTimer = 0;
 }
 
+function createBossMatt(worldId, profile, random = Math.random) {
+  const boss = WORLD_BOSS_MATTS[worldId];
+  if (!boss) {
+    return null;
+  }
+
+  const config = getMattConfig(boss.type);
+  const level = rollWildMattLevel(profile, random);
+  const matt = {
+    id: boss.id,
+    originalId: boss.id,
+    name: boss.name,
+    type: boss.type,
+    assetKey: boss.assetKey || boss.type,
+    x: clamp(boss.x, 0, getMapWidth()),
+    y: clamp(boss.y, 0, getMapHeight()),
+    width: config.width,
+    height: config.height,
+    scale: boss.scale || 1,
+    action: "idle",
+    frameTimer: 0,
+    frameIndex: 0,
+    direction: "left",
+    level,
+    xp: 0,
+    friendship: 0,
+    captureDifficulty: profile.captureDifficulty,
+    captureChance: 0,
+    captureHitsRequired: 0,
+    damageScale: profile.damageScale,
+    hitCount: 0,
+    hitCooldown: 0,
+    hitReactionTimer: 0,
+    attackCooldown: 0.8,
+    attackTimer: 0,
+    attackElapsed: 0,
+    attackApplied: false,
+    caught: false,
+    boss: true,
+    rooted: true,
+    awakened: false,
+    aggroRadius: boss.aggroRadius || config.noticeRadius,
+    attacks: boss.attacks || [],
+    pathId: "",
+    pathPointIndex: 0,
+    pathDirection: 1,
+    spawnAreaId: "",
+    pathRoamMode: "boss",
+    pathRoamTarget: null,
+    pathPauseTimer: 0,
+    pathPanicTimer: 0,
+  };
+  matt.captureChance = getWildMattCaptureChance(matt);
+  matt.captureHitsRequired = getWildMattCaptureHits(matt);
+  return matt;
+}
+
+function awakenBossMatt(matt) {
+  if (!matt?.boss || matt.awakened) {
+    return;
+  }
+
+  matt.awakened = true;
+  matt.attackCooldown = 0.25;
+  matt.activeAttack = null;
+  matt.attackTarget = null;
+  startPrimeGrassMattMusic();
+  setGameMessage(`${matt.name || "The boss"} wakes up.`);
+}
+
 function spawnDogmatts() {
   const profile = getWorldEncounterProfile();
   const type = profile?.mattType || "";
@@ -6704,6 +7412,12 @@ function spawnDogmatts() {
   const mapWidth = getMapWidth();
   const mapHeight = getMapHeight();
   const margin = Math.min(600, Math.max(80, Math.min(mapWidth, mapHeight) * 0.12));
+  const bossMatt = createBossMatt(state.currentWorld, profile, random);
+
+  if (bossMatt) {
+    state.dogmatts = attachCapturedParty([bossMatt]);
+    return;
+  }
 
   for (let index = 0; index < (profile.count || config.count); index += 1) {
     let x = margin + random() * Math.max(1, mapWidth - margin * 2);
@@ -7009,7 +7723,7 @@ function updatePlayer(dt) {
   player.stamina = clamp(player.stamina ?? maxStamina, 0, maxStamina);
   player.damageCooldown = Math.max(0, (player.damageCooldown || 0) - dt);
 
-  if (state.dev.enabled || isShopOpen() || (state.arena.active && state.arena.phase !== "idle")) {
+  if (state.dev.enabled || isShopOpen() || isPauseMenuOpen() || (state.arena.active && state.arena.phase !== "idle")) {
     player.moving = false;
     player.stamina = Math.min(maxStamina, player.stamina + getPlayerStaminaRegen() * dt);
     updatePlayerRestAnimation(player, dt);
@@ -7086,10 +7800,14 @@ function cryingActionForHits(hitCount) {
 }
 
 function getMattHitAction(matt) {
-  const frameSet = images[matt.type] || {};
+  const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || {};
 
   if (matt.type === "dogmatt") {
     return cryingActionForHits(matt.hitCount);
+  }
+
+  if (matt.boss && !frameSet.hit) {
+    return "idle";
   }
 
   if (frameSet.hit && frameSet.hit.length > 0) {
@@ -7131,7 +7849,7 @@ function damagePlayer(amount, sourceMatt) {
   state.player.health = Math.max(0, state.player.health - damage);
   state.player.damageCooldown = PLAYER.damageInvulnerableTime;
   addScreenShake(7);
-  setGameMessage(`Lv ${getMattLevel(sourceMatt)} ${MATT_LABELS[sourceMatt.type] || "Matt"} hit Ivan for ${damage}.`);
+  setGameMessage(`Lv ${getMattLevel(sourceMatt)} ${sourceMatt.name || MATT_LABELS[sourceMatt.type] || "Matt"} hit Ivan for ${damage}.`);
   updatePlayerStatusHud();
 
   if (state.player.health <= 0) {
@@ -7139,15 +7857,237 @@ function damagePlayer(amount, sourceMatt) {
   }
 }
 
+function drainPlayerStamina(amount) {
+  if (!amount) {
+    return;
+  }
+
+  state.player.stamina = Math.max(0, (state.player.stamina || 0) - amount);
+  updatePlayerStatusHud();
+}
+
+function knockPlayerAwayFrom(point, amount) {
+  if (!amount) {
+    return;
+  }
+
+  const dx = state.player.x - point.x;
+  const dy = state.player.y - point.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  moveWithWalls(state.player, (dx / distance) * amount, (dy / distance) * amount, 28);
+  seedPlayerTrail();
+}
+
+function angleDifference(a, b) {
+  return Math.atan2(Math.sin(a - b), Math.cos(a - b));
+}
+
+function getPrimeAttackTarget(matt) {
+  return matt.attackTarget || { x: state.player.x, y: state.player.y };
+}
+
+function isPlayerHitByMattAttack(matt, attack) {
+  const dx = state.player.x - matt.x;
+  const dy = state.player.y - matt.y;
+  const distance = Math.hypot(dx, dy) || 1;
+
+  if (attack.hitShape === "cone") {
+    const target = getPrimeAttackTarget(matt);
+    const attackAngle = Math.atan2(target.y - matt.y, target.x - matt.x);
+    const playerAngle = Math.atan2(dy, dx);
+    const arc = attack.coneArc || Math.PI * 0.65;
+    return distance <= (attack.attackRadius || 0) && Math.abs(angleDifference(playerAngle, attackAngle)) <= arc / 2;
+  }
+
+  if (attack.hitShape === "beam") {
+    const target = getPrimeAttackTarget(matt);
+    const beamDistance = distanceToSegment(state.player, matt, target);
+    return beamDistance <= (attack.beamWidth || 72) || Math.hypot(state.player.x - target.x, state.player.y - target.y) <= 88;
+  }
+
+  return distance <= (attack.attackRadius || 0) + 42;
+}
+
+function addImageProjectile(imageKey, x, y, angle, speed, size, life) {
+  addParticle({
+    type: "image",
+    imageKey,
+    x,
+    y,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    life,
+    size,
+    rotation: angle + Math.PI / 2,
+  });
+}
+
+function spawnPrimeAttackEffect(matt, attack) {
+  const target = getPrimeAttackTarget(matt);
+  const originX = matt.x;
+  const originY = matt.y - 60 * (Number(matt.scale) || 1);
+
+  if (attack.effect === "sporeBurst") {
+    const count = attack.projectileCount || 16;
+    for (let i = 0; i < count; i += 1) {
+      const angle = (i / count) * Math.PI * 2;
+      addImageProjectile(
+        "primeSporeThorn",
+        originX + Math.cos(angle) * 72,
+        originY + Math.sin(angle) * 72,
+        angle,
+        attack.projectileSpeed || 560,
+        92,
+        0.82,
+      );
+    }
+    addScreenShake(attack.screenShake || 8);
+    return;
+  }
+
+  if (attack.effect === "thornFan") {
+    const count = attack.projectileCount || 7;
+    const centerAngle = Math.atan2(target.y - matt.y, target.x - matt.x);
+    const arc = attack.coneArc || Math.PI * 0.62;
+    for (let i = 0; i < count; i += 1) {
+      const percent = count <= 1 ? 0.5 : i / (count - 1);
+      const angle = centerAngle - arc / 2 + arc * percent;
+      addImageProjectile(
+        "primeThornFan",
+        originX + Math.cos(angle) * 86,
+        originY + Math.sin(angle) * 86,
+        angle,
+        attack.projectileSpeed || 640,
+        112,
+        0.78,
+      );
+    }
+    addScreenShake(attack.screenShake || 8);
+    return;
+  }
+
+  if (attack.effect === "rootSnare") {
+    addParticle({
+      type: "beam",
+      x: originX,
+      y: originY,
+      x2: target.x,
+      y2: target.y - 28,
+      vx: 0,
+      vy: 0,
+      life: 0.36,
+      size: attack.beamWidth || 78,
+      color: "rgba(236, 255, 180, 0.94)",
+    });
+    addParticle({
+      type: "ring",
+      x: target.x,
+      y: target.y,
+      vx: 0,
+      vy: 0,
+      life: 0.42,
+      size: 26,
+      color: "rgba(236, 255, 180, 0.88)",
+    });
+    addScreenShake(attack.screenShake || 10);
+    return;
+  }
+
+  if (attack.effect === "canopyQuake") {
+    for (let i = 0; i < 4; i += 1) {
+      addParticle({
+        type: "ring",
+        x: matt.x,
+        y: matt.y,
+        vx: 0,
+        vy: 0,
+        life: 0.7 + i * 0.08,
+        size: 80 + i * 54,
+        color: i % 2 === 0 ? "rgba(184, 255, 119, 0.78)" : "rgba(255, 244, 161, 0.72)",
+      });
+    }
+    addScreenShake(attack.screenShake || 16);
+    return;
+  }
+
+  if (attack.effect === "vineHammer") {
+    addParticle({
+      type: "ring",
+      x: target.x,
+      y: target.y,
+      vx: 0,
+      vy: 0,
+      life: 0.36,
+      size: 52,
+      color: "rgba(138, 255, 99, 0.88)",
+    });
+    for (let i = 0; i < 8; i += 1) {
+      const angle = (i / 8) * Math.PI * 2;
+      addParticle({
+        type: "slash",
+        x: target.x + Math.cos(angle) * 22,
+        y: target.y + Math.sin(angle) * 22,
+        vx: Math.cos(angle) * 140,
+        vy: Math.sin(angle) * 140,
+        life: 0.24,
+        size: 34,
+        color: "rgba(183, 255, 112, 0.9)",
+        rotation: angle,
+      });
+    }
+    addScreenShake(attack.screenShake || 10);
+  }
+}
+
+function applyMattAttackImpact(matt, attack) {
+  spawnPrimeAttackEffect(matt, attack);
+
+  if (!isPlayerHitByMattAttack(matt, attack)) {
+    return;
+  }
+
+  damagePlayer(getWildMattAttackDamage(matt, attack), matt);
+  drainPlayerStamina(attack.staminaDamage || 0);
+  knockPlayerAwayFrom(matt, attack.knockback || 0);
+}
+
+function chooseMattAttack(matt, config) {
+  if (!Array.isArray(matt.attacks) || matt.attacks.length === 0) {
+    return config;
+  }
+
+  const distance = Math.hypot(state.player.x - matt.x, state.player.y - matt.y);
+  const reachableAttacks = matt.attacks.filter((attack) => distance <= (attack.attackRadius || config.attackRadius || 0) + 80);
+  const candidates = reachableAttacks.length > 0 ? reachableAttacks : matt.attacks;
+  const options = candidates.filter((attack) => attack.id !== matt.lastAttackId);
+  const attackPool = options.length > 0 ? options : candidates;
+  const attack = attackPool[Math.floor(Math.random() * attackPool.length)];
+  matt.lastAttackId = attack.id;
+  matt.activeAttackId = attack.id;
+  matt.activeAttackName = attack.name;
+  return { ...config, ...attack };
+}
+
+function getMattAttackTriggerRadius(matt, config) {
+  const baseRadius = config.attackRadius || 0;
+  const specialRadius = Array.isArray(matt.attacks)
+    ? Math.max(0, ...matt.attacks.map((attack) => attack.attackRadius || 0))
+    : 0;
+  return Math.max(baseRadius, specialRadius);
+}
+
 function startMattAttack(matt, config) {
-  matt.attackTimer = Math.max(0.45, (config.attackWindup || 0.24) + 0.42);
+  const attackConfig = chooseMattAttack(matt, config);
+  matt.activeAttack = attackConfig;
+  matt.attackTarget = { x: state.player.x, y: state.player.y };
+  matt.attackTimer = Math.max(0.45, (attackConfig.attackWindup || 0.24) + 0.42);
   matt.attackElapsed = 0;
   matt.attackApplied = false;
-  matt.attackCooldown = config.attackCooldown || 1.8;
+  matt.attackCooldown = attackConfig.attackCooldown || 1.8;
   matt.frameIndex = 0;
   matt.frameTimer = 0;
   facePlayer(matt);
-  setAction(matt, "attack");
+  setAction(matt, attackConfig.action || "attack");
 }
 
 function updateMattAttack(matt, config, distance, dt) {
@@ -7161,19 +8101,18 @@ function updateMattAttack(matt, config, distance, dt) {
     matt.attackTimer = Math.max(0, matt.attackTimer - dt);
     matt.attackElapsed = (matt.attackElapsed || 0) + dt;
     facePlayer(matt);
-    setAction(matt, "attack");
 
-    if (!matt.attackApplied && matt.attackElapsed >= (config.attackWindup || 0.24)) {
+    const activeAttack = matt.activeAttack || config;
+    setAction(matt, activeAttack.action || "attack");
+    if (!matt.attackApplied && matt.attackElapsed >= (activeAttack.attackWindup || 0.24)) {
       matt.attackApplied = true;
-      if (distance <= config.attackRadius + 42) {
-        damagePlayer(getWildMattAttackDamage(matt, config), matt);
-      }
+      applyMattAttackImpact(matt, activeAttack);
     }
 
     return true;
   }
 
-  if (distance <= config.attackRadius && matt.attackCooldown <= 0) {
+  if (distance <= getMattAttackTriggerRadius(matt, config) && matt.attackCooldown <= 0) {
     startMattAttack(matt, config);
     return true;
   }
@@ -7335,6 +8274,28 @@ function updateWildDogmatt(dogmatt, dt) {
   dogmatt.hitReactionTimer = Math.max(0, (dogmatt.hitReactionTimer || 0) - dt);
   dogmatt.pathPanicTimer = Math.max(0, (dogmatt.pathPanicTimer || 0) - dt);
 
+  if (dogmatt.rooted) {
+    if (!dogmatt.awakened) {
+      setWildMattBaseAction(dogmatt, "idle", dt);
+      return;
+    }
+
+    if (!dogmatt.caught && dogmatt.hitReactionTimer <= 0 && updateMattAttack(dogmatt, config, distance, dt)) {
+      return;
+    }
+
+    if (distance <= (dogmatt.aggroRadius || config.noticeRadius)) {
+      facePlayer(dogmatt);
+    }
+
+    if (dogmatt.hitReactionTimer > 0) {
+      setAction(dogmatt, getMattHitAction(dogmatt));
+    } else {
+      setWildMattBaseAction(dogmatt, "idle", dt);
+    }
+    return;
+  }
+
   if (dogmatt.pathPanicTimer > 0) {
     const moveX = dx / distance;
     const moveY = dy / distance;
@@ -7408,8 +8369,8 @@ function updateCaughtDogmatt(dogmatt, dt, caughtIndex) {
 }
 
 function getMattFrames(matt) {
-  const frameSet = images[matt.type] || images.dogmatt;
-  return frameSet[matt.action] || frameSet.idle || images.dogmatt.idle;
+  const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || images.dogmatt;
+  return frameSet[matt.action] || frameSet.attack || frameSet.idle || images.dogmatt.idle;
 }
 
 function advanceMattAnimation(matt, dt) {
@@ -7473,6 +8434,12 @@ function advanceMattAnimation(matt, dt) {
       setAction(matt, "mysticIdleStop");
     }
 
+    return;
+  }
+
+  if (matt.assetKey === "primegrassmatt") {
+    const frameDuration = matt.action === "idle" ? 0.16 : 0.085;
+    advanceAnimation(matt, frames.length, frameDuration, dt);
     return;
   }
 
@@ -7546,6 +8513,8 @@ function updateCaughtHud(caughtCount) {
 function addParticle(particle) {
   state.particles.push({
     maxLife: particle.life,
+    vx: 0,
+    vy: 0,
     gravity: 0,
     spin: 0,
     rotation: 0,
@@ -7799,7 +8768,7 @@ function updateNpcs(dt) {
 }
 
 function updateFriendshipWalking(dt) {
-  if (!state.player.moving || state.capturedParty.length === 0 || state.arena.active || isShopOpen()) {
+  if (!state.player.moving || state.capturedParty.length === 0 || state.arena.active || isShopOpen() || isPauseMenuOpen()) {
     return;
   }
 
@@ -7836,9 +8805,10 @@ function update(dt) {
 
 function hitDogmatt(dogmatt) {
   const captureHitThreshold = getCaptureHitThreshold(dogmatt);
+  awakenBossMatt(dogmatt);
   dogmatt.hitCooldown = 0.25;
   dogmatt.hitReactionTimer = 0.55;
-  dogmatt.pathPanicTimer = Math.max(dogmatt.pathPanicTimer || 0, 2.2);
+  dogmatt.pathPanicTimer = dogmatt.rooted ? 0 : Math.max(dogmatt.pathPanicTimer || 0, 2.2);
   dogmatt.pathRoamTarget = null;
   dogmatt.hitCount += 1;
   dogmatt.frameIndex = 0;
@@ -7876,12 +8846,12 @@ function hitDogmatt(dogmatt) {
 
     if (Math.random() > captureChance) {
       dogmatt.hitCount = Math.max(0, captureHitThreshold - 1);
-      dogmatt.pathPanicTimer = Math.max(dogmatt.pathPanicTimer || 0, 3.5);
+      dogmatt.pathPanicTimer = dogmatt.rooted ? 0 : Math.max(dogmatt.pathPanicTimer || 0, 3.5);
       dogmatt.attackCooldown = Math.min(dogmatt.attackCooldown || 0, 0.3);
       setAction(dogmatt, getMattHitAction(dogmatt));
       playHitSound(dogmatt.hitCount);
       setGameMessage(
-        `Lv ${getMattLevel(dogmatt)} ${MATT_LABELS[dogmatt.type] || "Matt"} resisted capture (${Math.round(captureChance * 100)}%).`,
+        `Lv ${getMattLevel(dogmatt)} ${dogmatt.name || MATT_LABELS[dogmatt.type] || "Matt"} resisted capture (${Math.round(captureChance * 100)}%).`,
       );
       return;
     }
@@ -7895,6 +8865,9 @@ function hitDogmatt(dogmatt) {
     setAction(dogmatt, "caught");
     state.capturedParty.push(serializeCapturedMatt(dogmatt));
     state.capturedParty = state.capturedParty.slice(0, MATT_PARTY_LIMIT);
+    if (dogmatt.boss) {
+      resumeAmbientMusicFromPrimeGrassMatt();
+    }
     spawnCaptureEffect(dogmatt);
     playCaptureSound();
     addScreenShake(10);
@@ -7903,7 +8876,7 @@ function hitDogmatt(dogmatt) {
       "capture",
     );
     setGameMessage(
-      `Captured Lv ${getMattLevel(dogmatt)} ${MATT_LABELS[dogmatt.type] || "Matt"} (${Math.round(captureChance * 100)}%). Ivan XP +${ivanProgress.gained}${ivanProgress.leveled ? `, Lv ${ivanProgress.level}` : ""}.`,
+      `Captured Lv ${getMattLevel(dogmatt)} ${dogmatt.name || MATT_LABELS[dogmatt.type] || "Matt"} (${Math.round(captureChance * 100)}%). Ivan XP +${ivanProgress.gained}${ivanProgress.leveled ? `, Lv ${ivanProgress.level}` : ""}.`,
     );
     updateCaughtHud(countCaughtMatts());
     saveCapturedParty();
@@ -8037,6 +9010,10 @@ function getInnActorScale() {
 }
 
 function getPlayerRenderScale() {
+  if (["grass_tree", "grass_cave"].includes(state.currentWorld)) {
+    return 2.2;
+  }
+
   return ["town_blacksmith", "town_arena_entrance"].includes(state.currentWorld) ? 3 : getInnActorScale();
 }
 
@@ -8080,7 +9057,7 @@ function drawPlayer() {
 
 function drawDogmattShadow(dogmatt) {
   const config = getMattConfig(dogmatt.type);
-  const scale = getInnActorScale();
+  const scale = getInnActorScale() * (Number(dogmatt.scale) || 1);
   const screenX = dogmatt.x - state.camera.x;
   const screenY = dogmatt.y - state.camera.y;
 
@@ -8100,7 +9077,7 @@ function drawDogmatt(dogmatt) {
   }
 
   const sprite = frames[dogmatt.frameIndex % frames.length];
-  const scale = getInnActorScale();
+  const scale = getInnActorScale() * (Number(dogmatt.scale) || 1);
   const screenX = Math.round(dogmatt.x - state.camera.x);
   const screenY = Math.round(dogmatt.y - state.camera.y);
   const facingLeft = dogmatt.direction === "left";
@@ -8118,14 +9095,15 @@ function drawDogmatt(dogmatt) {
 
   if (!dogmatt.caught && !dogmatt.arenaBattler) {
     const difficulty = Math.max(1, Number(dogmatt.captureDifficulty) || 1);
+    const label = dogmatt.boss ? `${dogmatt.name} Lv ${getMattLevel(dogmatt)}` : `Lv ${getMattLevel(dogmatt)}`;
     ctx.save();
     ctx.font = "800 13px Inter, system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.lineWidth = 4;
     ctx.strokeStyle = "rgba(18, 16, 14, 0.82)";
     ctx.fillStyle = difficulty >= 3 ? "#ffb36d" : difficulty >= 2 ? "#f7f1d0" : "#baf7ce";
-    ctx.strokeText(`Lv ${getMattLevel(dogmatt)}`, screenX, screenY - config.height * scale - 12);
-    ctx.fillText(`Lv ${getMattLevel(dogmatt)}`, screenX, screenY - config.height * scale - 12);
+    ctx.strokeText(label, screenX, screenY - config.height * scale - 12);
+    ctx.fillText(label, screenX, screenY - config.height * scale - 12);
     ctx.restore();
   }
 }
@@ -8286,6 +9264,49 @@ function drawParticles() {
     const progress = 1 - particle.life / particle.maxLife;
     const alpha = Math.max(0, 1 - progress);
     ctx.globalAlpha = alpha;
+
+    if (particle.type === "image") {
+      const image = images.effects[particle.imageKey];
+      if (!image) {
+        continue;
+      }
+
+      const height = particle.size;
+      const width = height * (image.naturalWidth || image.width || 1) / Math.max(1, image.naturalHeight || image.height || 1);
+      ctx.save();
+      ctx.translate(particle.x, particle.y);
+      ctx.rotate(particle.rotation);
+      ctx.drawImage(image, -width / 2, -height / 2, width, height);
+      ctx.restore();
+      continue;
+    }
+
+    if (particle.type === "beam") {
+      const pulse = 1 - Math.abs(progress - 0.5) * 1.4;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0.18, alpha);
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "rgba(255, 255, 235, 0.22)";
+      ctx.lineWidth = particle.size * (1.35 + pulse * 0.4);
+      ctx.beginPath();
+      ctx.moveTo(particle.x, particle.y);
+      ctx.lineTo(particle.x2, particle.y2);
+      ctx.stroke();
+      ctx.strokeStyle = particle.color;
+      ctx.lineWidth = particle.size * (0.45 + pulse * 0.25);
+      ctx.beginPath();
+      ctx.moveTo(particle.x, particle.y);
+      ctx.lineTo(particle.x2, particle.y2);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.lineWidth = Math.max(4, particle.size * 0.12);
+      ctx.beginPath();
+      ctx.moveTo(particle.x, particle.y);
+      ctx.lineTo(particle.x2, particle.y2);
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
 
     if (particle.type === "slash") {
       ctx.save();
@@ -8759,7 +9780,7 @@ function bindTouchButton(button, onPress, onRelease) {
 }
 
 function triggerWhip() {
-  if (!state.ready || state.dev.enabled || isShopOpen() || (state.arena.active && state.arena.phase !== "idle")) {
+  if (!state.ready || state.dev.enabled || isShopOpen() || isPauseMenuOpen() || (state.arena.active && state.arena.phase !== "idle")) {
     return;
   }
 
@@ -8795,6 +9816,12 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (key === "escape" && isPauseMenuOpen()) {
+    event.preventDefault();
+    closePauseMenu();
+    return;
+  }
+
   if (key === "escape" && isShopOpen()) {
     event.preventDefault();
     if (state.arena.active) {
@@ -8812,6 +9839,11 @@ window.addEventListener("keydown", (event) => {
   }
 
   if (isTypingTarget(event.target)) {
+    return;
+  }
+
+  if (isPauseMenuOpen()) {
+    event.preventDefault();
     return;
   }
 
@@ -8841,6 +9873,12 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (key === "escape" && !event.repeat) {
+    event.preventDefault();
+    openPauseMenu("character");
+    return;
+  }
+
   ensureAudio();
 
   if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
@@ -8855,8 +9893,19 @@ window.addEventListener("keydown", (event) => {
 
   if (key === "k" && !event.repeat) {
     event.preventDefault();
-    openInventory();
-    setShopTab("skills");
+    openPauseMenu("skills");
+    return;
+  }
+
+  if (key === "m" && !event.repeat) {
+    event.preventDefault();
+    openPauseMenu("map");
+    return;
+  }
+
+  if (key === "j" && !event.repeat) {
+    event.preventDefault();
+    openPauseMenu("journal");
     return;
   }
 
@@ -8896,6 +9945,11 @@ window.addEventListener("blur", () => {
 });
 
 canvas.addEventListener("pointerdown", (event) => {
+  if (isPauseMenuOpen()) {
+    event.preventDefault();
+    return;
+  }
+
   if (state.dev.enabled) {
     handleDevPointerDown(event);
     return;
@@ -8941,6 +9995,57 @@ inventoryButton?.addEventListener("click", () => {
 touchInventory?.addEventListener("click", (event) => {
   event.preventDefault();
   openInventory();
+});
+
+pauseMenuClose?.addEventListener("click", () => {
+  closePauseMenu();
+});
+
+pauseMenuTabs?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-tab]");
+  if (!button) {
+    return;
+  }
+
+  state.pauseMenuTab = button.dataset.tab;
+  renderPauseMenu();
+});
+
+pauseMenuContent?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action]");
+  if (!button || button.disabled) {
+    return;
+  }
+
+  const { action, id } = button.dataset;
+  if (action === "pause-tab") {
+    state.pauseMenuTab = id;
+    renderPauseMenu();
+  } else if (action === "use-item") {
+    useInventoryItem(id);
+  } else if (action === "complete-mission") {
+    completeMission(id);
+  } else if (action === "bond-care") {
+    careForMatt(id);
+  } else if (action === "bond-treat") {
+    useBondItemOnMatt(id, "matt_treat", 12);
+  } else if (action === "bond-brush") {
+    useBondItemOnMatt(id, "camp_brush", 16, 5);
+  } else if (action === "bond-mint") {
+    useBondItemOnMatt(id, "focus_mint", 8, 18);
+  } else if (action === "bond-spar") {
+    sparWithMatt(id);
+  } else if (action === "learn-skill") {
+    unlockSkill(id);
+  } else if (action === "reset-skills") {
+    resetPlayerSkills();
+  }
+});
+
+pauseMenu?.addEventListener("click", (event) => {
+  if (event.target === pauseMenu) {
+    closePauseMenu();
+  }
 });
 
 shopClose?.addEventListener("click", () => {
@@ -9058,6 +10163,8 @@ async function startGameForProfile(profileId) {
 
   state.ready = false;
   hideLauncher();
+  closeShop();
+  closePauseMenu();
 
   if (loading) {
     loading.textContent = `Loading ${state.profileName}...`;
@@ -9192,6 +10299,8 @@ profileMenu?.addEventListener("click", () => {
   }
 
   state.ready = false;
+  closeShop();
+  closePauseMenu();
   showLauncher("Choose a profile.");
 });
 

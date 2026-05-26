@@ -1,6 +1,6 @@
 window.DEFAULT_WORLD_DATA = {
   "version": 1,
-  "currentWorld": "town",
+  "currentWorld": "water_cove",
   "worlds": {
     "mainworld": {
       "id": "mainworld",
@@ -25540,9 +25540,9 @@ window.DEFAULT_WORLD_DATA = {
       "nodes": [
         {
           "id": "node-grass-tree-to-grassworld",
-          "x": 336,
-          "y": 502,
-          "radius": 90,
+          "x": 3800,
+          "y": 5480,
+          "radius": 120,
           "target": "treeworld"
         }
       ]
@@ -25557,9 +25557,9 @@ window.DEFAULT_WORLD_DATA = {
       "nodes": [
         {
           "id": "node-grass-camp-to-grassworld",
-          "x": 336,
-          "y": 502,
-          "radius": 90,
+          "x": 3800,
+          "y": 5480,
+          "radius": 120,
           "target": "treeworld"
         }
       ]
@@ -25574,9 +25574,9 @@ window.DEFAULT_WORLD_DATA = {
       "nodes": [
         {
           "id": "node-grass-cave-to-grassworld",
-          "x": 336,
-          "y": 502,
-          "radius": 90,
+          "x": 3800,
+          "y": 5480,
+          "radius": 120,
           "target": "treeworld"
         }
       ]
