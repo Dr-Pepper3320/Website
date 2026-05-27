@@ -32,6 +32,8 @@ const pauseMenuTitle = document.querySelector("#pause-menu-title");
 const pauseMenuSubtitle = document.querySelector("#pause-menu-subtitle");
 const pauseMenuContent = document.querySelector("#pause-menu-content");
 const pauseMenuMessage = document.querySelector("#pause-menu-message");
+const newGameIntro = document.querySelector("#new-game-intro");
+const introClose = document.querySelector("#intro-close");
 const arenaBattleUi = document.querySelector("#arena-battle-ui");
 const arenaBattleTitle = document.querySelector("#arena-battle-title");
 const arenaBattleStats = document.querySelector("#arena-battle-stats");
@@ -76,6 +78,9 @@ const INN_RECOVERY_WORLD_ID = "town_inn";
 const INN_RECOVERY_POINT = { x: 2860, y: 2500 };
 const INN_RECOVERY_MESSAGE =
   "Brick: Easy now. You limped back here and passed out. I nursed you back to health. Stay a minute before chasing trouble again.";
+const NEW_GAME_START_POINT = { x: 1120, y: 5760 };
+const NEW_GAME_INTRO_MESSAGE =
+  "Welcome to Ivan Monster Hunt. Explore, capture Matts, visit Ty to tame followers, and use the menu tabs to track your map, missions, journal, skills, and party.";
 const WORLD_MAPS = {
   mainworld: {
     ...MAIN_MAP,
@@ -562,6 +567,67 @@ const PRIME_FIRE_MATT_ATTACKS = [
   },
 ];
 
+const PRIME_ROCK_MATT_ATTACKS = [
+  {
+    id: "granite_punch",
+    name: "Granite Punch",
+    action: "punch",
+    effect: "granitePunch",
+    hitShape: "circle",
+    attackDamage: 34,
+    attackRadius: 300,
+    attackWindup: 0.3,
+    attackCooldown: 1.55,
+    staminaDamage: 14,
+    knockback: 105,
+    screenShake: 12,
+  },
+  {
+    id: "rock_throw",
+    name: "Rock Throw",
+    action: "rockThrow",
+    effect: "rockThrow",
+    hitShape: "targetCircle",
+    attackDamage: 32,
+    attackRadius: 135,
+    attackWindup: 0.5,
+    attackCooldown: 2.15,
+    projectileSpeed: 920,
+    staminaDamage: 16,
+    knockback: 120,
+    screenShake: 14,
+  },
+  {
+    id: "rolling_crush",
+    name: "Rolling Crush",
+    action: "rollAttack",
+    effect: "rollingCrush",
+    hitShape: "charge",
+    attackDamage: 38,
+    attackRadius: 720,
+    attackWindup: 0.42,
+    attackCooldown: 2.6,
+    beamWidth: 150,
+    staminaDamage: 20,
+    knockback: 170,
+    screenShake: 18,
+  },
+  {
+    id: "tomb_quake",
+    name: "Tomb Quake",
+    action: "punch",
+    effect: "tombQuake",
+    hitShape: "circle",
+    attackDamage: 42,
+    attackRadius: 640,
+    attackWindup: 0.72,
+    attackCooldown: 3.4,
+    staminaDamage: 26,
+    knockback: 185,
+    screenShake: 24,
+  },
+];
+
 const WORLD_BOSS_MATTS = {
   fireworld: {
     id: "prime-fire-matt",
@@ -585,6 +651,26 @@ const WORLD_BOSS_MATTS = {
     introMessage: "Prime Fire Matt erupts from the fireworld.",
     requiresCaptured: { type: "firematt", count: 10 },
     attacks: PRIME_FIRE_MATT_ATTACKS,
+  },
+  tomb: {
+    id: "prime-rock-matt",
+    name: "Prime Rock Matt",
+    type: "rockmatt",
+    assetKey: "primerockmatt",
+    x: 3800,
+    y: 3100,
+    scale: 4.35,
+    levelMin: 14,
+    levelMax: 15,
+    captureDifficulty: 4.5,
+    damageScale: 1.55,
+    aggroRadius: 920,
+    walkSpeed: 108,
+    preferredDistance: 410,
+    closeDistance: 250,
+    preBattleRoam: true,
+    introMessage: "Prime Rock Matt shakes loose from the tomb stone.",
+    attacks: PRIME_ROCK_MATT_ATTACKS,
   },
   grass_tree: {
     id: "prime-grass-matt",
@@ -1752,6 +1838,7 @@ const MATT_PROGRESS_STORAGE_KEY = "ivan-monster-hunt-matt-progress-v1";
 const ECONOMY_STORAGE_KEY = "ivan-monster-hunt-economy-v1";
 const PROFILE_STORAGE_KEY = "ivan-monster-hunt-profiles-v1";
 const ACTIVE_PROFILE_STORAGE_KEY = "ivan-monster-hunt-active-profile-v1";
+const NEW_GAME_INTRO_STORAGE_KEY = "ivan-monster-hunt-new-game-intro-v1";
 const MATT_PARTY_LIMIT = 6;
 const STARTING_COINS = 120;
 const SHOP_INTERACT_RADIUS = 310;
@@ -1966,6 +2053,13 @@ const ASSETS = {
     swipe: numberedFrames("assets/maps/fire/firemattprime/attack/swipe", 7),
     tailSwipe: numberedFrames("assets/maps/fire/firemattprime/attack/tailswipe", 12),
   },
+  primerockmatt: {
+    idle: numberedFrames("assets/maps/tomb/rockmattprime/idle", 12),
+    walking: numberedFrames("assets/maps/tomb/rockmattprime/walking", 12),
+    punch: numberedFrames("assets/maps/tomb/rockmattprime/attack/punch", 12),
+    rockThrow: numberedFrames("assets/maps/tomb/rockmattprime/attack/rockthrow", 11),
+    rollAttack: numberedFrames("assets/maps/tomb/rockmattprime/attack/rollattack", 15),
+  },
   watermatt: {
     idle: ["assets/matts/watermatt/idle/1.png"],
     walking: numberedFrames("assets/matts/watermatt/walking", 12),
@@ -2020,6 +2114,7 @@ const ASSETS = {
 const EFFECT_ASSETS = {
   primeSporeThorn: "assets/maps/grass/characters/primematt/attack/sporeburst/thorn.png",
   primeThornFan: "assets/maps/grass/characters/primematt/attack/thornfan/thorn.png",
+  primeRockThrow: "assets/maps/tomb/rockmattprime/attack/rockthrow/rock.png",
 };
 
 // Drop future monster image paths/positions here when the other monster PNGs are ready.
@@ -2184,6 +2279,13 @@ const images = {
     swipe: [],
     tailSwipe: [],
   },
+  primerockmatt: {
+    idle: [],
+    walking: [],
+    punch: [],
+    rockThrow: [],
+    rollAttack: [],
+  },
   watermatt: {
     idle: [],
     walking: [],
@@ -2264,6 +2366,7 @@ async function loadAssets() {
     grassmattFrames,
     primegrassmattFrames,
     primefiremattFrames,
+    primerockmattFrames,
     watermattFrames,
     rockmattFrames,
     mysticmattFrames,
@@ -2279,6 +2382,7 @@ async function loadAssets() {
     loadAnimationSet(ASSETS.grassmatt, GRASSMATT.width, GRASSMATT.height),
     loadAnimationSet(ASSETS.primegrassmatt, GRASSMATT.width, GRASSMATT.height),
     loadAnimationSet(ASSETS.primefirematt, FIREMATT.width, FIREMATT.height),
+    loadAnimationSet(ASSETS.primerockmatt, ROCKMATT.width, ROCKMATT.height),
     loadAnimationSet(ASSETS.watermatt, WATERMATT.width, WATERMATT.height),
     loadAnimationSet(ASSETS.rockmatt, ROCKMATT.width, ROCKMATT.height),
     loadAnimationSet(ASSETS.mysticmatt, MYSTICMATT.width, MYSTICMATT.height),
@@ -2300,6 +2404,7 @@ async function loadAssets() {
   Object.assign(images.grassmatt, grassmattFrames);
   Object.assign(images.primegrassmatt, primegrassmattFrames);
   Object.assign(images.primefirematt, primefiremattFrames);
+  Object.assign(images.primerockmatt, primerockmattFrames);
   Object.assign(images.watermatt, watermattFrames);
   Object.assign(images.rockmatt, rockmattFrames);
   Object.assign(images.mysticmatt, mysticmattFrames);
@@ -2431,6 +2536,10 @@ function getEconomyStorageKey() {
   return getProfileScopedStorageKey(ECONOMY_STORAGE_KEY);
 }
 
+function getNewGameIntroStorageKey() {
+  return getProfileScopedStorageKey(NEW_GAME_INTRO_STORAGE_KEY);
+}
+
 function createProfile(name) {
   return {
     id: createId("profile"),
@@ -2538,6 +2647,76 @@ function hideLauncher() {
   if (launcher) {
     launcher.hidden = true;
   }
+}
+
+function hasProfileGameProgress() {
+  try {
+    return Boolean(localStorage.getItem(getEconomyStorageKey()) || localStorage.getItem(getMattProgressStorageKey()));
+  } catch (error) {
+    console.warn("Could not check profile progress.", error);
+    return false;
+  }
+}
+
+function shouldShowNewGameIntro() {
+  try {
+    return !localStorage.getItem(getNewGameIntroStorageKey()) && !hasProfileGameProgress();
+  } catch (error) {
+    console.warn("Could not check intro state.", error);
+    return false;
+  }
+}
+
+function markNewGameIntroSeen() {
+  try {
+    localStorage.setItem(getNewGameIntroStorageKey(), "seen");
+  } catch (error) {
+    console.warn("Could not save intro state.", error);
+  }
+}
+
+function isIntroOpen() {
+  return Boolean(newGameIntro && !newGameIntro.hidden);
+}
+
+function showNewGameIntro() {
+  if (!newGameIntro) {
+    setGameMessage(NEW_GAME_INTRO_MESSAGE, 9000);
+    markNewGameIntroSeen();
+    return;
+  }
+
+  keys.clear();
+  touchInput.sprint = false;
+  resetTouchJoystick();
+  newGameIntro.hidden = false;
+  document.body.classList.add("intro-open");
+}
+
+function closeNewGameIntro() {
+  if (newGameIntro) {
+    newGameIntro.hidden = true;
+  }
+
+  document.body.classList.remove("intro-open");
+  markNewGameIntroSeen();
+  saveEconomy();
+  setGameMessage(NEW_GAME_INTRO_MESSAGE, 7200);
+}
+
+function getNewGameStartPoint() {
+  const townNode = state.worlds?.[DEFAULT_WORLD_ID]?.nodes?.find((node) => node.target === "town");
+  if (townNode) {
+    return {
+      x: clamp(townNode.x + townNode.radius + 260, 0, getMapWidth()),
+      y: clamp(townNode.y, 0, getMapHeight()),
+    };
+  }
+
+  return {
+    x: clamp(NEW_GAME_START_POINT.x, 0, getMapWidth()),
+    y: clamp(NEW_GAME_START_POINT.y, 0, getMapHeight()),
+  };
 }
 
 function addScreenShake(amount) {
@@ -8357,7 +8536,7 @@ function updatePlayer(dt) {
   player.stamina = clamp(player.stamina ?? maxStamina, 0, maxStamina);
   player.damageCooldown = Math.max(0, (player.damageCooldown || 0) - dt);
 
-  if (state.dev.enabled || isShopOpen() || isPauseMenuOpen() || isBossIntroPlaying() || (state.arena.active && state.arena.phase !== "idle")) {
+  if (state.dev.enabled || isIntroOpen() || isShopOpen() || isPauseMenuOpen() || isBossIntroPlaying() || (state.arena.active && state.arena.phase !== "idle")) {
     player.moving = false;
     player.stamina = Math.min(maxStamina, player.stamina + getPlayerStaminaRegen() * dt);
     updatePlayerRestAnimation(player, dt);
@@ -8555,6 +8734,20 @@ function isPlayerHitByMattAttack(matt, attack) {
     return beamDistance <= (attack.beamWidth || 72) || Math.hypot(state.player.x - target.x, state.player.y - target.y) <= 88;
   }
 
+  if (attack.hitShape === "targetCircle") {
+    const target = getPrimeAttackTarget(matt);
+    return Math.hypot(state.player.x - target.x, state.player.y - target.y) <= (attack.attackRadius || 120);
+  }
+
+  if (attack.hitShape === "charge") {
+    const target = getPrimeAttackTarget(matt);
+    const chargeDistance = distanceToSegment(state.player, matt, target);
+    return (
+      chargeDistance <= (attack.beamWidth || 120) ||
+      Math.hypot(state.player.x - target.x, state.player.y - target.y) <= 130
+    );
+  }
+
   return distance <= (attack.attackRadius || 0) + 42;
 }
 
@@ -8691,6 +8884,139 @@ function spawnPrimeAttackEffect(matt, attack) {
       });
     }
     addScreenShake(attack.screenShake || 16);
+    return;
+  }
+
+  if (attack.effect === "granitePunch") {
+    const centerAngle = Math.atan2(target.y - matt.y, target.x - matt.x);
+    const impactX = matt.x + Math.cos(centerAngle) * 190;
+    const impactY = matt.y + Math.sin(centerAngle) * 190;
+    addParticle({
+      type: "ring",
+      x: impactX,
+      y: impactY,
+      vx: 0,
+      vy: 0,
+      life: 0.34,
+      size: 54,
+      color: "rgba(218, 205, 176, 0.9)",
+    });
+    for (let i = 0; i < 16; i += 1) {
+      const angle = centerAngle + randomBetween(-1.2, 1.2);
+      addParticle({
+        type: "spark",
+        x: impactX + randomBetween(-28, 28),
+        y: impactY - randomBetween(18, 64),
+        vx: Math.cos(angle) * randomBetween(130, 360),
+        vy: Math.sin(angle) * randomBetween(90, 280) - randomBetween(80, 210),
+        gravity: 520,
+        life: randomBetween(0.36, 0.7),
+        size: randomBetween(5, 12),
+        color: Math.random() < 0.5 ? "rgba(184, 173, 148, 0.92)" : "rgba(237, 223, 180, 0.9)",
+      });
+    }
+    addScreenShake(attack.screenShake || 10);
+    return;
+  }
+
+  if (attack.effect === "rockThrow") {
+    const targetY = target.y - 38;
+    const angle = Math.atan2(targetY - originY, target.x - originX);
+    const distance = Math.hypot(target.x - originX, targetY - originY);
+    const speed = attack.projectileSpeed || 820;
+    addImageProjectile("primeRockThrow", originX, originY, angle, speed, 118, clamp(distance / speed + 0.18, 0.42, 1.15));
+    addParticle({
+      type: "ring",
+      x: target.x,
+      y: target.y,
+      vx: 0,
+      vy: 0,
+      life: 0.52,
+      size: 42,
+      color: "rgba(218, 205, 176, 0.85)",
+    });
+    for (let i = 0; i < 18; i += 1) {
+      const sprayAngle = Math.random() * Math.PI * 2;
+      addParticle({
+        type: "spark",
+        x: target.x + randomBetween(-30, 30),
+        y: target.y - randomBetween(8, 44),
+        vx: Math.cos(sprayAngle) * randomBetween(80, 320),
+        vy: Math.sin(sprayAngle) * randomBetween(80, 320) - randomBetween(100, 240),
+        gravity: 560,
+        life: randomBetween(0.4, 0.82),
+        size: randomBetween(5, 13),
+        color: "rgba(196, 184, 158, 0.92)",
+      });
+    }
+    addScreenShake(attack.screenShake || 12);
+    return;
+  }
+
+  if (attack.effect === "rollingCrush") {
+    const centerAngle = Math.atan2(target.y - matt.y, target.x - matt.x);
+    const chargeLength = Math.min(attack.attackRadius || 650, Math.hypot(target.x - matt.x, target.y - matt.y) + 130);
+    const endX = matt.x + Math.cos(centerAngle) * chargeLength;
+    const endY = matt.y + Math.sin(centerAngle) * chargeLength;
+    addParticle({
+      type: "beam",
+      x: matt.x,
+      y: matt.y - 18,
+      x2: endX,
+      y2: endY - 18,
+      life: 0.34,
+      size: attack.beamWidth || 140,
+      color: "rgba(190, 181, 156, 0.62)",
+    });
+    for (let i = 0; i < 28; i += 1) {
+      const along = randomBetween(40, chargeLength);
+      const side = randomBetween(-80, 80);
+      const perp = centerAngle + Math.PI / 2;
+      addParticle({
+        type: "spark",
+        x: matt.x + Math.cos(centerAngle) * along + Math.cos(perp) * side,
+        y: matt.y + Math.sin(centerAngle) * along + Math.sin(perp) * side - randomBetween(0, 36),
+        vx: Math.cos(perp) * randomBetween(-120, 120),
+        vy: randomBetween(-260, -80),
+        gravity: 620,
+        life: randomBetween(0.36, 0.74),
+        size: randomBetween(7, 16),
+        color: Math.random() < 0.5 ? "rgba(150, 143, 126, 0.9)" : "rgba(222, 209, 174, 0.88)",
+      });
+    }
+    addScreenShake(attack.screenShake || 16);
+    return;
+  }
+
+  if (attack.effect === "tombQuake") {
+    for (let i = 0; i < 5; i += 1) {
+      addParticle({
+        type: "ring",
+        x: matt.x,
+        y: matt.y,
+        vx: 0,
+        vy: 0,
+        life: 0.62 + i * 0.08,
+        size: 92 + i * 72,
+        color: i % 2 === 0 ? "rgba(177, 168, 146, 0.78)" : "rgba(246, 225, 166, 0.58)",
+      });
+    }
+    for (let i = 0; i < 34; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = randomBetween(70, attack.attackRadius || 580);
+      addParticle({
+        type: "spark",
+        x: matt.x + Math.cos(angle) * radius,
+        y: matt.y + Math.sin(angle) * radius,
+        vx: Math.cos(angle) * randomBetween(60, 220),
+        vy: randomBetween(-360, -120),
+        gravity: 680,
+        life: randomBetween(0.45, 0.9),
+        size: randomBetween(7, 18),
+        color: "rgba(202, 190, 160, 0.9)",
+      });
+    }
+    addScreenShake(attack.screenShake || 20);
     return;
   }
 
@@ -9241,7 +9567,7 @@ function isFollowerCombatTarget(target) {
 }
 
 function getFollowerCombatTarget(follower) {
-  if (!follower?.tamed || !follower.follower || state.arena.active || isShopOpen() || isPauseMenuOpen()) {
+  if (!follower?.tamed || !follower.follower || state.arena.active || isIntroOpen() || isShopOpen() || isPauseMenuOpen()) {
     return null;
   }
 
@@ -9841,7 +10167,7 @@ function updateNpcs(dt) {
 }
 
 function updateFriendshipWalking(dt) {
-  if (!state.player.moving || state.capturedParty.length === 0 || state.arena.active || isShopOpen() || isPauseMenuOpen()) {
+  if (!state.player.moving || state.capturedParty.length === 0 || state.arena.active || isIntroOpen() || isShopOpen() || isPauseMenuOpen()) {
     return;
   }
 
@@ -10154,7 +10480,10 @@ function drawWorldBossHealthBar(dogmatt, screenX, screenY, config, scale) {
   const x = clamp(Math.round(screenX - width / 2), 12, Math.max(12, canvas.clientWidth - width - 12));
   const rawY = Math.round(screenY - config.height * scale - 48);
   const y = clamp(rawY, 18, Math.max(18, canvas.clientHeight - height - 18));
-  const fillColor = dogmatt.assetKey === "primefirematt" ? "#ff6f3e" : "#8ff36b";
+  const fillColor =
+    dogmatt.assetKey === "primefirematt" ? "#ff6f3e" :
+    dogmatt.assetKey === "primerockmatt" ? "#c8b88a" :
+    "#8ff36b";
 
   ctx.save();
   ctx.translate(x, y);
@@ -10937,7 +11266,7 @@ function bindTouchButton(button, onPress, onRelease) {
 }
 
 function triggerWhip() {
-  if (!state.ready || state.dev.enabled || isShopOpen() || isPauseMenuOpen() || isBossIntroPlaying() || (state.arena.active && state.arena.phase !== "idle")) {
+  if (!state.ready || state.dev.enabled || isIntroOpen() || isShopOpen() || isPauseMenuOpen() || isBossIntroPlaying() || (state.arena.active && state.arena.phase !== "idle")) {
     return;
   }
 
@@ -10973,6 +11302,12 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
+  if ((key === "escape" || key === "enter" || key === " ") && isIntroOpen()) {
+    event.preventDefault();
+    closeNewGameIntro();
+    return;
+  }
+
   if (key === "escape" && isPauseMenuOpen()) {
     event.preventDefault();
     closePauseMenu();
@@ -10996,6 +11331,11 @@ window.addEventListener("keydown", (event) => {
   }
 
   if (isTypingTarget(event.target)) {
+    return;
+  }
+
+  if (isIntroOpen()) {
+    event.preventDefault();
     return;
   }
 
@@ -11107,7 +11447,7 @@ window.addEventListener("blur", () => {
 });
 
 canvas.addEventListener("pointerdown", (event) => {
-  if (isPauseMenuOpen() || isBossIntroPlaying()) {
+  if (isIntroOpen() || isPauseMenuOpen() || isBossIntroPlaying()) {
     event.preventDefault();
     return;
   }
@@ -11161,6 +11501,16 @@ touchInventory?.addEventListener("click", (event) => {
 
 pauseMenuClose?.addEventListener("click", () => {
   closePauseMenu();
+});
+
+introClose?.addEventListener("click", () => {
+  closeNewGameIntro();
+});
+
+newGameIntro?.addEventListener("click", (event) => {
+  if (event.target === newGameIntro) {
+    closeNewGameIntro();
+  }
 });
 
 pauseMenuTabs?.addEventListener("click", (event) => {
@@ -11349,6 +11699,8 @@ async function startGameForProfile(profileId) {
 
   state.currentWorld = DEFAULT_WORLD_ID;
   state.worlds = loadWorlds();
+  const isFreshSave = !hasProfileGameProgress();
+  const showIntro = shouldShowNewGameIntro();
   state.capturedParty = loadCapturedParty();
   loadEconomy();
   state.caughtDogmatts = -1;
@@ -11361,9 +11713,12 @@ async function startGameForProfile(profileId) {
   state.cameraFocus = null;
   resetArenaBattle(false);
 
-  const start = getMapCenter(state.currentWorld);
+  const start = isFreshSave ? getNewGameStartPoint() : getMapCenter(state.currentWorld);
   state.player.x = start.x;
   state.player.y = start.y;
+  state.player.direction = "down";
+  state.player.facingX = 0;
+  state.player.facingY = 1;
   state.player.action = "breathing";
   state.player.frameIndex = 0;
   state.player.frameTimer = 0;
@@ -11404,6 +11759,10 @@ async function startGameForProfile(profileId) {
     if (!state.loopStarted) {
       state.loopStarted = true;
       requestAnimationFrame(loop);
+    }
+
+    if (showIntro) {
+      showNewGameIntro();
     }
   } catch (error) {
     if (loading) {

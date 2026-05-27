@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Ivan Monster Hunt</title>
-    <link rel="stylesheet" href="styles.css?v=dialogue-followers" />
+    <link rel="stylesheet" href="styles.css?v=new-game-intro" />
   </head>
   <body>
     <main class="game-shell">
@@ -103,6 +103,42 @@
         </div>
       </section>
 
+      <section class="new-game-intro" id="new-game-intro" aria-label="New game introduction" hidden>
+        <div class="intro-panel">
+          <span>New Save</span>
+          <strong>Ivan Monster Hunt</strong>
+          <p>
+            Ivan starts on the old Main World road. Explore the world gates, calm and capture Matts, bring captured Matts to Ty
+            to tame followers, and build enough strength to face the Prime Matts.
+          </p>
+
+          <div class="intro-grid">
+            <article>
+              <strong>Move</strong>
+              <span>WASD or arrow keys. Hold Shift to sprint.</span>
+            </article>
+            <article>
+              <strong>Interact</strong>
+              <span>Press E near doors, world nodes, and townsfolk.</span>
+            </article>
+            <article>
+              <strong>Capture</strong>
+              <span>Press Space to use the whip and calm wild Matts.</span>
+            </article>
+            <article>
+              <strong>Menu</strong>
+              <span>Press I for inventory, M for map, J for journal, and K for skills.</span>
+            </article>
+            <article>
+              <strong>Touch</strong>
+              <span>Use the left stick to move, then RUN, WHIP, and MENU buttons on screen.</span>
+            </article>
+          </div>
+
+          <button id="intro-close" type="button">Start Exploring</button>
+        </div>
+      </section>
+
       <section class="arena-battle-ui" id="arena-battle-ui" aria-label="Arena battle" hidden>
         <div class="arena-battle-head">
           <strong id="arena-battle-title">Arena Battle</strong>
@@ -182,6 +218,6 @@
 
     <script src="assets/worlds/default-worlds.js?v=treeworld-pathing-bundle"></script>
     <script src="assets/music/music-tracks.js?v=arena-friendship-overhaul"></script>
-    <script src="game.js?v=dialogue-followers"></script>
+    <script src="game.js?v=prime-rock-matt"></script>
   </body>
 </html>
