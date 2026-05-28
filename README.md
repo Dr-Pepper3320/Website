@@ -50,7 +50,7 @@ Press `F1` to toggle Dev Mode. Press `Esc` to close it.
 - `Erase`: click a wall, spawn area, node, or path point to remove it.
 - `New Line`: starts a separate wall or path. `Enter` does the same, and `Backspace` removes the last point from the active wall/path.
 
-Press `E` near a node to enter its world. The built-in worlds include `mainworld`, `town`, the town interiors, `fireworld`, `purplewaterworld`, `temple`, `tomb`, `treeworld`, and `home`.
+Walk onto a node circle to enter its world. The built-in worlds include `mainworld`, `town`, the town interiors, `fireworld`, `purplewaterworld`, `temple`, `tomb`, `treeworld`, and `home`.
 
 Dev Mode data is saved in browser `localStorage` with `Save All`. Use `Export All` and `Import` to move all wall, spawn, path, and node placements between browsers or keep backups.
 

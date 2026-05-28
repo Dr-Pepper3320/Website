@@ -773,8 +773,8 @@ canvas {
 
 .menu-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(58px, max-content) minmax(82px, max-content);
+  align-items: start;
   gap: 10px;
   min-height: 58px;
   padding: 10px;
@@ -791,6 +791,10 @@ canvas {
   min-width: 0;
   display: grid;
   gap: 3px;
+}
+
+.menu-row span {
+  overflow-wrap: anywhere;
 }
 
 .menu-row em,
@@ -826,6 +830,20 @@ canvas {
   gap: 8px;
 }
 
+.menu-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.menu-filter-row button.active {
+  border-color: rgba(143, 243, 197, 0.76);
+  background:
+    linear-gradient(180deg, rgba(65, 151, 111, 0.36), rgba(255, 238, 143, 0.12)),
+    rgba(255, 255, 255, 0.08);
+  color: #faffee;
+}
+
 .menu-empty {
   margin: 0;
   color: #cbd6c4;
@@ -841,7 +859,14 @@ canvas {
 }
 
 .menu-skill {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) minmax(64px, max-content) minmax(88px, max-content);
   border-left: 3px solid rgba(121, 241, 185, 0.55);
+}
+
+.menu-skill em,
+.menu-skill button {
+  align-self: center;
 }
 
 .menu-skill.locked {
@@ -850,6 +875,226 @@ canvas {
 
 .menu-skill.maxed {
   border-left-color: rgba(255, 238, 143, 0.72);
+}
+
+.menu-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  width: max-content;
+  max-width: 100%;
+  padding: 3px 8px;
+  border: 1px solid rgba(244, 237, 198, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.065);
+  color: #dce5d6;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.menu-pill.consumable,
+.menu-pill.effect {
+  border-color: rgba(143, 243, 197, 0.35);
+  color: #aef8d3;
+}
+
+.menu-pill.capture {
+  border-color: rgba(255, 238, 143, 0.34);
+  color: #fff0a8;
+}
+
+.menu-pill.gear {
+  border-color: rgba(122, 185, 255, 0.34);
+  color: #c9e0ff;
+}
+
+.menu-pill.bond {
+  border-color: rgba(255, 166, 214, 0.34);
+  color: #ffd6ee;
+}
+
+.menu-pill.key,
+.menu-pill.mastered {
+  border-color: rgba(255, 238, 143, 0.54);
+  color: #fff8cc;
+}
+
+.menu-inventory-list {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menu-inventory-list .menu-empty {
+  grid-column: 1 / -1;
+}
+
+.menu-inventory-item {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid rgba(244, 237, 198, 0.13);
+  border-left: 3px solid rgba(244, 237, 198, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.052);
+}
+
+.menu-inventory-item.consumable {
+  border-left-color: rgba(143, 243, 197, 0.64);
+}
+
+.menu-inventory-item.capture {
+  border-left-color: rgba(255, 238, 143, 0.62);
+}
+
+.menu-inventory-item.gear {
+  border-left-color: rgba(122, 185, 255, 0.62);
+}
+
+.menu-inventory-item.bond {
+  border-left-color: rgba(255, 166, 214, 0.62);
+}
+
+.menu-inventory-item.key {
+  border-left-color: rgba(255, 238, 143, 0.78);
+}
+
+.menu-inventory-item header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.menu-inventory-item header div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.menu-inventory-item p {
+  margin: 0;
+  color: #cbd6c4;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.menu-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.menu-skill-branch {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+}
+
+.menu-skill-branch > header {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(244, 237, 198, 0.16);
+}
+
+.menu-skill-branch > header h3 {
+  margin: 0;
+  color: #f6e6a4;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.menu-skill-branch > header span {
+  color: #cbd6c4;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.branch-meter {
+  width: 100%;
+}
+
+.menu-skill-track {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menu-skill-node {
+  min-width: 0;
+  min-height: 184px;
+  display: grid;
+  grid-template-rows: auto minmax(44px, 1fr) auto auto;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid rgba(244, 237, 198, 0.13);
+  border-top: 3px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.068), rgba(255, 255, 255, 0.035)),
+    rgba(6, 10, 9, 0.28);
+}
+
+.menu-skill-node.available {
+  border-top-color: rgba(143, 243, 197, 0.72);
+  box-shadow: inset 0 1px 0 rgba(143, 243, 197, 0.18);
+}
+
+.menu-skill-node.learned {
+  border-top-color: rgba(255, 238, 143, 0.62);
+}
+
+.menu-skill-node.mastered {
+  border-color: rgba(255, 238, 143, 0.26);
+  border-top-color: rgba(255, 238, 143, 0.86);
+  background:
+    linear-gradient(180deg, rgba(255, 238, 143, 0.105), rgba(255, 255, 255, 0.035)),
+    rgba(6, 10, 9, 0.28);
+}
+
+.menu-skill-node.locked {
+  opacity: 0.72;
+}
+
+.menu-skill-node header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.menu-skill-node p {
+  margin: 0;
+  color: #d3decf;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.menu-skill-node footer {
+  display: grid;
+  gap: 4px;
+  min-height: 44px;
+}
+
+.menu-skill-node footer span {
+  color: #cbd6c4;
+  font-size: 11px;
+  line-height: 1.28;
+  overflow-wrap: anywhere;
+}
+
+.menu-skill-node button {
+  width: 100%;
 }
 
 .menu-map-wrap {
@@ -1452,6 +1697,19 @@ canvas {
     grid-template-columns: 1fr;
   }
 
+  .menu-inventory-list,
+  .menu-skill-track {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-skill-node {
+    min-height: 0;
+  }
+
+  .menu-inventory-item header {
+    display: grid;
+  }
+
   .menu-card,
   .menu-card.wide,
   .menu-map-wrap {
@@ -1459,11 +1717,12 @@ canvas {
   }
 
   .menu-row {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(54px, max-content);
   }
 
   .menu-row button {
     grid-column: 1 / -1;
+    justify-self: start;
     width: 100%;
   }
 

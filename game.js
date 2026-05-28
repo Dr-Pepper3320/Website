@@ -405,7 +405,9 @@ const FOLLOWER_ASSIST = {
 const WORLD_MATT_TYPES = {
   mainworld: "dogmatt",
   fireworld: "firematt",
+  treeworld: "grassmatt",
   grass_tree: "grassmatt",
+  grass_cave: "grassmatt",
   purplewaterworld: "watermatt",
   water_tree: "watermatt",
   water_hut: "watermatt",
@@ -417,7 +419,9 @@ const WORLD_MATT_TYPES = {
 const WORLD_ENCOUNTER_PROFILES = {
   mainworld: { levelMin: 1, levelMax: 3, captureDifficulty: 1, damageScale: 0.85, count: 20 },
   fireworld: { levelMin: 4, levelMax: 8, captureDifficulty: 2.3, damageScale: 1.08, count: 10 },
+  treeworld: { levelMin: 5, levelMax: 9, captureDifficulty: 2.4, damageScale: 1.1, count: 12, eliteChance: 0.1 },
   grass_tree: { levelMin: 12, levelMax: 12, captureDifficulty: 4.2, damageScale: 1.45, count: 1 },
+  grass_cave: { levelMin: 7, levelMax: 11, captureDifficulty: 2.9, damageScale: 1.16, count: 8, eliteChance: 0.12 },
   purplewaterworld: { levelMin: 3, levelMax: 7, captureDifficulty: 2, damageScale: 1.02, count: 14 },
   water_tree: { levelMin: 5, levelMax: 9, captureDifficulty: 2.4, damageScale: 1.08, count: 5 },
   water_hut: { levelMin: 7, levelMax: 11, captureDifficulty: 2.8, damageScale: 1.14, count: 5 },
@@ -439,6 +443,9 @@ const PRIME_GRASS_MATT_ATTACKS = [
     attackRadius: 225,
     attackWindup: 0.34,
     attackCooldown: 1.65,
+    minRange: 0,
+    maxRange: 320,
+    weight: 1.35,
     staminaDamage: 8,
     knockback: 70,
     screenShake: 12,
@@ -453,6 +460,9 @@ const PRIME_GRASS_MATT_ATTACKS = [
     attackRadius: 430,
     attackWindup: 0.42,
     attackCooldown: 2.15,
+    minRange: 160,
+    maxRange: 560,
+    weight: 1.15,
     projectileCount: 18,
     projectileSpeed: 610,
     staminaDamage: 12,
@@ -468,6 +478,9 @@ const PRIME_GRASS_MATT_ATTACKS = [
     attackRadius: 660,
     attackWindup: 0.3,
     attackCooldown: 1.95,
+    minRange: 260,
+    maxRange: 780,
+    weight: 1.45,
     projectileCount: 9,
     projectileSpeed: 700,
     coneArc: Math.PI * 0.72,
@@ -485,6 +498,9 @@ const PRIME_GRASS_MATT_ATTACKS = [
     attackRadius: 900,
     attackWindup: 0.5,
     attackCooldown: 2.5,
+    minRange: 420,
+    maxRange: 980,
+    weight: 1.55,
     beamWidth: 82,
     staminaDamage: 22,
     knockback: 90,
@@ -500,6 +516,9 @@ const PRIME_GRASS_MATT_ATTACKS = [
     attackRadius: 720,
     attackWindup: 0.72,
     attackCooldown: 3.35,
+    minRange: 0,
+    maxRange: 760,
+    weight: 0.9,
     staminaDamage: 20,
     knockback: 150,
     screenShake: 20,
@@ -517,6 +536,9 @@ const PRIME_FIRE_MATT_ATTACKS = [
     attackRadius: 760,
     attackWindup: 0.42,
     attackCooldown: 2.05,
+    minRange: 300,
+    maxRange: 840,
+    weight: 1.55,
     coneArc: Math.PI * 0.58,
     staminaDamage: 16,
     knockback: 78,
@@ -532,6 +554,9 @@ const PRIME_FIRE_MATT_ATTACKS = [
     attackRadius: 520,
     attackWindup: 0.38,
     attackCooldown: 2.25,
+    minRange: 120,
+    maxRange: 560,
+    weight: 1.35,
     coneArc: Math.PI * 0.95,
     staminaDamage: 18,
     knockback: 120,
@@ -547,6 +572,9 @@ const PRIME_FIRE_MATT_ATTACKS = [
     attackRadius: 260,
     attackWindup: 0.24,
     attackCooldown: 1.5,
+    minRange: 0,
+    maxRange: 310,
+    weight: 1.45,
     staminaDamage: 9,
     knockback: 58,
     screenShake: 9,
@@ -561,6 +589,9 @@ const PRIME_FIRE_MATT_ATTACKS = [
     attackRadius: 620,
     attackWindup: 0.68,
     attackCooldown: 3.15,
+    minRange: 0,
+    maxRange: 680,
+    weight: 0.95,
     staminaDamage: 22,
     knockback: 150,
     screenShake: 20,
@@ -578,6 +609,9 @@ const PRIME_ROCK_MATT_ATTACKS = [
     attackRadius: 300,
     attackWindup: 0.3,
     attackCooldown: 1.55,
+    minRange: 0,
+    maxRange: 340,
+    weight: 1.45,
     staminaDamage: 14,
     knockback: 105,
     screenShake: 12,
@@ -592,6 +626,9 @@ const PRIME_ROCK_MATT_ATTACKS = [
     attackRadius: 135,
     attackWindup: 0.5,
     attackCooldown: 2.15,
+    minRange: 360,
+    maxRange: 980,
+    weight: 1.35,
     projectileSpeed: 920,
     staminaDamage: 16,
     knockback: 120,
@@ -607,6 +644,9 @@ const PRIME_ROCK_MATT_ATTACKS = [
     attackRadius: 720,
     attackWindup: 0.42,
     attackCooldown: 2.6,
+    minRange: 240,
+    maxRange: 820,
+    weight: 1.45,
     beamWidth: 150,
     staminaDamage: 20,
     knockback: 170,
@@ -622,6 +662,9 @@ const PRIME_ROCK_MATT_ATTACKS = [
     attackRadius: 640,
     attackWindup: 0.72,
     attackCooldown: 3.4,
+    minRange: 0,
+    maxRange: 680,
+    weight: 1,
     staminaDamage: 26,
     knockback: 185,
     screenShake: 24,
@@ -642,9 +685,12 @@ const WORLD_BOSS_MATTS = {
     captureDifficulty: 4.6,
     damageScale: 1.58,
     aggroRadius: 860,
-    walkSpeed: 128,
-    preferredDistance: 360,
-    closeDistance: 210,
+    walkSpeed: 168,
+    rushSpeed: 220,
+    preferredDistance: 420,
+    closeDistance: 230,
+    moveIntervalMin: 0.55,
+    moveIntervalMax: 1.35,
     preBattleRoam: true,
     introAction: "spawn",
     introFrameDuration: 0.095,
@@ -665,9 +711,12 @@ const WORLD_BOSS_MATTS = {
     captureDifficulty: 4.5,
     damageScale: 1.55,
     aggroRadius: 920,
-    walkSpeed: 108,
-    preferredDistance: 410,
-    closeDistance: 250,
+    walkSpeed: 142,
+    rushSpeed: 190,
+    preferredDistance: 460,
+    closeDistance: 270,
+    moveIntervalMin: 0.65,
+    moveIntervalMax: 1.55,
     preBattleRoam: true,
     introMessage: "Prime Rock Matt shakes loose from the tomb stone.",
     attacks: PRIME_ROCK_MATT_ATTACKS,
@@ -681,9 +730,12 @@ const WORLD_BOSS_MATTS = {
     y: 3000,
     scale: 4.4,
     aggroRadius: 900,
-    walkSpeed: 122,
-    preferredDistance: 380,
-    closeDistance: 240,
+    walkSpeed: 156,
+    rushSpeed: 205,
+    preferredDistance: 430,
+    closeDistance: 255,
+    moveIntervalMin: 0.55,
+    moveIntervalMax: 1.4,
     musicTrack: PRIME_GRASS_MATT_MUSIC,
     musicMode: "primeGrassMatt",
     suppressNormalSpawns: true,
@@ -1031,6 +1083,18 @@ const ITEM_DEFS = {
     unique: true,
   },
 };
+
+const INVENTORY_CATEGORIES = [
+  { id: "all", label: "All", description: "Everything Ivan is carrying." },
+  { id: "consumable", label: "Recovery", description: "Health, stamina, meals, and field restoratives." },
+  { id: "capture", label: "Capture", description: "Tools and passives that help tame wild Matts." },
+  { id: "gear", label: "Gear", description: "Permanent upgrades and passive combat equipment." },
+  { id: "bond", label: "Bond", description: "Items for caring for captured Matts and followers." },
+  { id: "key", label: "Key", description: "Tickets, keepsakes, and special-use items." },
+  { id: "misc", label: "Misc", description: "Anything that does not fit the other shelves." },
+];
+
+const INVENTORY_CATEGORY_ORDER = Object.fromEntries(INVENTORY_CATEGORIES.map((category, index) => [category.id, index]));
 
 const SHOP_DEFS = {
   scott: {
@@ -1925,11 +1989,35 @@ const PAUSE_MENU_TABS = [
   { id: "party", label: "Party", title: "Party" },
 ];
 
+const SKILL_BRANCH_DEFS = {
+  Explorer: {
+    label: "Explorer",
+    description: "Movement, stamina, map sense, and staying nimble while the field gets mean.",
+  },
+  Survivor: {
+    label: "Survivor",
+    description: "Health, armor discipline, recovery items, and lasting longer against dangerous Matts.",
+  },
+  Hunter: {
+    label: "Hunter",
+    description: "Whip control, capture odds, Prime Matt pressure, and better rewards from hard catches.",
+  },
+  Bond: {
+    label: "Bond",
+    description: "Follower combat, friendship growth, arena tempo, and turning captured Matts into partners.",
+  },
+  Pack: {
+    label: "Pack",
+    description: "Inventory mastery, stronger supplies, and better trade value from every shop run.",
+  },
+};
+
 const PLAYER_SKILLS = {
   trail_runner: {
     id: "trail_runner",
     name: "Trail Runner",
     branch: "Explorer",
+    tier: 1,
     maxRank: 3,
     description: "Move faster and sprint longer.",
     perRank: "+30 walk speed, +45 sprint speed, +8 stamina",
@@ -1938,15 +2026,37 @@ const PLAYER_SKILLS = {
     id: "steady_breath",
     name: "Steady Breath",
     branch: "Explorer",
+    tier: 2,
     maxRank: 3,
     requires: { trail_runner: 1 },
     description: "Recover stamina faster and spend less while sprinting.",
     perRank: "+7 stamina regen, -2 sprint drain",
   },
+  pathfinder: {
+    id: "pathfinder",
+    name: "Pathfinder",
+    branch: "Explorer",
+    tier: 3,
+    maxRank: 3,
+    requires: { steady_breath: 1 },
+    description: "Read terrain better and keep your pace through long routes.",
+    perRank: "+18 walk speed, +28 sprint speed, +2 stamina regen",
+  },
+  evasive_stride: {
+    id: "evasive_stride",
+    name: "Evasive Stride",
+    branch: "Explorer",
+    tier: 4,
+    maxRank: 2,
+    requires: { pathfinder: 2 },
+    description: "Recover from hits cleanly and create a bigger escape window.",
+    perRank: "+10% post-hit safety, +14 sprint speed",
+  },
   field_endurance: {
     id: "field_endurance",
     name: "Field Endurance",
     branch: "Survivor",
+    tier: 1,
     maxRank: 3,
     description: "Increase Ivan's maximum health.",
     perRank: "+14 max health",
@@ -1955,15 +2065,37 @@ const PLAYER_SKILLS = {
     id: "iron_will",
     name: "Iron Will",
     branch: "Survivor",
+    tier: 2,
     maxRank: 3,
     requires: { field_endurance: 1 },
     description: "Reduce wild Matt damage before armor is applied.",
     perRank: "-6% wild damage",
   },
+  field_medic: {
+    id: "field_medic",
+    name: "Field Medic",
+    branch: "Survivor",
+    tier: 3,
+    maxRank: 3,
+    requires: { field_endurance: 2 },
+    description: "Squeeze more recovery out of health items.",
+    perRank: "+9% health restored from items",
+  },
+  last_stand: {
+    id: "last_stand",
+    name: "Last Stand",
+    branch: "Survivor",
+    tier: 4,
+    maxRank: 2,
+    requires: { iron_will: 2, field_medic: 1 },
+    description: "Toughen up for Prime fights and other heavy hits.",
+    perRank: "+10 max health, +3% damage reduction",
+  },
   whip_mastery: {
     id: "whip_mastery",
     name: "Whip Mastery",
     branch: "Hunter",
+    tier: 1,
     maxRank: 3,
     description: "Extend whip reach and make field captures less exhausting.",
     perRank: "+28 whip range, capture XP bonus",
@@ -1972,27 +2104,109 @@ const PLAYER_SKILLS = {
     id: "calm_hands",
     name: "Calm Hands",
     branch: "Hunter",
+    tier: 2,
     maxRank: 3,
     requires: { whip_mastery: 1 },
     description: "Improve capture odds against stronger Matts.",
     perRank: "+6% capture chance",
   },
+  clean_capture: {
+    id: "clean_capture",
+    name: "Clean Capture",
+    branch: "Hunter",
+    tier: 3,
+    maxRank: 3,
+    requires: { whip_mastery: 2 },
+    description: "Stagger wild Matts faster and earn better capture training.",
+    perRank: "+18 whip range, +4 capture XP, rank 2 trims a capture hit",
+  },
+  prime_study: {
+    id: "prime_study",
+    name: "Prime Study",
+    branch: "Hunter",
+    tier: 4,
+    maxRank: 3,
+    requires: { calm_hands: 2, clean_capture: 1 },
+    description: "Learn Prime Matt tells so their openings are easier to punish.",
+    perRank: "+4% boss capture chance, -5% boss damage",
+  },
   matt_mentor: {
     id: "matt_mentor",
     name: "Matt Mentor",
     branch: "Bond",
+    tier: 1,
     maxRank: 3,
     description: "Captured Matts gain more friendship and arena XP.",
     perRank: "+15% Matt XP and +1 friendship rewards",
+  },
+  pack_leader: {
+    id: "pack_leader",
+    name: "Pack Leader",
+    branch: "Bond",
+    tier: 2,
+    maxRank: 3,
+    requires: { matt_mentor: 1 },
+    description: "Followers assist more often and bond faster in field fights.",
+    perRank: "-8% assist cooldown, +2 follower assist XP",
+  },
+  follow_through: {
+    id: "follow_through",
+    name: "Follow Through",
+    branch: "Bond",
+    tier: 3,
+    maxRank: 3,
+    requires: { pack_leader: 2 },
+    description: "Follower strikes pressure targets harder and reward more friendship.",
+    perRank: "+35 assist range, +1 assist friendship",
   },
   arena_instinct: {
     id: "arena_instinct",
     name: "Arena Instinct",
     branch: "Bond",
+    tier: 4,
     maxRank: 3,
-    requires: { matt_mentor: 1 },
+    requires: { matt_mentor: 2 },
     description: "Start arena battles sharper and hit harder.",
     perRank: "+3 arena energy, +2 arena power",
+  },
+  quartermaster: {
+    id: "quartermaster",
+    name: "Quartermaster",
+    branch: "Pack",
+    tier: 1,
+    maxRank: 3,
+    description: "Keep your pack organized and make every carried supply count.",
+    perRank: "+4% item recovery, better inventory readouts",
+  },
+  field_alchemy: {
+    id: "field_alchemy",
+    name: "Field Alchemy",
+    branch: "Pack",
+    tier: 2,
+    maxRank: 3,
+    requires: { quartermaster: 1 },
+    description: "Boost health and stamina restored by consumables.",
+    perRank: "+7% all consumable recovery",
+  },
+  merchant_sense: {
+    id: "merchant_sense",
+    name: "Merchant Sense",
+    branch: "Pack",
+    tier: 3,
+    maxRank: 3,
+    requires: { quartermaster: 2 },
+    description: "Read shop value better when buying and selling.",
+    perRank: "-4% shop prices, +8% item sell value",
+  },
+  provisioner: {
+    id: "provisioner",
+    name: "Provisioner",
+    branch: "Pack",
+    tier: 4,
+    maxRank: 2,
+    requires: { field_alchemy: 2, merchant_sense: 1 },
+    description: "Hybrid foods and drinks become emergency-grade supplies.",
+    perRank: "+10% recovery on items that restore health and stamina",
   },
 };
 
@@ -2162,6 +2376,7 @@ const state = {
   activeShopId: "",
   shopTab: "buy",
   pauseMenuTab: "character",
+  inventoryCategory: "all",
   activeDialogueTopic: "",
   arena: {
     active: false,
@@ -2187,6 +2402,9 @@ const state = {
   },
   toastTimer: null,
   caughtDogmatts: -1,
+  nodeTravelCooldown: 0,
+  nodeTravelExitWorld: "",
+  nodeTravelExitNodeId: "",
   ambientTimer: 0,
   particles: [],
   screenShake: 0,
@@ -3764,14 +3982,14 @@ function unlockSkill(skillId) {
   }
 
   state.playerProgress = normalizePlayerProgress(state.playerProgress);
+  const previousMaxHealth = getPlayerMaxHealth();
+  const previousMaxStamina = getPlayerMaxStamina();
   state.playerProgress.skillPoints -= 1;
   state.playerProgress.skills[skillId] = getSkillRank(skillId) + 1;
-  if (skillId === "field_endurance") {
-    state.player.health = Math.min(getPlayerMaxHealth(), (state.player.health || 0) + 14);
-  }
-  if (skillId === "trail_runner") {
-    state.player.stamina = Math.min(getPlayerMaxStamina(), (state.player.stamina || 0) + 8);
-  }
+  const healthGain = Math.max(0, getPlayerMaxHealth() - previousMaxHealth);
+  const staminaGain = Math.max(0, getPlayerMaxStamina() - previousMaxStamina);
+  state.player.health = Math.min(getPlayerMaxHealth(), (state.player.health || 0) + healthGain);
+  state.player.stamina = Math.min(getPlayerMaxStamina(), (state.player.stamina || 0) + staminaGain);
   saveEconomy();
   updateEconomyHud();
   updatePlayerProgressHud();
@@ -3789,6 +4007,8 @@ function resetPlayerSkills() {
   state.playerProgress = normalizePlayerProgress(state.playerProgress);
   state.playerProgress.skillPoints += spent;
   state.playerProgress.skills = {};
+  state.player.health = Math.min(state.player.health || 0, getPlayerMaxHealth());
+  state.player.stamina = Math.min(state.player.stamina || 0, getPlayerMaxStamina());
   saveEconomy();
   updateEconomyHud();
   updatePlayerProgressHud();
@@ -3801,11 +4021,15 @@ function getPlayerMaxHealth() {
     (hasItem("guard_armor") ? 15 : 0) +
     (hasItem("steel_armor") ? 30 : 0) +
     (hasItem("tempered_plate") ? 45 : 0) +
-    getSkillBonus("field_endurance", 14);
+    getSkillBonus("field_endurance", 14) +
+    getSkillBonus("last_stand", 10);
 }
 
 function getPlayerMaxStamina() {
-  return PLAYER.maxStamina + (hasItem("swift_boots") ? 20 : 0) + (hasItem("trail_map") ? 12 : 0) + getSkillBonus("trail_runner", 8);
+  return PLAYER.maxStamina +
+    (hasItem("swift_boots") ? 20 : 0) +
+    (hasItem("trail_map") ? 12 : 0) +
+    getSkillBonus("trail_runner", 8);
 }
 
 function updatePlayerStatusHud() {
@@ -3853,23 +4077,33 @@ function getWhipAttackRange() {
   return PLAYER.attackRange +
     (hasItem("iron_whip") ? 80 : 0) +
     (hasItem("whetstone") ? 35 : 0) +
-    getSkillBonus("whip_mastery", 28);
+    getSkillBonus("whip_mastery", 28) +
+    getSkillBonus("clean_capture", 18);
 }
 
 function getPlayerWalkSpeed() {
-  return PLAYER.speed + (hasItem("swift_boots") ? 130 : 0) + (hasItem("trail_map") ? 55 : 0) + getSkillBonus("trail_runner", 30);
+  return PLAYER.speed +
+    (hasItem("swift_boots") ? 130 : 0) +
+    (hasItem("trail_map") ? 55 : 0) +
+    getSkillBonus("trail_runner", 30) +
+    getSkillBonus("pathfinder", 18);
 }
 
 function getPlayerSprintSpeed() {
-  return PLAYER.sprintSpeed + (hasItem("swift_boots") ? 160 : 0) + (hasItem("trail_map") ? 70 : 0) + getSkillBonus("trail_runner", 45);
+  return PLAYER.sprintSpeed +
+    (hasItem("swift_boots") ? 160 : 0) +
+    (hasItem("trail_map") ? 70 : 0) +
+    getSkillBonus("trail_runner", 45) +
+    getSkillBonus("pathfinder", 28) +
+    getSkillBonus("evasive_stride", 14);
 }
 
 function getPlayerStaminaRegen() {
-  return PLAYER.staminaRegen + getSkillBonus("steady_breath", 7);
+  return PLAYER.staminaRegen + getSkillBonus("steady_breath", 7) + getSkillBonus("pathfinder", 2);
 }
 
 function getPlayerSprintStaminaCost() {
-  return Math.max(10, PLAYER.sprintStaminaCost - getSkillBonus("steady_breath", 2));
+  return Math.max(8, PLAYER.sprintStaminaCost - getSkillBonus("steady_breath", 2) - getSkillBonus("pathfinder", 1));
 }
 
 function getArmorDamageReduction() {
@@ -3877,7 +4111,7 @@ function getArmorDamageReduction() {
     .filter(hasItem)
     .map((itemId) => ITEM_DEFS[itemId].armor || 0);
   const armorReduction = reductions.length > 0 ? Math.max(...reductions) : 0;
-  return clamp(armorReduction + getSkillBonus("iron_will", 0.06), 0, 0.72);
+  return clamp(armorReduction + getSkillBonus("iron_will", 0.06) + getSkillBonus("last_stand", 0.03), 0, 0.78);
 }
 
 function hashStringSeed(text) {
@@ -3952,6 +4186,12 @@ function getCaptureHitThreshold(matt = null) {
   if (hasItem("calming_flute")) {
     threshold -= 1;
   }
+  if (getSkillRank("clean_capture") >= 2) {
+    threshold -= 1;
+  }
+  if (matt?.boss && getSkillRank("prime_study") >= 2) {
+    threshold -= 1;
+  }
   return Math.max(2, threshold);
 }
 
@@ -3967,6 +4207,10 @@ function getCaptureAttemptChance(matt, { snackUsed = false, netUsed = false, flu
     chance += 0.14;
   }
   chance += getSkillBonus("calm_hands", 0.06);
+  chance += getSkillBonus("clean_capture", 0.03);
+  if (matt?.boss) {
+    chance += getSkillBonus("prime_study", 0.04);
+  }
   return clamp(chance, 0.18, 0.98);
 }
 
@@ -3979,7 +4223,8 @@ function getWildMattAttackDamage(matt, config = getMattConfig(matt?.type)) {
   const level = getMattLevel(matt);
   const difficulty = Math.max(1, Number(matt?.captureDifficulty) || 1);
   const scale = Math.max(0.4, Number(matt?.damageScale) || 1);
-  return Math.max(1, Math.round(base * scale * (1 + (level - 1) * 0.045 + (difficulty - 1) * 0.055)));
+  const bossStudy = matt?.boss ? getSkillBonus("prime_study", 0.05) : 0;
+  return Math.max(1, Math.round(base * scale * (1 + (level - 1) * 0.045 + (difficulty - 1) * 0.055) * (1 - bossStudy)));
 }
 
 function getMattSellValue(type, matt = null) {
@@ -4016,6 +4261,66 @@ function getFollowerStatusLine(matt) {
   return `${role} | ${getFriendshipLine(matt)} | Lv ${getMattLevel(matt)}`;
 }
 
+function getCapturedBossVisualMeta(matt) {
+  const sourceWorld = matt?.sourceWorld || state.currentWorld || DEFAULT_WORLD_ID;
+  const originalId = matt?.originalId || matt?.id || "";
+  const boss = WORLD_BOSS_MATTS[sourceWorld];
+
+  if (!boss || boss.type !== matt?.type || (boss.id !== originalId && boss.id !== matt?.id)) {
+    return null;
+  }
+
+  return {
+    assetKey: boss.assetKey || boss.type,
+    scale: boss.scale || 1,
+    name: boss.name || "",
+  };
+}
+
+function getCapturedMattVisualMeta(matt) {
+  const bossVisual = getCapturedBossVisualMeta(matt);
+  const requestedAssetKey = matt?.assetKey || bossVisual?.assetKey || "";
+  const assetKey = requestedAssetKey && ASSETS[requestedAssetKey] ? requestedAssetKey : "";
+  const directScale = Number(matt?.scale);
+  const bossScale = Number(bossVisual?.scale);
+  const scale = Number.isFinite(directScale) && directScale > 0
+    ? directScale
+    : Number.isFinite(bossScale) && bossScale > 0
+      ? bossScale
+      : 1;
+
+  return {
+    assetKey,
+    scale,
+    name: bossVisual?.name || "",
+  };
+}
+
+function shouldCapturedMattUseWalkingLoop(matt) {
+  return matt?.assetKey === "primegrassmatt";
+}
+
+function shouldUseWildFollowerFrames(matt) {
+  return Boolean(matt?.tamed && matt.follower && (matt.caught || matt.partyId));
+}
+
+function getCapturedMattRestAction(matt) {
+  if (shouldUseWildFollowerFrames(matt)) {
+    const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || {};
+    return frameSet.idle?.length > 0 ? "idle" : getFollowerMoveAction(matt);
+  }
+
+  return shouldCapturedMattUseWalkingLoop(matt) ? "walking" : "caught";
+}
+
+function getCapturedMattTravelAction(matt) {
+  if (shouldUseWildFollowerFrames(matt)) {
+    return getFollowerMoveAction(matt);
+  }
+
+  return shouldCapturedMattUseWalkingLoop(matt) ? "walking" : "caught";
+}
+
 function normalizeFollowerSelection(party) {
   let activeFollowerFound = false;
   return party.map((matt) => {
@@ -4043,8 +4348,16 @@ function syncCapturedMattRuntime(updated) {
       candidate.level = updated.level;
       candidate.xp = updated.xp;
       candidate.friendship = updated.friendship;
+      candidate.assetKey = updated.assetKey || "";
+      candidate.scale = Number(updated.scale) || 1;
+      if (candidate.caught && shouldUseWildFollowerFrames(candidate) && candidate.action === "caught") {
+        setAction(candidate, getCapturedMattRestAction(candidate));
+      }
     } else if (updated.follower && candidate.caught) {
       candidate.follower = false;
+      if (!shouldCapturedMattUseWalkingLoop(candidate) && ["idle", "walking"].includes(candidate.action)) {
+        setAction(candidate, "caught");
+      }
     }
   });
 }
@@ -4082,6 +4395,9 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
   const friendship = clamp(Math.floor(Number(matt.friendship) || 0), 0, 100);
   const captureDifficulty = Math.max(1, Number(matt.captureDifficulty) || 1);
   const tamed = Boolean(matt.tamed);
+  const visualMeta = getCapturedMattVisualMeta({ ...matt, originalId, sourceWorld });
+  const visualName = sanitizeMattName(matt.name || visualMeta.name);
+  const assetKey = visualMeta.assetKey;
 
   return {
     partyId: matt.partyId || `${sourceWorld}:${originalId}`,
@@ -4089,12 +4405,14 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
     originalId,
     sourceWorld,
     type: matt.type,
-    name: sanitizeMattName(matt.name),
+    assetKey,
+    scale: visualMeta.scale,
+    name: visualName,
     tamed,
     follower: tamed && Boolean(matt.follower),
     x: Number.isFinite(matt.x) ? matt.x : state.player.x,
     y: Number.isFinite(matt.y) ? matt.y : state.player.y,
-    action: "caught",
+    action: getCapturedMattTravelAction({ assetKey }),
     frameIndex: Number.isFinite(matt.frameIndex) ? matt.frameIndex : 0,
     direction: matt.direction || "right",
     level,
@@ -4169,6 +4487,8 @@ function serializeCapturedMatt(matt) {
     y: matt.y,
     frameIndex: matt.frameIndex,
     direction: matt.direction,
+    assetKey: normalized.assetKey,
+    scale: normalized.scale,
     level: normalized.level,
     xp: normalized.xp,
     friendship: normalized.friendship,
@@ -4221,6 +4541,7 @@ function hydrateCapturedMatt(saved, caughtIndex) {
     partyId: saved.partyId,
     sourceWorld: saved.sourceWorld || state.currentWorld,
     type: saved.type,
+    assetKey: saved.assetKey || "",
     name: sanitizeMattName(saved.name),
     tamed: Boolean(saved.tamed),
     follower: Boolean(saved.tamed && saved.follower),
@@ -4228,7 +4549,8 @@ function hydrateCapturedMatt(saved, caughtIndex) {
     y: target.y,
     width: config.width,
     height: config.height,
-    action: "caught",
+    scale: Number(saved.scale) || 1,
+    action: getCapturedMattTravelAction(saved),
     frameTimer: 0,
     frameIndex: saved.frameIndex || 0,
     direction: saved.direction || "right",
@@ -4421,10 +4743,217 @@ function setShopTab(tab) {
   renderShop();
 }
 
-function getInventoryEntries() {
+function getInventoryCategory(itemId) {
+  const item = ITEM_DEFS[itemId];
+  if (!item) {
+    return "misc";
+  }
+  if (itemId === "arena_ticket" || itemId === "room_key" || item.mattType) {
+    return "key";
+  }
+  if (item.bondOnly || itemId === "bond_ribbon" || itemId === "memory_locket" || item.use?.friendship) {
+    return "bond";
+  }
+  if (
+    itemId === "matt_snack" ||
+    itemId === "matt_charm" ||
+    itemId === "capture_net" ||
+    itemId === "calming_flute" ||
+    itemId === "trade_ledger"
+  ) {
+    return "capture";
+  }
+  if (item.armor || item.unique) {
+    return "gear";
+  }
+  if (item.use?.health || item.use?.stamina) {
+    return "consumable";
+  }
+  return "misc";
+}
+
+function getInventoryCategoryDef(categoryId) {
+  return INVENTORY_CATEGORIES.find((category) => category.id === categoryId) || INVENTORY_CATEGORIES[0];
+}
+
+function getInventoryCategoryLabel(categoryId) {
+  return getInventoryCategoryDef(categoryId).label;
+}
+
+function getItemRoleLabel(itemId) {
+  const item = ITEM_DEFS[itemId];
+  const category = getInventoryCategory(itemId);
+  if (!item) {
+    return "Unknown";
+  }
+  if (item.armor) {
+    return "Armor";
+  }
+  if (itemId === "iron_whip" || itemId === "whetstone") {
+    return "Whip Upgrade";
+  }
+  if (itemId === "swift_boots" || itemId === "trail_map") {
+    return "Travel Gear";
+  }
+  if (item.use?.health && item.use?.stamina) {
+    return "Meal";
+  }
+  if (item.use?.health) {
+    return "Health";
+  }
+  if (item.use?.stamina) {
+    return "Stamina";
+  }
+  if (item.bondOnly) {
+    return "Single Matt Care";
+  }
+  if (item.use?.friendship) {
+    return "Party Bond";
+  }
+  if (category === "capture") {
+    return "Capture Aid";
+  }
+  if (category === "key") {
+    return "Key Item";
+  }
+  if (category === "gear") {
+    return "Passive Gear";
+  }
+  return getInventoryCategoryLabel(category);
+}
+
+function getItemEffectText(itemId) {
+  const item = ITEM_DEFS[itemId];
+  if (!item) {
+    return "";
+  }
+
+  const effects = [];
+  if (item.use?.health) {
+    effects.push(`+${Math.round(item.use.health * getItemRecoveryMultiplier(itemId, "health"))} health`);
+  }
+  if (item.use?.stamina) {
+    effects.push(`+${Math.round(item.use.stamina * getItemRecoveryMultiplier(itemId, "stamina"))} stamina`);
+  }
+  if (item.use?.friendship) {
+    effects.push(`+${getFriendshipGain(item.use.friendship)} friendship`);
+  }
+  if (item.armor) {
+    effects.push(`${Math.round(item.armor * 100)}% armor`);
+  }
+  if (itemId === "iron_whip") {
+    effects.push("+80 whip reach");
+  }
+  if (itemId === "whetstone") {
+    effects.push("+35 whip reach");
+  }
+  if (itemId === "swift_boots") {
+    effects.push("+speed and stamina");
+  }
+  if (itemId === "trail_map") {
+    effects.push("+travel speed");
+  }
+  if (itemId === "arena_handbook") {
+    effects.push("+arena power, +arena XP");
+  }
+  if (itemId === "sparring_gloves") {
+    effects.push("arena loss XP");
+  }
+  if (itemId === "matt_snack") {
+    effects.push("-1 capture hit");
+  }
+  if (itemId === "capture_net") {
+    effects.push("-1 capture hit, +capture chance");
+  }
+  if (itemId === "calming_flute") {
+    effects.push("-1 capture hit, +capture chance");
+  }
+  if (itemId === "matt_charm") {
+    effects.push("+Matt sale value");
+  }
+  if (itemId === "trade_ledger") {
+    effects.push("+Matt sale value");
+  }
+  if (itemId === "bond_ribbon") {
+    effects.push("+bond gains");
+  }
+  if (itemId === "memory_locket") {
+    effects.push("+arena energy");
+  }
+
+  return effects.join(" | ");
+}
+
+function getShopItemPrice(itemId) {
+  const item = ITEM_DEFS[itemId];
+  if (!item) {
+    return 0;
+  }
+  const discount = getSkillBonus("merchant_sense", 0.04);
+  return Math.max(1, Math.round(item.price * (1 - discount)));
+}
+
+function getItemSellValue(itemId) {
+  const item = ITEM_DEFS[itemId];
+  if (!item) {
+    return 0;
+  }
+  if (!item.sellPrice) {
+    return 0;
+  }
+  const bonus = getSkillBonus("merchant_sense", 0.08);
+  return Math.max(0, Math.round(item.sellPrice * (1 + bonus)));
+}
+
+function getItemRecoveryMultiplier(itemId, recoveryType = "") {
+  const item = ITEM_DEFS[itemId];
+  if (!item?.use) {
+    return 1;
+  }
+
+  let multiplier = 1;
+  multiplier += getSkillBonus("quartermaster", 0.04);
+  multiplier += getSkillBonus("field_alchemy", 0.07);
+  if (recoveryType === "health") {
+    multiplier += getSkillBonus("field_medic", 0.09);
+  }
+  if (item.use.health && item.use.stamina) {
+    multiplier += getSkillBonus("provisioner", 0.1);
+  }
+  return multiplier;
+}
+
+function getInventoryEntries(categoryId = "all") {
   return Object.entries(state.inventory)
     .filter(([itemId, count]) => ITEM_DEFS[itemId] && count > 0)
-    .sort(([a], [b]) => ITEM_DEFS[a].name.localeCompare(ITEM_DEFS[b].name));
+    .filter(([itemId]) => categoryId === "all" || getInventoryCategory(itemId) === categoryId)
+    .sort(([a], [b]) => {
+      const categoryDiff = (INVENTORY_CATEGORY_ORDER[getInventoryCategory(a)] ?? 99) - (INVENTORY_CATEGORY_ORDER[getInventoryCategory(b)] ?? 99);
+      if (categoryDiff !== 0) {
+        return categoryDiff;
+      }
+      return ITEM_DEFS[a].name.localeCompare(ITEM_DEFS[b].name);
+    });
+}
+
+function getInventorySummary() {
+  const entries = getInventoryEntries("all");
+  const totalStacks = entries.reduce((total, [, count]) => total + count, 0);
+  const categoryCounts = Object.fromEntries(INVENTORY_CATEGORIES.map((category) => [category.id, 0]));
+  entries.forEach(([itemId]) => {
+    const category = getInventoryCategory(itemId);
+    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+  });
+
+  return {
+    itemTypes: entries.length,
+    totalStacks,
+    consumables: categoryCounts.consumable || 0,
+    gear: categoryCounts.gear || 0,
+    bond: categoryCounts.bond || 0,
+    sellValue: entries.reduce((total, [itemId, count]) => total + getItemSellValue(itemId) * count, 0),
+    categoryCounts,
+  };
 }
 
 function makeShopButton(label, action, id, disabled = false) {
@@ -4446,6 +4975,8 @@ function appendItemRow(parent, itemId, mode) {
   }
 
   const count = getItemCount(itemId);
+  const price = getShopItemPrice(itemId);
+  const sellValue = getItemSellValue(itemId);
   const row = document.createElement("article");
   row.className = "shop-item";
 
@@ -4454,8 +4985,8 @@ function appendItemRow(parent, itemId, mode) {
   title.textContent = item.name;
   const detail = document.createElement("span");
   detail.textContent = mode === "buy"
-    ? `${item.description} Price: ${item.price} coins${item.unique ? " each profile" : ""}.`
-    : `${item.description} You own ${count}. Sell: ${item.sellPrice} coins.`;
+    ? `${getItemRoleLabel(itemId)}. ${item.description} Price: ${price} coins${item.unique ? " each profile" : ""}.`
+    : `${getItemRoleLabel(itemId)}. ${item.description} You own ${count}. Sell: ${sellValue} coins.`;
   info.append(title, detail);
 
   const owned = document.createElement("em");
@@ -4467,7 +4998,7 @@ function appendItemRow(parent, itemId, mode) {
       "Buy",
       "buy-item",
       itemId,
-      state.coins < item.price ||
+      state.coins < price ||
         (item.unique && count > 0) ||
         (item.mattType && state.capturedParty.length >= MATT_PARTY_LIMIT),
     );
@@ -5335,29 +5866,177 @@ function renderPauseCharacter(parent) {
   }
 }
 
-function renderPauseInventory(parent) {
-  const grid = createMenuGrid(parent);
-  const card = appendMenuCard(grid, "Pack", `${getInventoryEntries().length} item type${getInventoryEntries().length === 1 ? "" : "s"}`, "full");
-  const table = document.createElement("div");
-  table.className = "menu-table";
-  const entries = getInventoryEntries();
+function makeMenuPill(text, className = "") {
+  const pill = document.createElement("span");
+  pill.className = `menu-pill ${className}`.trim();
+  pill.textContent = text;
+  return pill;
+}
 
-  if (entries.length === 0) {
-    appendMenuEmpty(card, "Your pack is empty.");
+function getInventoryActionButton(itemId, count = getItemCount(itemId)) {
+  const item = ITEM_DEFS[itemId];
+  if (!item) {
+    return null;
+  }
+  if (item.bondOnly) {
+    return makeMenuButton("Party", "pause-tab", "party", count <= 0 || state.capturedParty.length === 0);
+  }
+  if (item.use) {
+    return makeMenuButton("Use", "use-item", itemId, count <= 0);
+  }
+  if (item.unique || item.armor) {
+    return makeMenuButton("Passive", "", itemId, true);
+  }
+  return null;
+}
+
+function appendInventoryItem(parent, itemId, count) {
+  const item = ITEM_DEFS[itemId];
+  if (!item) {
     return;
   }
 
-  entries.forEach(([itemId]) => {
-    const item = ITEM_DEFS[itemId];
-    const count = getItemCount(itemId);
-    const action = item.bondOnly
-      ? makeMenuButton("Party", "pause-tab", "party", state.capturedParty.length === 0)
-      : item.use
-        ? makeMenuButton("Use", "use-item", itemId, count <= 0)
-        : null;
-    appendMenuRow(table, item.name, item.description, `x${count}`, action);
+  const category = getInventoryCategory(itemId);
+  const card = document.createElement("article");
+  card.className = `menu-inventory-item ${category}`;
+
+  const header = document.createElement("header");
+  const titleWrap = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = item.name;
+  const description = document.createElement("p");
+  description.textContent = item.description;
+  titleWrap.append(title, description);
+  header.append(titleWrap, makeMenuPill(getItemRoleLabel(itemId), category));
+
+  const meta = document.createElement("div");
+  meta.className = "menu-item-meta";
+  meta.append(makeMenuPill(`x${count}`), makeMenuPill(`${getItemSellValue(itemId) * count}c value`));
+  const effectText = getItemEffectText(itemId);
+  if (effectText) {
+    meta.append(makeMenuPill(effectText, "effect"));
+  }
+
+  const action = getInventoryActionButton(itemId, count);
+  card.append(header, meta);
+  if (action) {
+    const actions = document.createElement("div");
+    actions.className = "menu-actions";
+    actions.append(action);
+    card.append(actions);
+  }
+  parent.append(card);
+}
+
+function renderPauseInventory(parent) {
+  const grid = createMenuGrid(parent);
+  const summary = getInventorySummary();
+  let activeCategory = INVENTORY_CATEGORIES.some((category) => category.id === state.inventoryCategory)
+    ? state.inventoryCategory
+    : "all";
+  if (activeCategory !== "all" && (summary.categoryCounts[activeCategory] || 0) <= 0) {
+    activeCategory = "all";
+  }
+  state.inventoryCategory = activeCategory;
+
+  const overview = appendMenuCard(grid, "Pack Overview", `${summary.itemTypes} item type${summary.itemTypes === 1 ? "" : "s"} | ${summary.totalStacks} total carried`, "full compact");
+  const statGrid = document.createElement("div");
+  statGrid.className = "menu-stat-grid inventory-stats";
+  appendMenuStat(statGrid, "Recovery", String(summary.consumables), "usable supplies");
+  appendMenuStat(statGrid, "Gear", String(summary.gear), "passives owned");
+  appendMenuStat(statGrid, "Bond", String(summary.bond), "care items");
+  appendMenuStat(statGrid, "Value", `${summary.sellValue}c`, `Merchant Sense ${getSkillRank("merchant_sense")}/3`);
+  overview.append(statGrid);
+
+  const shelves = appendMenuCard(grid, "Shelves", getInventoryCategoryDef(activeCategory).description, "full compact");
+  const filters = document.createElement("div");
+  filters.className = "menu-filter-row";
+  INVENTORY_CATEGORIES.forEach((category) => {
+    const count = category.id === "all" ? summary.itemTypes : summary.categoryCounts[category.id] || 0;
+    if (category.id !== "all" && count <= 0) {
+      return;
+    }
+    const button = makeMenuButton(`${category.label} ${count}`, "inventory-category", category.id);
+    button.classList.toggle("active", category.id === activeCategory);
+    filters.append(button);
   });
-  card.append(table);
+  shelves.append(filters);
+
+  const entries = getInventoryEntries(activeCategory);
+  const list = document.createElement("div");
+  list.className = "menu-inventory-list";
+  if (entries.length === 0) {
+    appendMenuEmpty(list, activeCategory === "all" ? "Your pack is empty." : `No ${getInventoryCategoryLabel(activeCategory).toLowerCase()} items right now.`);
+    grid.append(list);
+    return;
+  }
+
+  entries.forEach(([itemId, count]) => appendInventoryItem(list, itemId, count));
+  grid.append(list);
+}
+
+function getSkillBranches() {
+  const branchIds = Object.keys(SKILL_BRANCH_DEFS);
+  const extraBranches = [...new Set(Object.values(PLAYER_SKILLS)
+    .map((skill) => skill.branch)
+    .filter((branch) => !branchIds.includes(branch)))];
+
+  return [...branchIds, ...extraBranches].map((branch) => ({
+    branch,
+    def: SKILL_BRANCH_DEFS[branch] || { label: branch, description: "" },
+    skills: Object.values(PLAYER_SKILLS)
+      .filter((skill) => skill.branch === branch)
+      .sort((a, b) => (a.tier || 0) - (b.tier || 0) || a.name.localeCompare(b.name)),
+  })).filter((group) => group.skills.length > 0);
+}
+
+function getBranchSkillTotals(skills) {
+  return skills.reduce(
+    (totals, skill) => {
+      totals.spent += getSkillRank(skill.id);
+      totals.max += skill.maxRank;
+      return totals;
+    },
+    { spent: 0, max: 0 },
+  );
+}
+
+function appendSkillNode(parent, skill) {
+  const rank = getSkillRank(skill.id);
+  const check = canUnlockSkill(skill.id);
+  const mastered = rank >= skill.maxRank;
+  const requirement = getSkillRequirementText(skill);
+  const node = document.createElement("article");
+  node.className = [
+    "menu-skill-node",
+    mastered ? "mastered" : "",
+    check.ok ? "available" : "",
+    rank > 0 && !mastered ? "learned" : "",
+    !check.ok && rank <= 0 ? "locked" : "",
+  ].filter(Boolean).join(" ");
+
+  const header = document.createElement("header");
+  const title = document.createElement("strong");
+  title.textContent = skill.name;
+  header.append(title, makeMenuPill(`Rank ${rank}/${skill.maxRank}`, mastered ? "mastered" : ""));
+
+  const detail = document.createElement("p");
+  detail.textContent = skill.description;
+
+  const footer = document.createElement("footer");
+  const effect = document.createElement("span");
+  effect.textContent = skill.perRank;
+  footer.append(effect);
+  if (requirement && !mastered) {
+    const requires = document.createElement("span");
+    requires.textContent = `Requires ${requirement}`;
+    footer.append(requires);
+  }
+
+  const label = mastered ? "Max" : getPlayerSkillPoints() <= 0 ? "No SP" : check.ok ? "Learn" : "Locked";
+  const action = makeMenuButton(label, "learn-skill", skill.id, !check.ok);
+  node.append(header, detail, footer, action);
+  parent.append(node);
 }
 
 function renderPauseSkills(parent) {
@@ -5371,31 +6050,38 @@ function renderPauseSkills(parent) {
     `${next}. Skill points: ${getPlayerSkillPoints()}. Skills spent: ${getSpentSkillPoints()}.`,
     "full compact",
   );
-  summary.append(makeMenuButton("Reset", "reset-skills", null, getSpentSkillPoints() <= 0));
+  const statGrid = document.createElement("div");
+  statGrid.className = "menu-stat-grid skill-stats";
+  appendMenuStat(statGrid, "SP", String(getPlayerSkillPoints()), "available");
+  appendMenuStat(statGrid, "Spent", String(getSpentSkillPoints()), "learned ranks");
+  appendMenuStat(statGrid, "Branches", String(getSkillBranches().length), "paths open");
+  appendMenuStat(statGrid, "Recovery", `${Math.round((getItemRecoveryMultiplier("health_potion", "health") - 1) * 100)}%`, "item bonus");
+  summary.append(statGrid);
+  const actions = document.createElement("div");
+  actions.className = "menu-actions";
+  actions.append(makeMenuButton("Reset", "reset-skills", null, getSpentSkillPoints() <= 0));
+  summary.append(actions);
 
-  let currentBranch = "";
-  Object.values(PLAYER_SKILLS).forEach((skill) => {
-    if (skill.branch !== currentBranch) {
-      currentBranch = skill.branch;
-      const heading = document.createElement("h3");
-      heading.className = "menu-branch";
-      heading.textContent = currentBranch;
-      grid.append(heading);
-    }
-
-    const rank = getSkillRank(skill.id);
-    const check = canUnlockSkill(skill.id);
-    const requirement = getSkillRequirementText(skill);
-    const label = rank >= skill.maxRank ? "Max" : getPlayerSkillPoints() <= 0 ? "No SP" : check.ok ? "Learn" : "Locked";
-    const rowClass = rank >= skill.maxRank ? "menu-skill maxed" : check.ok ? "menu-skill" : "menu-skill locked";
-    appendMenuRow(
-      grid,
-      skill.name,
-      `Rank ${rank}/${skill.maxRank}. ${skill.description} ${skill.perRank}${requirement ? `. Requires ${requirement}` : ""}.`,
-      rank >= skill.maxRank ? "Max" : `${rank}/${skill.maxRank}`,
-      makeMenuButton(label, "learn-skill", skill.id, !check.ok),
-      rowClass,
-    );
+  getSkillBranches().forEach(({ branch, def, skills }) => {
+    const totals = getBranchSkillTotals(skills);
+    const section = document.createElement("section");
+    section.className = "menu-skill-branch";
+    const header = document.createElement("header");
+    const title = document.createElement("h3");
+    title.textContent = def.label || branch;
+    const detail = document.createElement("span");
+    detail.textContent = `${def.description} ${totals.spent}/${totals.max} ranks learned.`;
+    header.append(title, detail);
+    const branchMeter = document.createElement("i");
+    branchMeter.className = "menu-meter branch-meter";
+    const fill = document.createElement("b");
+    fill.style.width = `${totals.max > 0 ? clamp((totals.spent / totals.max) * 100, 0, 100) : 0}%`;
+    branchMeter.append(fill);
+    const track = document.createElement("div");
+    track.className = "menu-skill-track";
+    skills.forEach((skill) => appendSkillNode(track, skill));
+    section.append(header, branchMeter, track);
+    grid.append(section);
   });
 }
 
@@ -5726,8 +6412,9 @@ function getArenaMattMaxHp(matt, opponentBoost = 0) {
 function getArenaMattPowerBonus(matt, opponentBoost = 0) {
   const handbookBonus = hasItem("arena_handbook") ? 4 : 0;
   const instinctBonus = opponentBoost === 0 ? getSkillBonus("arena_instinct", 2) : 0;
+  const tacticsBonus = opponentBoost === 0 ? getSkillBonus("pack_leader", 1) + getSkillBonus("follow_through", 1) : 0;
   const rank = getFriendshipRank(matt?.friendship || 0);
-  return getMattLevel(matt) * 3 + Math.floor((Number(matt?.friendship) || 0) / 12) + rank.power + opponentBoost + handbookBonus + instinctBonus;
+  return getMattLevel(matt) * 3 + Math.floor((Number(matt?.friendship) || 0) / 12) + rank.power + opponentBoost + handbookBonus + instinctBonus + tacticsBonus;
 }
 
 function getArenaMattCritChance(matt, ability = {}) {
@@ -5739,7 +6426,8 @@ function getArenaInitialEnergy(matt, opponentBoost = 0, includePlayerItems = tru
   const rank = getFriendshipRank(matt?.friendship || 0);
   const locketBonus = includePlayerItems && hasItem("memory_locket") ? 6 : 0;
   const instinctBonus = includePlayerItems ? getSkillBonus("arena_instinct", 3) : 0;
-  return clamp(62 + rank.energy + Math.floor(getMattLevel(matt) / 3) + opponentBoost + locketBonus + instinctBonus, 0, ARENA_MAX_ENERGY);
+  const leaderBonus = includePlayerItems ? getSkillBonus("pack_leader", 1) : 0;
+  return clamp(62 + rank.energy + Math.floor(getMattLevel(matt) / 3) + opponentBoost + locketBonus + instinctBonus + leaderBonus, 0, ARENA_MAX_ENERGY);
 }
 
 function getArenaRankTitle(points = state.arenaStats.rankPoints) {
@@ -6748,6 +7436,7 @@ function addPurchasedMattToParty(type) {
 function buyShopItem(itemId) {
   const shop = getShopDef();
   const item = ITEM_DEFS[itemId];
+  const price = getShopItemPrice(itemId);
 
   if (!shop || !item || !shop.buy.includes(itemId)) {
     return;
@@ -6758,7 +7447,7 @@ function buyShopItem(itemId) {
     return;
   }
 
-  if (state.coins < item.price) {
+  if (state.coins < price) {
     renderShop(`Not enough coins for ${item.name}.`);
     return;
   }
@@ -6768,7 +7457,7 @@ function buyShopItem(itemId) {
     return;
   }
 
-  state.coins -= item.price;
+  state.coins -= price;
   if (item.mattType) {
     addPurchasedMattToParty(item.mattType);
   } else {
@@ -6782,16 +7471,17 @@ function buyShopItem(itemId) {
 
 function sellInventoryItem(itemId) {
   const item = ITEM_DEFS[itemId];
+  const sellValue = getItemSellValue(itemId);
   if (!item || getItemCount(itemId) <= 0) {
     return;
   }
 
   removeItem(itemId);
-  state.coins += item.sellPrice;
+  state.coins += sellValue;
   saveEconomy();
   updateEconomyHud();
   updatePlayerStatusHud();
-  renderShop(`Sold ${item.name} for ${item.sellPrice} coins.`);
+  renderShop(`Sold ${item.name} for ${sellValue} coins.`);
 }
 
 function useInventoryItem(itemId) {
@@ -6816,12 +7506,12 @@ function useInventoryItem(itemId) {
   let used = false;
 
   if (item.use.health && state.player.health < maxHealth) {
-    state.player.health = clamp(state.player.health + item.use.health, 0, maxHealth);
+    state.player.health = clamp(state.player.health + item.use.health * getItemRecoveryMultiplier(itemId, "health"), 0, maxHealth);
     used = true;
   }
 
   if (item.use.stamina && state.player.stamina < maxStamina) {
-    state.player.stamina = clamp(state.player.stamina + item.use.stamina, 0, maxStamina);
+    state.player.stamina = clamp(state.player.stamina + item.use.stamina * getItemRecoveryMultiplier(itemId, "stamina"), 0, maxStamina);
     used = true;
   }
 
@@ -6951,12 +7641,15 @@ function updateClock(dt) {
   }
 }
 
-function getTransitionSpawnPoint(destinationWorldId, fromWorldId = "") {
+function getTransitionSpawnNode(destinationWorldId, fromWorldId = "") {
   const destination = state.worlds[destinationWorldId];
-  const matchingNode = fromWorldId
+  return fromWorldId
     ? destination?.nodes?.find((node) => node.target === fromWorldId)
     : null;
+}
 
+function getTransitionSpawnPoint(destinationWorldId, fromWorldId = "") {
+  const matchingNode = getTransitionSpawnNode(destinationWorldId, fromWorldId);
   if (matchingNode) {
     return { x: matchingNode.x, y: matchingNode.y };
   }
@@ -6986,14 +7679,21 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
   state.dev.activeNodeId = null;
 
   if (movePlayer) {
+    const arrivalNode = getTransitionSpawnNode(id, fromWorldId);
     const spawnPoint = getTransitionSpawnPoint(id, fromWorldId);
     state.player.x = spawnPoint.x;
     state.player.y = spawnPoint.y;
+    state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.25);
+    state.nodeTravelExitWorld = arrivalNode ? id : "";
+    state.nodeTravelExitNodeId = arrivalNode?.id || "";
     seedPlayerTrail();
   } else {
     const clamped = clampToCurrentMap(state.player);
     state.player.x = clamped.x;
     state.player.y = clamped.y;
+    state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.25);
+    state.nodeTravelExitWorld = "";
+    state.nodeTravelExitNodeId = "";
   }
 
   if (devWorld) {
@@ -8118,9 +8818,13 @@ function createBossMatt(worldId, profile, random = Math.random) {
     boss: true,
     rooted: true,
     bossWalkSpeed: boss.walkSpeed || config.wanderSpeed,
+    bossRushSpeed: boss.rushSpeed || boss.walkSpeed || config.wanderSpeed,
     bossPreferredDistance: boss.preferredDistance || 360,
     bossCloseDistance: boss.closeDistance || 220,
     bossMoveTimer: 0,
+    bossMoveIntervalMin: boss.moveIntervalMin || 0.8,
+    bossMoveIntervalMax: boss.moveIntervalMax || 1.8,
+    bossMoveMode: "orbit",
     bossOrbitDirection: random() < 0.5 ? -1 : 1,
     preBattleRoam: Boolean(boss.preBattleRoam),
     introPlaying: hasIntro,
@@ -8673,7 +9377,7 @@ function damagePlayer(amount, sourceMatt) {
 
   const damage = Math.max(1, Math.round(amount * (1 - getArmorDamageReduction())));
   state.player.health = Math.max(0, state.player.health - damage);
-  state.player.damageCooldown = PLAYER.damageInvulnerableTime;
+  state.player.damageCooldown = PLAYER.damageInvulnerableTime * (1 + getSkillBonus("evasive_stride", 0.1));
   addScreenShake(7);
   setGameMessage(`Lv ${getMattLevel(sourceMatt)} ${sourceMatt.name || MATT_LABELS[sourceMatt.type] || "Matt"} hit Ivan for ${damage}.`);
   updatePlayerStatusHud();
@@ -9152,11 +9856,41 @@ function chooseMattAttack(matt, config) {
   }
 
   const distance = Math.hypot(state.player.x - matt.x, state.player.y - matt.y);
-  const reachableAttacks = matt.attacks.filter((attack) => distance <= (attack.attackRadius || config.attackRadius || 0) + 80);
-  const candidates = reachableAttacks.length > 0 ? reachableAttacks : matt.attacks;
-  const options = candidates.filter((attack) => attack.id !== matt.lastAttackId);
-  const attackPool = options.length > 0 ? options : candidates;
-  const attack = attackPool[Math.floor(Math.random() * attackPool.length)];
+  const scoredAttacks = matt.attacks
+    .map((attack) => {
+      const maxRange = attack.maxRange || attack.attackRadius || config.attackRadius || 0;
+      const minRange = Math.max(0, attack.minRange || 0);
+      if (distance > maxRange + 90 || distance < Math.max(0, minRange - 90)) {
+        return { attack, score: 0 };
+      }
+
+      const sweetSpot = Number.isFinite(attack.sweetSpot)
+        ? attack.sweetSpot
+        : minRange + Math.max(1, maxRange - minRange) * 0.55;
+      const rangeWidth = Math.max(1, maxRange - minRange);
+      const rangeFit = clamp(1 - Math.abs(distance - sweetSpot) / rangeWidth, 0.18, 1);
+      const repeatPenalty = attack.id && attack.id === matt.lastAttackId ? 0.28 : 1;
+      return {
+        attack,
+        score: rangeFit * (attack.weight || 1) * repeatPenalty,
+      };
+    })
+    .filter((entry) => entry.score > 0);
+  const candidates = scoredAttacks.length > 0
+    ? scoredAttacks
+    : matt.attacks.map((attack) => ({ attack, score: attack.id === matt.lastAttackId ? 0.25 : 1 }));
+  const totalScore = candidates.reduce((sum, entry) => sum + entry.score, 0) || 1;
+  let roll = Math.random() * totalScore;
+  let attack = candidates[candidates.length - 1].attack;
+
+  for (const entry of candidates) {
+    roll -= entry.score;
+    if (roll <= 0) {
+      attack = entry.attack;
+      break;
+    }
+  }
+
   matt.lastAttackId = attack.id;
   matt.activeAttackId = attack.id;
   matt.activeAttackName = attack.name;
@@ -9363,32 +10097,51 @@ function updateAwakenedBossMovement(matt, config, distance, dt) {
   }
 
   matt.bossMoveTimer = Math.max(0, (matt.bossMoveTimer || 0) - dt);
+  const safeDistance = distance || 1;
+  const preferredDistance = matt.bossPreferredDistance || 360;
+  const closeDistance = matt.bossCloseDistance || 220;
+
   if (matt.bossMoveTimer <= 0) {
+    const modes = safeDistance > preferredDistance * 1.45
+      ? ["rush", "rush", "flank"]
+      : safeDistance < closeDistance
+        ? ["retreat", "retreat", "flank"]
+        : ["orbit", "flank", "rush", "retreat"];
+    matt.bossMoveMode = modes[Math.floor(Math.random() * modes.length)];
     matt.bossOrbitDirection = Math.random() < 0.5 ? -1 : 1;
-    matt.bossMoveTimer = randomBetween(1.6, 3.4);
+    matt.bossMoveTimer = randomBetween(matt.bossMoveIntervalMin || 0.8, matt.bossMoveIntervalMax || 1.8);
   }
 
-  const safeDistance = distance || 1;
   const toPlayerX = (state.player.x - matt.x) / safeDistance;
   const toPlayerY = (state.player.y - matt.y) / safeDistance;
   const orbitDirection = matt.bossOrbitDirection || 1;
   const tangentX = -toPlayerY * orbitDirection;
   const tangentY = toPlayerX * orbitDirection;
-  const preferredDistance = matt.bossPreferredDistance || 360;
-  const closeDistance = matt.bossCloseDistance || 220;
   let moveX = tangentX;
   let moveY = tangentY;
+  let speed = matt.bossWalkSpeed || config.wanderSpeed;
 
-  if (safeDistance > preferredDistance) {
-    moveX = toPlayerX * 0.88 + tangentX * 0.28;
-    moveY = toPlayerY * 0.88 + tangentY * 0.28;
+  if (matt.bossMoveMode === "rush") {
+    moveX = toPlayerX * 1.05 + tangentX * 0.18;
+    moveY = toPlayerY * 1.05 + tangentY * 0.18;
+    speed = matt.bossRushSpeed || speed * 1.25;
+  } else if (matt.bossMoveMode === "retreat") {
+    moveX = -toPlayerX * 0.82 + tangentX * 0.62;
+    moveY = -toPlayerY * 0.82 + tangentY * 0.62;
+    speed *= 1.1;
+  } else if (matt.bossMoveMode === "flank") {
+    moveX = tangentX * 1.18 + toPlayerX * (safeDistance > preferredDistance ? 0.36 : -0.18);
+    moveY = tangentY * 1.18 + toPlayerY * (safeDistance > preferredDistance ? 0.36 : -0.18);
+    speed *= 1.18;
+  } else if (safeDistance > preferredDistance) {
+    moveX = toPlayerX * 0.82 + tangentX * 0.42;
+    moveY = toPlayerY * 0.82 + tangentY * 0.42;
   } else if (safeDistance < closeDistance) {
-    moveX = -toPlayerX * 0.72 + tangentX * 0.54;
-    moveY = -toPlayerY * 0.72 + tangentY * 0.54;
+    moveX = -toPlayerX * 0.72 + tangentX * 0.68;
+    moveY = -toPlayerY * 0.72 + tangentY * 0.68;
   }
 
   const magnitude = Math.hypot(moveX, moveY) || 1;
-  const speed = matt.bossWalkSpeed || config.wanderSpeed;
   const beforeX = matt.x;
   const beforeY = matt.y;
   moveWithWalls(matt, (moveX / magnitude) * speed * dt, (moveY / magnitude) * speed * dt, Math.max(36, config.width * 0.42));
@@ -9647,6 +10400,22 @@ function spawnFollowerStrikeEffect(follower, target) {
   }
 }
 
+function getFollowerAssistRange() {
+  return FOLLOWER_ASSIST.attackRange + getSkillBonus("follow_through", 35);
+}
+
+function getFollowerAssistCooldown() {
+  return Math.max(0.48, FOLLOWER_ASSIST.strikeCooldown * (1 - getSkillBonus("pack_leader", 0.08)));
+}
+
+function getFollowerAssistBondFriendship() {
+  return FOLLOWER_ASSIST.bondFriendship + getSkillBonus("follow_through", 1);
+}
+
+function getFollowerAssistBondXp() {
+  return FOLLOWER_ASSIST.bondXp + getSkillBonus("pack_leader", 2) + getSkillBonus("follow_through", 1);
+}
+
 function rewardFollowerAssistBond(follower) {
   if (!follower.partyId || follower.assistBondTimer > 0) {
     return;
@@ -9654,8 +10423,8 @@ function rewardFollowerAssistBond(follower) {
 
   follower.assistBondTimer = FOLLOWER_ASSIST.bondCooldown;
   const result = applyCapturedMattProgress(follower.partyId, {
-    friendship: FOLLOWER_ASSIST.bondFriendship,
-    xp: FOLLOWER_ASSIST.bondXp,
+    friendship: getFollowerAssistBondFriendship(),
+    xp: getFollowerAssistBondXp(),
   });
 
   if (result?.leveled) {
@@ -9701,9 +10470,10 @@ function updateCombatFollower(follower, target, config, dt) {
   const dx = target.x - follower.x;
   const dy = target.y - follower.y;
   const distance = Math.hypot(dx, dy) || 1;
+  const assistRange = getFollowerAssistRange();
 
-  if (distance > FOLLOWER_ASSIST.attackRange) {
-    const speed = Math.min((config.followSpeed + 210) * dt, distance - FOLLOWER_ASSIST.attackRange + 18);
+  if (distance > assistRange) {
+    const speed = Math.min((config.followSpeed + 210) * dt, distance - assistRange + 18);
     follower.x = clamp(follower.x + (dx / distance) * speed, 0, getMapWidth());
     follower.y = clamp(follower.y + (dy / distance) * speed, 0, getMapHeight());
     follower.direction = dx < 0 ? "left" : "right";
@@ -9715,11 +10485,11 @@ function updateCombatFollower(follower, target, config, dt) {
   follower.direction = dx < 0 ? "left" : "right";
   follower.caughtAnimationPaused = false;
   if (follower.assistCooldown <= 0) {
-    follower.assistCooldown = FOLLOWER_ASSIST.strikeCooldown;
+    follower.assistCooldown = getFollowerAssistCooldown();
     followerStrikeTarget(follower, target);
     setAction(follower, getFollowerAttackAction(follower));
   } else {
-    setAction(follower, "caught");
+    setAction(follower, getCapturedMattTravelAction(follower));
   }
 
   return true;
@@ -9747,12 +10517,24 @@ function updateCaughtDogmatt(dogmatt, dt, caughtIndex) {
     moved = true;
   }
 
-  dogmatt.caughtAnimationPaused = !state.player.moving && !moved;
-  setAction(dogmatt, "caught");
+  const resting = !state.player.moving && !moved;
+  dogmatt.caughtAnimationPaused = resting && !shouldUseWildFollowerFrames(dogmatt);
+  setAction(dogmatt, resting ? getCapturedMattRestAction(dogmatt) : getCapturedMattTravelAction(dogmatt));
+
+  if (dogmatt.caughtAnimationPaused && shouldCapturedMattUseWalkingLoop(dogmatt)) {
+    dogmatt.frameIndex = 0;
+    dogmatt.frameTimer = 0;
+  }
 }
 
 function getMattFrames(matt) {
   const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || images.dogmatt;
+  if (shouldUseWildFollowerFrames(matt) && matt.action === "caught") {
+    return frameSet.idle || frameSet.walking || frameSet.attack || images.dogmatt.idle;
+  }
+  if (matt.caught && shouldCapturedMattUseWalkingLoop(matt) && matt.action === "caught" && frameSet.walking?.length) {
+    return frameSet.walking;
+  }
   return frameSet[matt.action] || frameSet.attack || frameSet.idle || images.dogmatt.idle;
 }
 
@@ -10194,6 +10976,7 @@ function update(dt) {
   state.time += dt;
   updateClock(dt);
   updatePlayer(dt);
+  updateAutomaticNodeTravel(dt);
   updateNpcs(dt);
   updateDogmatts(dt);
   updateFriendshipWalking(dt);
@@ -10272,7 +11055,13 @@ function hitDogmatt(dogmatt) {
     playCaptureSound();
     addScreenShake(10);
     const ivanProgress = awardPlayerXp(
-      Math.round(24 + getMattLevel(dogmatt) * 6 + (Number(dogmatt.captureDifficulty) || 1) * 10 + getSkillBonus("whip_mastery", 5)),
+      Math.round(
+        24 +
+          getMattLevel(dogmatt) * 6 +
+          (Number(dogmatt.captureDifficulty) || 1) * 10 +
+          getSkillBonus("whip_mastery", 5) +
+          getSkillBonus("clean_capture", 4),
+      ),
       "capture",
     );
     setGameMessage(
@@ -10845,8 +11634,13 @@ function getNearbyNode() {
   );
 }
 
-function tryEnterNode() {
-  const node = getNearbyNode();
+function getOverlappingNode() {
+  return getWorld().nodes.find(
+    (node) => Math.hypot(node.x - state.player.x, node.y - state.player.y) <= node.radius + 28,
+  );
+}
+
+function tryEnterNode(node = getNearbyNode()) {
 
   if (!node) {
     return false;
@@ -10854,12 +11648,14 @@ function tryEnterNode() {
 
   if (node.locked) {
     setGameMessage(`${getNodeLabel(node)} is locked for now.`);
+    state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.75);
     return false;
   }
 
   if (state.currentWorld === "town_arena_entrance" && node.target === "town_arena") {
     if (!hasItem("arena_ticket")) {
       setGameMessage("Scott sells arena tickets. Buy one before entering.");
+      state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.9);
       return false;
     }
 
@@ -10880,6 +11676,42 @@ function tryEnterNode() {
   addScreenShake(8);
   saveWorlds();
   return true;
+}
+
+function updateAutomaticNodeTravel(dt) {
+  state.nodeTravelCooldown = Math.max(0, (state.nodeTravelCooldown || 0) - dt);
+
+  if (
+    state.dev.enabled ||
+    isIntroOpen() ||
+    isShopOpen() ||
+    isPauseMenuOpen() ||
+    isBossIntroPlaying() ||
+    (state.arena.active && state.arena.phase !== "idle")
+  ) {
+    return;
+  }
+
+  const node = getOverlappingNode();
+  if (
+    state.nodeTravelExitNodeId &&
+    state.currentWorld === state.nodeTravelExitWorld &&
+    node?.id === state.nodeTravelExitNodeId
+  ) {
+    return;
+  }
+
+  if (!node) {
+    state.nodeTravelExitWorld = "";
+    state.nodeTravelExitNodeId = "";
+    return;
+  }
+
+  if (state.nodeTravelCooldown > 0) {
+    return;
+  }
+
+  tryEnterNode(node);
 }
 
 function drawWorldNodes() {
@@ -10916,7 +11748,7 @@ function drawWorldNodes() {
       ctx.fillStyle = "#f7f1d0";
       ctx.font = "800 18px Inter, system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(locked ? `${getNodeLabel(node)} locked` : `E: ${getNodeLabel(node)}`, node.x, node.y - node.radius - 14);
+      ctx.fillText(locked ? `${getNodeLabel(node)} locked` : getNodeLabel(node), node.x, node.y - node.radius - 14);
     }
   }
 
@@ -11414,9 +12246,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "e" && !event.repeat) {
     event.preventDefault();
     if (!state.dev.enabled) {
-      if (!tryOpenNearbyShop()) {
-        tryEnterNode();
-      }
+      tryOpenNearbyShop();
     }
     return;
   }
@@ -11458,7 +12288,7 @@ canvas.addEventListener("pointerdown", (event) => {
   }
 
   if (event.pointerType !== "mouse") {
-    if (tryOpenNearbyShop() || tryEnterNode()) {
+    if (tryOpenNearbyShop()) {
       event.preventDefault();
       return;
     }
@@ -11532,6 +12362,9 @@ pauseMenuContent?.addEventListener("click", (event) => {
   const { action, id } = button.dataset;
   if (action === "pause-tab") {
     state.pauseMenuTab = id;
+    renderPauseMenu();
+  } else if (action === "inventory-category") {
+    state.inventoryCategory = INVENTORY_CATEGORIES.some((category) => category.id === id) ? id : "all";
     renderPauseMenu();
   } else if (action === "use-item") {
     useInventoryItem(id);
