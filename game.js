@@ -2457,6 +2457,7 @@ const state = {
   profileId: "",
   profileName: "",
   profiles: [],
+  lastProfileTouch: 0,
   worlds: {},
   capturedParty: [],
   coins: STARTING_COINS,
@@ -2832,8 +2833,12 @@ function seededRandom(seed) {
   };
 }
 
+function getScopedStorageKey(baseKey, profileId = state.profileId) {
+  return profileId ? `${baseKey}:${profileId}` : baseKey;
+}
+
 function getProfileScopedStorageKey(baseKey) {
-  return state.profileId ? `${baseKey}:${state.profileId}` : baseKey;
+  return getScopedStorageKey(baseKey);
 }
 
 function getWorldStorageKey() {
@@ -2850,6 +2855,215 @@ function getEconomyStorageKey() {
 
 function getNewGameIntroStorageKey() {
   return getProfileScopedStorageKey(NEW_GAME_INTRO_STORAGE_KEY);
+}
+
+function readJsonStorageValue(storageKey) {
+  try {
+    const saved = localStorage.getItem(storageKey);
+    return saved ? JSON.parse(saved) : null;
+  } catch (error) {
+    console.warn(`Could not read ${storageKey}.`, error);
+    return null;
+  }
+}
+
+function readProfileStorage(baseKey, profileId, allowLegacy = false) {
+  const scopedData = profileId ? readJsonStorageValue(getScopedStorageKey(baseKey, profileId)) : null;
+
+  if (scopedData) {
+    return scopedData;
+  }
+
+  return allowLegacy ? readJsonStorageValue(baseKey) : null;
+}
+
+function getProfilePartyFromData(data) {
+  if (Array.isArray(data?.party)) {
+    return data.party.filter((matt) => matt?.type && MATT_CONFIGS[matt.type]);
+  }
+
+  const party = [];
+  if (data && typeof data.worlds === "object") {
+    Object.entries(data.worlds).forEach(([worldId, worldProgress]) => {
+      if (!Array.isArray(worldProgress?.matts)) {
+        return;
+      }
+
+      worldProgress.matts.forEach((matt) => {
+        if (matt?.caught && matt.type && MATT_CONFIGS[matt.type]) {
+          party.push({ ...matt, sourceWorld: worldId, originalId: matt.id });
+        }
+      });
+    });
+  }
+
+  return party.slice(0, MATT_PARTY_LIMIT);
+}
+
+function getCaptureTypeCounts(captureStats = {}, party = []) {
+  const counts = {};
+
+  if (captureStats?.byType && typeof captureStats.byType === "object") {
+    Object.keys(MATT_CONFIGS).forEach((type) => {
+      const count = Math.max(0, Math.floor(Number(captureStats.byType[type]) || 0));
+      if (count > 0) {
+        counts[type] = count;
+      }
+    });
+  }
+
+  const partyCounts = {};
+  party.forEach((matt) => {
+    if (matt?.type && MATT_CONFIGS[matt.type]) {
+      partyCounts[matt.type] = (partyCounts[matt.type] || 0) + 1;
+    }
+  });
+
+  Object.entries(partyCounts).forEach(([type, count]) => {
+    counts[type] = Math.max(counts[type] || 0, count);
+  });
+
+  return counts;
+}
+
+function getCaptureTotal(captureStats = {}, party = []) {
+  return Object.values(getCaptureTypeCounts(captureStats, party)).reduce((total, count) => total + count, 0);
+}
+
+function getCaptureTypeSummary(captureStats = {}, party = []) {
+  return Object.entries(getCaptureTypeCounts(captureStats, party))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([type, count]) => `${MATT_LABELS[type] || "Matts"} ${count}`)
+    .join(" | ");
+}
+
+function getInventoryTotals(inventory = {}) {
+  const normalized = normalizeInventory(inventory);
+  const entries = Object.entries(normalized);
+
+  return {
+    itemTypes: entries.length,
+    totalStacks: entries.reduce((total, [, count]) => total + count, 0),
+  };
+}
+
+function formatProfileTime(timestamp) {
+  if (!timestamp) {
+    return "Never played";
+  }
+
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  if (seconds < 60) {
+    return "Just now";
+  }
+  if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}m ago`;
+  }
+  if (seconds < 86400) {
+    const hours = Math.floor(seconds / 3600);
+    return `${hours}h ago`;
+  }
+  if (seconds < 604800) {
+    const days = Math.floor(seconds / 86400);
+    return `${days}d ago`;
+  }
+
+  return new Date(timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function getProfileSummary(profile) {
+  const isLiveProfile = profile?.id === state.profileId && state.ready;
+  const allowLegacy = profile?.id === state.profileId;
+  const worldData = isLiveProfile
+    ? { currentWorld: state.currentWorld }
+    : readProfileStorage(WORLD_STORAGE_KEY, profile?.id, allowLegacy);
+  const economyData = isLiveProfile
+    ? {
+        coins: state.coins,
+        inventory: state.inventory,
+        captureStats: state.captureStats,
+        playerProgress: state.playerProgress,
+        arenaStats: state.arenaStats,
+      }
+    : readProfileStorage(ECONOMY_STORAGE_KEY, profile?.id, allowLegacy);
+  const progressData = isLiveProfile
+    ? { party: state.capturedParty }
+    : readProfileStorage(MATT_PROGRESS_STORAGE_KEY, profile?.id, allowLegacy);
+  const party = isLiveProfile ? state.capturedParty : getProfilePartyFromData(progressData);
+  const playerProgress = normalizePlayerProgress(economyData?.playerProgress);
+  const arenaStats = normalizeArenaStats(economyData?.arenaStats);
+  const inventory = getInventoryTotals(economyData?.inventory);
+  const activeFollower = party.find((matt) => matt?.follower);
+  const strongestMatt = party.reduce(
+    (best, matt) => (!best || getMattLevel(matt) > getMattLevel(best) ? matt : best),
+    null,
+  );
+  const captureTotal = getCaptureTotal(economyData?.captureStats, party);
+  const currentWorld = resolveWorldId(
+    worldData?.currentWorld || (isLiveProfile ? state.currentWorld : DEFAULT_WORLD_ID),
+    worldData || {},
+  );
+
+  return {
+    currentWorld,
+    level: playerProgress.level,
+    xp: playerProgress.xp,
+    coins: Math.max(0, Math.floor(Number(economyData?.coins) || (economyData ? 0 : STARTING_COINS))),
+    skillPoints: playerProgress.skillPoints,
+    partyCount: party.length,
+    tamedCount: party.filter((matt) => matt?.tamed).length,
+    captureTotal,
+    captureTypeSummary: getCaptureTypeSummary(economyData?.captureStats, party),
+    followerName: activeFollower ? getCapturedMattDisplayName(activeFollower) : "",
+    strongestMattName: strongestMatt ? getCapturedMattDisplayName(strongestMatt) : "",
+    strongestMattLevel: strongestMatt ? getMattLevel(strongestMatt) : 0,
+    arenaRank: getArenaRankTitle(arenaStats.rankPoints),
+    arenaRecord: `${arenaStats.wins}W-${arenaStats.losses}L`,
+    inventoryTypes: inventory.itemTypes,
+    inventoryStacks: inventory.totalStacks,
+    lastPlayed: profile?.updatedAt || profile?.createdAt || 0,
+    hasProgress: Boolean(economyData || progressData || party.length),
+  };
+}
+
+function getActiveProfileSummary() {
+  const profile = state.profiles.find((item) => item.id === state.profileId) || {
+    id: state.profileId,
+    name: state.profileName || "Ivan",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  return getProfileSummary(profile);
+}
+
+function makeProfilePill(text, className = "") {
+  const pill = document.createElement("span");
+  pill.className = `profile-pill ${className}`.trim();
+  pill.textContent = text;
+  return pill;
+}
+
+function touchActiveProfile(force = false) {
+  if (!state.profileId) {
+    return;
+  }
+
+  const now = Date.now();
+  if (!force && now - state.lastProfileTouch < 30000) {
+    return;
+  }
+
+  const profile = state.profiles.find((item) => item.id === state.profileId);
+  if (!profile) {
+    return;
+  }
+
+  profile.updatedAt = now;
+  state.lastProfileTouch = now;
+  saveProfiles();
 }
 
 function createProfile(name) {
@@ -2921,18 +3135,49 @@ function updateProfileList() {
   }
 
   state.profiles.forEach((profile) => {
+    const summary = getProfileSummary(profile);
     const button = document.createElement("button");
     button.type = "button";
     button.className = "profile-option";
     button.classList.toggle("active", profile.id === state.profileId);
     button.dataset.profileId = profile.id;
 
+    const main = document.createElement("div");
+    main.className = "profile-option-main";
     const label = document.createElement("strong");
     label.textContent = profile.name;
     const detail = document.createElement("span");
-    detail.textContent = profile.id === state.profileId ? "Selected" : "Profile";
+    detail.textContent = summary.hasProgress
+      ? `${getWorldLabel(summary.currentWorld)} | ${formatProfileTime(summary.lastPlayed)}`
+      : `Fresh save | ${formatProfileTime(summary.lastPlayed)}`;
+    main.append(label, detail);
 
-    button.append(label, detail);
+    const meta = document.createElement("div");
+    meta.className = "profile-meta";
+    meta.append(
+      makeProfilePill(`Lv ${summary.level}`, "level"),
+      makeProfilePill(`${summary.coins}c`, "coins"),
+      makeProfilePill(`${summary.partyCount}/${MATT_PARTY_LIMIT} party`, "party"),
+      makeProfilePill(summary.arenaRank, "arena"),
+    );
+
+    const progress = document.createElement("div");
+    progress.className = "profile-progress";
+    const captureLine = document.createElement("span");
+    captureLine.textContent = summary.captureTotal > 0
+      ? `${summary.captureTotal} captured${summary.captureTypeSummary ? ` | ${summary.captureTypeSummary}` : ""}`
+      : "No captures yet";
+    const followerLine = document.createElement("span");
+    followerLine.textContent = summary.followerName
+      ? `Follower: ${summary.followerName}`
+      : summary.strongestMattName
+        ? `Top Matt: ${summary.strongestMattName} Lv ${summary.strongestMattLevel}`
+        : profile.id === state.profileId
+          ? "Selected"
+          : "Ready";
+    progress.append(captureLine, followerLine);
+
+    button.append(main, meta, progress);
     button.addEventListener("click", () => {
       setActiveProfile(profile.id);
       updateProfileList();
@@ -3794,6 +4039,7 @@ function saveWorlds() {
     getWorldStorageKey(),
     JSON.stringify({ version: 1, currentWorld: state.currentWorld, worlds: state.worlds }),
   );
+  touchActiveProfile();
   refreshDogmattPaths();
   refreshNpcPaths();
   setDevStatus("All placements saved.");
@@ -3948,6 +4194,7 @@ function saveEconomy() {
         friendshipCare: state.friendshipCare,
       }),
     );
+    touchActiveProfile();
   } catch (error) {
     console.warn("Could not save economy.", error);
   }
@@ -4620,6 +4867,7 @@ function saveCapturedParty() {
       getMattProgressStorageKey(),
       JSON.stringify({ version: 2, party: state.capturedParty }),
     );
+    touchActiveProfile();
   } catch (error) {
     console.warn("Could not save captured Matt party.", error);
   }
@@ -5912,6 +6160,32 @@ function createMenuGrid(parent) {
   return grid;
 }
 
+function appendMenuPillRow(parent, pills = []) {
+  const row = document.createElement("div");
+  row.className = "menu-pill-row";
+  pills.filter(Boolean).forEach((pill) => row.append(pill));
+  parent.append(row);
+  return row;
+}
+
+function getPartyOverview() {
+  const party = state.capturedParty;
+  const follower = party.find((matt) => matt?.follower);
+  const strongest = party.reduce((best, matt) => (!best || getMattLevel(matt) > getMattLevel(best) ? matt : best), null);
+  const closest = party.reduce(
+    (best, matt) => (!best || (matt?.friendship || 0) > (best?.friendship || 0) ? matt : best),
+    null,
+  );
+
+  return {
+    total: party.length,
+    tamed: party.filter((matt) => matt?.tamed).length,
+    follower,
+    strongest,
+    closest,
+  };
+}
+
 function renderPauseCharacter(parent) {
   const grid = createMenuGrid(parent);
   const maxHealth = getPlayerMaxHealth();
@@ -5919,6 +6193,7 @@ function renderPauseCharacter(parent) {
   const level = getPlayerLevel();
   const xp = Math.max(0, Math.floor(Number(state.playerProgress?.xp) || 0));
   const nextXp = level >= MAX_PLAYER_LEVEL ? 1 : getPlayerXpToNext(level);
+  const profileSummary = getActiveProfileSummary();
 
   const stats = appendMenuCard(grid, "Ivan", `${getWorldLabel(state.currentWorld)} | ${timeLabel?.textContent || ""}`, "full compact");
   const statGrid = document.createElement("div");
@@ -5928,6 +6203,27 @@ function renderPauseCharacter(parent) {
   appendMenuStat(statGrid, "Stamina", `${Math.ceil(state.player.stamina)}/${maxStamina}`, "", state.player.stamina / maxStamina);
   appendMenuStat(statGrid, "Coins", String(state.coins), `${getPlayerSkillPoints()} skill point${getPlayerSkillPoints() === 1 ? "" : "s"}`);
   stats.append(statGrid);
+
+  const profile = appendMenuCard(
+    grid,
+    "Profile",
+    `${state.profileName || "Ivan"} | ${formatProfileTime(profileSummary.lastPlayed)}`,
+    "wide profile-card",
+  );
+  const profileGrid = document.createElement("div");
+  profileGrid.className = "menu-stat-grid";
+  appendMenuStat(profileGrid, "World", getWorldLabel(profileSummary.currentWorld), profileSummary.arenaRank);
+  appendMenuStat(profileGrid, "Party", `${profileSummary.partyCount}/${MATT_PARTY_LIMIT}`, `${profileSummary.tamedCount} tamed`);
+  appendMenuStat(profileGrid, "Captured", String(profileSummary.captureTotal), profileSummary.captureTypeSummary || "Start hunting");
+  appendMenuStat(profileGrid, "Pack", String(profileSummary.inventoryStacks), `${profileSummary.inventoryTypes} item types`);
+  profile.append(profileGrid);
+  appendMenuPillRow(profile, [
+    makeMenuPill(`Arena ${profileSummary.arenaRecord}`, "capture"),
+    makeMenuPill(profileSummary.followerName ? `Follower ${profileSummary.followerName}` : "No active follower", "bond"),
+    profileSummary.strongestMattName
+      ? makeMenuPill(`Top Matt ${profileSummary.strongestMattName} Lv ${profileSummary.strongestMattLevel}`, "gear")
+      : makeMenuPill("Build your party", "effect"),
+  ]);
 
   appendMenuCard(
     grid,
@@ -5949,11 +6245,12 @@ function renderPauseCharacter(parent) {
     const table = document.createElement("div");
     table.className = "menu-table";
     state.capturedParty.forEach((matt) => {
+      const mattLevel = getMattLevel(matt);
       appendMenuRow(
         table,
         getCapturedMattDisplayName(matt),
-        `${getFollowerStatusLine(matt)} | ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)}`,
-        `${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))}`,
+        `${MATT_LABELS[matt.type] || "Matt"} | ${getFollowerStatusLine(matt)} | Origin: ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)}`,
+        `Lv ${mattLevel}`,
       );
     });
     party.append(table);
@@ -6314,13 +6611,57 @@ function renderPauseParty(parent) {
     return;
   }
 
+  const overview = getPartyOverview();
+  const overviewCard = appendMenuCard(
+    grid,
+    "Party Overview",
+    `${overview.total}/${MATT_PARTY_LIMIT} slots filled | ${overview.tamed} ready followers`,
+    "full compact profile-card",
+  );
+  const overviewStats = document.createElement("div");
+  overviewStats.className = "menu-stat-grid";
+  appendMenuStat(overviewStats, "Active", overview.follower ? getCapturedMattDisplayName(overview.follower) : "None", "field follower");
+  appendMenuStat(
+    overviewStats,
+    "Strongest",
+    overview.strongest ? `Lv ${getMattLevel(overview.strongest)}` : "None",
+    overview.strongest ? getCapturedMattDisplayName(overview.strongest) : "",
+  );
+  appendMenuStat(
+    overviewStats,
+    "Closest",
+    overview.closest ? `${overview.closest.friendship || 0}/100` : "0/100",
+    overview.closest ? getCapturedMattDisplayName(overview.closest) : "bond progress",
+    overview.closest ? (overview.closest.friendship || 0) / 100 : 0,
+  );
+  appendMenuStat(overviewStats, "Captures", String(getCaptureTotal(state.captureStats, state.capturedParty)), getCaptureTypeSummary(state.captureStats, state.capturedParty) || "keep hunting");
+  overviewCard.append(overviewStats);
+
   state.capturedParty.forEach((matt) => {
+    const mattLevel = getMattLevel(matt);
+    const mattXp = Math.max(0, Math.floor(Number(matt.xp) || 0));
+    const nextXp = getMattXpToNext(mattLevel);
+    const friendship = clamp(Math.floor(Number(matt.friendship) || 0), 0, 100);
+    const rank = getFriendshipRank(friendship);
     const card = appendMenuCard(
       grid,
       getCapturedMattDisplayName(matt),
-      `XP ${matt.xp || 0}/${getMattXpToNext(getMattLevel(matt))} | ${getFollowerStatusLine(matt)}. ${getFriendshipBonusLine(matt)}`,
-      "full",
+      `${MATT_LABELS[matt.type] || "Matt"} | ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)} | ${getFollowerStatusLine(matt)}`,
+      "full menu-party-card",
     );
+    appendMenuPillRow(card, [
+      makeMenuPill(matt.tamed ? "Tamed" : "Untamed", matt.tamed ? "bond" : "capture"),
+      makeMenuPill(matt.follower ? "Active follower" : "Resting", matt.follower ? "effect" : ""),
+      makeMenuPill(`Origin ${getWorldLabel(matt.sourceWorld || DEFAULT_WORLD_ID)}`, "gear"),
+      makeMenuPill(`Difficulty ${Math.round((Number(matt.captureDifficulty) || 1) * 10) / 10}`, "capture"),
+    ]);
+    const statGrid = document.createElement("div");
+    statGrid.className = "menu-stat-grid";
+    appendMenuStat(statGrid, "Level", String(mattLevel), `${mattXp}/${nextXp} XP`, mattXp / nextXp);
+    appendMenuStat(statGrid, "Bond", rank.name, `${friendship}/100`, friendship / 100);
+    appendMenuStat(statGrid, "Battle HP", String(getArenaMattMaxHp(matt)), getFriendshipBonusLine(matt));
+    appendMenuStat(statGrid, "Power", `+${getArenaMattPowerBonus(matt)}`, `${Math.round(getArenaMattCritChance(matt) * 100)}% crit`);
+    card.append(statGrid);
     const actions = document.createElement("div");
     actions.className = "menu-actions";
     actions.append(
@@ -12748,11 +13089,7 @@ async function startGameForProfile(profileId) {
     return;
   }
 
-  const profile = state.profiles.find((item) => item.id === state.profileId);
-  if (profile) {
-    profile.updatedAt = Date.now();
-    saveProfiles();
-  }
+  touchActiveProfile(true);
 
   state.ready = false;
   hideLauncher();
@@ -12888,6 +13225,7 @@ profileDelete?.addEventListener("click", () => {
   localStorage.removeItem(getWorldStorageKey());
   localStorage.removeItem(getMattProgressStorageKey());
   localStorage.removeItem(getEconomyStorageKey());
+  localStorage.removeItem(getNewGameIntroStorageKey());
   saveProfiles();
   setActiveProfile(state.profiles[0].id);
   updateProfileList();
