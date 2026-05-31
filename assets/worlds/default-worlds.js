@@ -2834,6 +2834,17 @@ window.DEFAULT_WORLD_DATA = {
           "y": 1754.2561065877128,
           "radius": 82,
           "target": "home"
+        },
+        {
+          "id": "waystone-mptsqym4-wvlr7r",
+          "x": 4452.257586972613,
+          "y": 3656.5507031828274,
+          "radius": 74,
+          "target": "",
+          "name": "Waystone",
+          "kind": "waystone",
+          "questionId": "",
+          "reward": "random"
         }
       ]
     },
@@ -5294,6 +5305,17 @@ window.DEFAULT_WORLD_DATA = {
           "radius": 82,
           "target": "town_itemshop",
           "name": "Item Shop"
+        },
+        {
+          "id": "waystone-mptsrifr-rxglkl",
+          "x": 7014.063656550703,
+          "y": 5039.2301998519615,
+          "radius": 74,
+          "target": "",
+          "name": "Waystone",
+          "kind": "waystone",
+          "questionId": "",
+          "reward": "random"
         }
       ]
     },
@@ -11867,6 +11889,17 @@ window.DEFAULT_WORLD_DATA = {
           "y": 393.5573649148779,
           "radius": 82,
           "target": "mainworld"
+        },
+        {
+          "id": "waystone-mptss8wi-5o795a",
+          "x": 1452.6350851221318,
+          "y": 1904.6691339748336,
+          "radius": 74,
+          "target": "",
+          "name": "Waystone",
+          "kind": "waystone",
+          "questionId": "",
+          "reward": "random"
         }
       ]
     },
@@ -16155,6 +16188,17 @@ window.DEFAULT_WORLD_DATA = {
           "radius": 82,
           "target": "water_cove",
           "name": "Water Cove"
+        },
+        {
+          "id": "waystone-mptssi5s-bhteba",
+          "x": 1201.9245003700962,
+          "y": 5351.59141376758,
+          "radius": 74,
+          "target": "",
+          "name": "Waystone",
+          "kind": "waystone",
+          "questionId": "",
+          "reward": "random"
         }
       ]
     },
@@ -18998,6 +19042,17 @@ window.DEFAULT_WORLD_DATA = {
           "y": 1083.6417468541822,
           "radius": 82,
           "target": "mainworld"
+        },
+        {
+          "id": "waystone-mptsth3t-xexas6",
+          "x": 6575.721687638786,
+          "y": 1465.5810510732792,
+          "radius": 74,
+          "target": "",
+          "name": "Waystone",
+          "kind": "waystone",
+          "questionId": "",
+          "reward": "random"
         }
       ]
     },
@@ -25779,6 +25834,17 @@ window.DEFAULT_WORLD_DATA = {
           "radius": 82,
           "target": "grass_cave",
           "name": "Grass Cave"
+        },
+        {
+          "id": "waystone-mptstz8b-v509at",
+          "x": 3511.3249444855664,
+          "y": 648.4085862324205,
+          "radius": 74,
+          "target": "",
+          "name": "Waystone",
+          "kind": "waystone",
+          "questionId": "",
+          "reward": "random"
         }
       ]
     },

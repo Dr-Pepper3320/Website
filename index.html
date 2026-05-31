@@ -6,18 +6,18 @@
       name="viewport"
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
-    <title>Ivan Monster Hunt</title>
-    <link rel="stylesheet" href="styles.css?v=skill-tree-inventory-rpg" />
+    <title>Matt Game</title>
+    <link rel="stylesheet" href="styles.css?v=player-ui-bars" />
   </head>
   <body>
     <main class="game-shell">
-      <canvas id="game" width="1280" height="720" aria-label="Ivan Monster Hunt game canvas"></canvas>
+      <canvas id="game" width="1280" height="720" aria-label="Matt Game canvas"></canvas>
 
       <section class="launcher" id="launcher" aria-label="Profile launcher">
         <div class="launcher-panel">
           <header>
             <div>
-              <strong>Ivan Monster Hunt</strong>
+              <strong>Matt Game</strong>
               <span>Choose a profile</span>
             </div>
           </header>
@@ -39,32 +39,73 @@
       </section>
 
       <section class="hud" aria-label="Game status">
-        <div class="brand">
-          <strong>Ivan Monster Hunt</strong>
-          <span id="world-label">World: Main World</span>
-          <span id="time-label">Day 1 - 6:00 AM</span>
-          <span id="player-counter">Ivan Lv 1 - XP 0 / 114</span>
-          <span id="health-counter">Health: 100 / 100</span>
-          <span id="stamina-counter">Stamina: 100 / 100</span>
-          <span id="money-counter">Coins: 0</span>
-          <span id="caught-counter">Mattdogs caught: 0 / 20</span>
+        <div class="hud-left">
+          <div class="brand">
+            <div class="brand-title">
+              <span>Matt Game</span>
+              <strong id="world-label">Main World</strong>
+            </div>
+            <div class="hud-meta">
+              <span id="time-label">Day 1 - 6:00 AM</span>
+              <span id="money-counter">Coins: 0</span>
+            </div>
+          </div>
+
+          <div class="player-card" aria-label="Player status">
+            <div class="player-card-head">
+              <strong>Ivan</strong>
+              <span id="player-counter">Lv 1 - XP 0 / 114 - SP 0</span>
+            </div>
+
+            <div class="vitals">
+              <div class="vital health" role="meter" aria-label="Health">
+                <div class="vital-row">
+                  <span>Health</span>
+                  <strong id="health-counter">100 / 100</strong>
+                </div>
+                <div class="vital-track"><span id="health-fill"></span></div>
+              </div>
+
+              <div class="vital stamina" role="meter" aria-label="Stamina">
+                <div class="vital-row">
+                  <span>Stamina</span>
+                  <strong id="stamina-counter">100 / 100</strong>
+                </div>
+                <div class="vital-track"><span id="stamina-fill"></span></div>
+              </div>
+
+              <div class="vital xp" role="meter" aria-label="Experience">
+                <div class="vital-row">
+                  <span>Experience</span>
+                  <strong id="xp-counter">0%</strong>
+                </div>
+                <div class="vital-track"><span id="xp-fill"></span></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="monster-slots" aria-label="Monster collection slots">
-          <span class="slot"></span>
-          <span class="slot"></span>
-          <span class="slot"></span>
-          <span class="slot"></span>
-          <span class="slot"></span>
-          <span class="slot"></span>
+        <div class="hud-center">
+          <div class="objective-card" aria-label="Current objective">
+            <span>Current Objective</span>
+            <strong id="caught-counter">Find Brick</strong>
+          </div>
+
+          <div class="monster-slots" aria-label="Matt party slots">
+            <span class="slot"></span>
+            <span class="slot"></span>
+            <span class="slot"></span>
+            <span class="slot"></span>
+            <span class="slot"></span>
+            <span class="slot"></span>
+          </div>
         </div>
 
-        <div class="controls">
-          <span>WASD / Arrows</span>
-          <span>E Talk</span>
-          <span>I</span>
-          <span>Shift</span>
-          <span>Space</span>
+        <div class="controls" aria-label="Controls">
+          <span><b>Move</b> WASD</span>
+          <span><b>Talk</b> E</span>
+          <span><b>Whip</b> Space</span>
+          <span><b>Run</b> Shift</span>
           <button id="inventory-button" type="button">Menu</button>
           <button id="profile-menu" type="button">Profiles</button>
         </div>
@@ -90,7 +131,7 @@
         <div class="pause-menu-panel">
           <header class="pause-menu-header">
             <div>
-              <span id="pause-menu-kicker">Ivan Monster Hunt</span>
+              <span id="pause-menu-kicker">Matt Game</span>
               <strong id="pause-menu-title">Character</strong>
               <em id="pause-menu-subtitle">World: Main World</em>
             </div>
@@ -106,10 +147,10 @@
       <section class="new-game-intro" id="new-game-intro" aria-label="New game introduction" hidden>
         <div class="intro-panel">
           <span>New Save</span>
-          <strong>Ivan Monster Hunt</strong>
+          <strong>Matt Game</strong>
           <p>
-            Ivan starts on the old Main World road. Explore the world gates, calm and capture Matts, bring captured Matts to Ty
-            to tame followers, and build enough strength to face the Prime Matts.
+            Ivan wakes up at Brick's Inn. Follow the town tutorial, calm and capture Matts, bring captured Matts to Ty
+            to tame followers, and build enough strength for the roads ahead.
           </p>
 
           <div class="intro-grid">
@@ -166,6 +207,7 @@
           <button type="button" data-tool="npc">NPC</button>
           <button type="button" data-tool="npcpath">NPC Path</button>
           <button type="button" data-tool="node">Node</button>
+          <button type="button" data-tool="waystone">Waystone</button>
           <button type="button" data-tool="erase">Erase</button>
         </div>
 
@@ -218,6 +260,6 @@
 
     <script src="assets/worlds/default-worlds.js?v=treeworld-pathing-bundle"></script>
     <script src="assets/music/music-tracks.js?v=arena-friendship-overhaul"></script>
-    <script src="game.js?v=skill-tree-inventory-rpg"></script>
+    <script src="game.js?v=waystone-dev-nodes"></script>
   </body>
 </html>

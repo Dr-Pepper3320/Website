@@ -14,6 +14,13 @@ const moneyCounter = document.querySelector("#money-counter");
 const playerCounter = document.querySelector("#player-counter");
 const healthCounter = document.querySelector("#health-counter");
 const staminaCounter = document.querySelector("#stamina-counter");
+const xpCounter = document.querySelector("#xp-counter");
+const healthFill = document.querySelector("#health-fill");
+const staminaFill = document.querySelector("#stamina-fill");
+const xpFill = document.querySelector("#xp-fill");
+const healthMeter = document.querySelector(".vital.health");
+const staminaMeter = document.querySelector(".vital.stamina");
+const xpMeter = document.querySelector(".vital.xp");
 const timeLabel = document.querySelector("#time-label");
 const worldLabel = document.querySelector("#world-label");
 const monsterSlots = [...document.querySelectorAll(".slot")];
@@ -80,7 +87,7 @@ const INN_RECOVERY_MESSAGE =
   "Brick: Easy now. You limped back here and passed out. I nursed you back to health. Stay a minute before chasing trouble again.";
 const NEW_GAME_START_POINT = { x: 1120, y: 5760 };
 const NEW_GAME_INTRO_MESSAGE =
-  "Welcome to Ivan Monster Hunt. Explore, capture Matts, visit Ty to tame followers, and use the menu tabs to track your map, missions, journal, skills, and party.";
+  "Welcome to Matt Game. Follow Brick's lead, capture Matts, visit Ty to tame followers, and use the menu tabs to track your map, missions, journal, skills, and party.";
 const WORLD_MAPS = {
   mainworld: {
     ...MAIN_MAP,
@@ -402,6 +409,15 @@ const FOLLOWER_ASSIST = {
   bondXp: 7,
 };
 
+const PRIME_MYSTIC_GRAVITY_WELL = {
+  duration: 4.3,
+  radius: 980,
+  pullStrength: 760,
+  followerDamage: 14,
+  followerAttackRange: 116,
+  followerAttackCooldown: 0.72,
+};
+
 const WORLD_MATT_TYPES = {
   mainworld: "dogmatt",
   fireworld: "firematt",
@@ -439,14 +455,14 @@ const PRIME_GRASS_MATT_ATTACKS = [
     action: "vineHammer",
     effect: "vineHammer",
     hitShape: "circle",
-    attackDamage: 30,
-    attackRadius: 250,
-    attackWindup: 0.32,
-    attackCooldown: 1.5,
+    attackDamage: 31,
+    attackRadius: 275,
+    attackWindup: 0.3,
+    attackCooldown: 1.35,
     minRange: 0,
     maxRange: 350,
     weight: 1.35,
-    staminaDamage: 10,
+    staminaDamage: 12,
     knockback: 85,
     screenShake: 13,
   },
@@ -456,16 +472,16 @@ const PRIME_GRASS_MATT_ATTACKS = [
     action: "sporeBurst",
     effect: "sporeBurst",
     hitShape: "circle",
-    attackDamage: 24,
-    attackRadius: 470,
+    attackDamage: 26,
+    attackRadius: 510,
     attackWindup: 0.38,
-    attackCooldown: 2,
+    attackCooldown: 1.85,
     minRange: 160,
     maxRange: 610,
-    weight: 1.15,
-    projectileCount: 22,
-    projectileSpeed: 670,
-    staminaDamage: 14,
+    weight: 1.25,
+    projectileCount: 24,
+    projectileSpeed: 710,
+    staminaDamage: 16,
     screenShake: 10,
   },
   {
@@ -474,16 +490,16 @@ const PRIME_GRASS_MATT_ATTACKS = [
     action: "thornFan",
     effect: "thornFan",
     hitShape: "cone",
-    attackDamage: 29,
-    attackRadius: 720,
+    attackDamage: 31,
+    attackRadius: 760,
     attackWindup: 0.28,
-    attackCooldown: 1.8,
+    attackCooldown: 1.65,
     minRange: 260,
     maxRange: 850,
     weight: 1.45,
     projectileCount: 11,
-    projectileSpeed: 760,
-    coneArc: Math.PI * 0.78,
+    projectileSpeed: 805,
+    coneArc: Math.PI * 0.84,
     staminaDamage: 12,
     knockback: 65,
     screenShake: 11,
@@ -494,15 +510,15 @@ const PRIME_GRASS_MATT_ATTACKS = [
     action: "rootSnare",
     effect: "rootSnare",
     hitShape: "beam",
-    attackDamage: 31,
-    attackRadius: 980,
-    attackWindup: 0.46,
-    attackCooldown: 2.3,
+    attackDamage: 34,
+    attackRadius: 1040,
+    attackWindup: 0.44,
+    attackCooldown: 2.05,
     minRange: 420,
     maxRange: 1060,
     weight: 1.55,
-    beamWidth: 96,
-    staminaDamage: 24,
+    beamWidth: 112,
+    staminaDamage: 26,
     knockback: 105,
     screenShake: 14,
   },
@@ -512,14 +528,14 @@ const PRIME_GRASS_MATT_ATTACKS = [
     action: "canopyQuake",
     effect: "canopyQuake",
     hitShape: "circle",
-    attackDamage: 40,
-    attackRadius: 780,
+    attackDamage: 43,
+    attackRadius: 820,
     attackWindup: 0.68,
-    attackCooldown: 3.15,
+    attackCooldown: 2.85,
     minRange: 0,
     maxRange: 820,
     weight: 0.9,
-    staminaDamage: 24,
+    staminaDamage: 28,
     knockback: 170,
     screenShake: 22,
   },
@@ -532,15 +548,15 @@ const PRIME_FIRE_MATT_ATTACKS = [
     action: "fireBreath",
     effect: "fireBreath",
     hitShape: "cone",
-    attackDamage: 35,
-    attackRadius: 820,
+    attackDamage: 38,
+    attackRadius: 880,
     attackWindup: 0.4,
-    attackCooldown: 1.9,
+    attackCooldown: 1.7,
     minRange: 300,
     maxRange: 920,
     weight: 1.55,
-    coneArc: Math.PI * 0.64,
-    staminaDamage: 18,
+    coneArc: Math.PI * 0.7,
+    staminaDamage: 20,
     knockback: 90,
     screenShake: 14,
   },
@@ -550,15 +566,15 @@ const PRIME_FIRE_MATT_ATTACKS = [
     action: "tailSwipe",
     effect: "tailFireWall",
     hitShape: "cone",
-    attackDamage: 37,
-    attackRadius: 570,
-    attackWindup: 0.36,
-    attackCooldown: 2.05,
+    attackDamage: 39,
+    attackRadius: 615,
+    attackWindup: 0.34,
+    attackCooldown: 1.85,
     minRange: 120,
     maxRange: 620,
     weight: 1.35,
-    coneArc: Math.PI * 1.05,
-    staminaDamage: 20,
+    coneArc: Math.PI * 1.12,
+    staminaDamage: 23,
     knockback: 135,
     screenShake: 17,
   },
@@ -568,14 +584,14 @@ const PRIME_FIRE_MATT_ATTACKS = [
     action: "swipe",
     effect: "emberSwipe",
     hitShape: "circle",
-    attackDamage: 31,
-    attackRadius: 300,
+    attackDamage: 33,
+    attackRadius: 325,
     attackWindup: 0.22,
-    attackCooldown: 1.35,
+    attackCooldown: 1.2,
     minRange: 0,
     maxRange: 350,
     weight: 1.45,
-    staminaDamage: 11,
+    staminaDamage: 13,
     knockback: 70,
     screenShake: 10,
   },
@@ -585,14 +601,14 @@ const PRIME_FIRE_MATT_ATTACKS = [
     action: "fireBreath",
     effect: "magmaRoar",
     hitShape: "circle",
-    attackDamage: 43,
-    attackRadius: 690,
+    attackDamage: 46,
+    attackRadius: 730,
     attackWindup: 0.64,
-    attackCooldown: 2.95,
+    attackCooldown: 2.65,
     minRange: 0,
     maxRange: 740,
     weight: 0.95,
-    staminaDamage: 26,
+    staminaDamage: 30,
     knockback: 175,
     screenShake: 23,
   },
@@ -605,14 +621,14 @@ const PRIME_ROCK_MATT_ATTACKS = [
     action: "punch",
     effect: "granitePunch",
     hitShape: "circle",
-    attackDamage: 37,
-    attackRadius: 330,
-    attackWindup: 0.28,
-    attackCooldown: 1.4,
+    attackDamage: 39,
+    attackRadius: 360,
+    attackWindup: 0.26,
+    attackCooldown: 1.25,
     minRange: 0,
     maxRange: 380,
     weight: 1.45,
-    staminaDamage: 16,
+    staminaDamage: 18,
     knockback: 120,
     screenShake: 13,
   },
@@ -622,15 +638,15 @@ const PRIME_ROCK_MATT_ATTACKS = [
     action: "rockThrow",
     effect: "rockThrow",
     hitShape: "targetCircle",
-    attackDamage: 35,
-    attackRadius: 150,
-    attackWindup: 0.46,
-    attackCooldown: 1.95,
+    attackDamage: 38,
+    attackRadius: 190,
+    attackWindup: 0.43,
+    attackCooldown: 1.75,
     minRange: 360,
     maxRange: 1060,
     weight: 1.35,
-    projectileSpeed: 1000,
-    staminaDamage: 18,
+    projectileSpeed: 1080,
+    staminaDamage: 21,
     knockback: 135,
     screenShake: 15,
   },
@@ -640,15 +656,15 @@ const PRIME_ROCK_MATT_ATTACKS = [
     action: "rollAttack",
     effect: "rollingCrush",
     hitShape: "charge",
-    attackDamage: 42,
-    attackRadius: 790,
+    attackDamage: 44,
+    attackRadius: 840,
     attackWindup: 0.4,
-    attackCooldown: 2.35,
+    attackCooldown: 2.1,
     minRange: 240,
     maxRange: 900,
     weight: 1.45,
-    beamWidth: 165,
-    staminaDamage: 24,
+    beamWidth: 185,
+    staminaDamage: 27,
     knockback: 190,
     screenShake: 20,
   },
@@ -658,14 +674,14 @@ const PRIME_ROCK_MATT_ATTACKS = [
     action: "punch",
     effect: "tombQuake",
     hitShape: "circle",
-    attackDamage: 46,
-    attackRadius: 700,
+    attackDamage: 49,
+    attackRadius: 760,
     attackWindup: 0.68,
-    attackCooldown: 3.15,
+    attackCooldown: 2.85,
     minRange: 0,
     maxRange: 760,
     weight: 1,
-    staminaDamage: 30,
+    staminaDamage: 34,
     knockback: 210,
     screenShake: 26,
   },
@@ -675,71 +691,129 @@ const PRIME_WATER_MATT_ATTACKS = [
   {
     id: "surge_bite",
     name: "Surge Bite",
-    action: "attack",
+    action: "waveBlast",
     effect: "surgeBite",
     hitShape: "circle",
-    attackDamage: 29,
-    attackRadius: 265,
+    attackDamage: 31,
+    attackRadius: 295,
     attackWindup: 0.24,
-    attackCooldown: 1.35,
+    attackCooldown: 1.2,
     minRange: 0,
     maxRange: 330,
     weight: 1.45,
-    staminaDamage: 12,
+    staminaDamage: 14,
     knockback: 75,
     screenShake: 10,
   },
   {
     id: "tidal_lance",
     name: "Tidal Lance",
-    action: "attack",
+    action: "waterShot",
     effect: "tidalLance",
     hitShape: "beam",
-    attackDamage: 32,
-    attackRadius: 940,
+    attackDamage: 35,
+    attackRadius: 1010,
     attackWindup: 0.4,
-    attackCooldown: 2.1,
+    attackCooldown: 1.9,
     minRange: 300,
     maxRange: 1040,
     weight: 1.5,
-    beamWidth: 94,
-    staminaDamage: 18,
+    beamWidth: 112,
+    staminaDamage: 21,
     knockback: 105,
     screenShake: 13,
   },
   {
     id: "bubble_cage",
     name: "Bubble Cage",
-    action: "attack",
+    action: "acidRain",
     effect: "bubbleCage",
     hitShape: "targetCircle",
-    attackDamage: 25,
-    attackRadius: 175,
-    attackWindup: 0.48,
-    attackCooldown: 2.25,
+    attackDamage: 28,
+    attackRadius: 220,
+    attackWindup: 0.46,
+    attackCooldown: 2,
     minRange: 180,
     maxRange: 820,
     weight: 1.25,
-    staminaDamage: 24,
+    staminaDamage: 27,
     knockback: 55,
     screenShake: 11,
   },
   {
     id: "moon_tide",
     name: "Moon Tide",
-    action: "attack",
+    action: "waveBlast",
     effect: "moonTide",
     hitShape: "circle",
-    attackDamage: 39,
-    attackRadius: 680,
+    attackDamage: 42,
+    attackRadius: 735,
     attackWindup: 0.66,
-    attackCooldown: 3.05,
+    attackCooldown: 2.75,
     minRange: 0,
     maxRange: 740,
     weight: 0.95,
-    staminaDamage: 28,
+    staminaDamage: 31,
     knockback: 165,
     screenShake: 22,
+  },
+];
+
+const PRIME_MYSTIC_MATT_ATTACKS = [
+  {
+    id: "mystic_swipe",
+    name: "Mystic Swipe",
+    action: "swipe",
+    effect: "mysticSwipe",
+    hitShape: "cone",
+    attackDamage: 46,
+    attackRadius: 430,
+    attackWindup: 0.24,
+    attackCooldown: 1.1,
+    minRange: 0,
+    maxRange: 470,
+    weight: 1.65,
+    coneArc: Math.PI * 0.95,
+    staminaDamage: 22,
+    knockback: 120,
+    screenShake: 16,
+  },
+  {
+    id: "mystic_pull",
+    name: "Mystic Pull",
+    action: "mysticPull",
+    effect: "mysticPull",
+    hitShape: "circle",
+    attackDamage: 24,
+    attackRadius: PRIME_MYSTIC_GRAVITY_WELL.radius,
+    attackWindup: 0.58,
+    attackCooldown: 3.2,
+    minRange: 120,
+    maxRange: 1040,
+    weight: 1.25,
+    gravityDuration: PRIME_MYSTIC_GRAVITY_WELL.duration,
+    gravityRadius: PRIME_MYSTIC_GRAVITY_WELL.radius,
+    pullStrength: PRIME_MYSTIC_GRAVITY_WELL.pullStrength,
+    staminaDamage: 36,
+    knockback: -70,
+    screenShake: 24,
+  },
+  {
+    id: "teleport_blast",
+    name: "Teleport Blast",
+    action: "teleportBlast",
+    effect: "teleportBlast",
+    hitShape: "circle",
+    attackDamage: 54,
+    attackRadius: 390,
+    attackWindup: 0.52,
+    attackCooldown: 2.55,
+    minRange: 280,
+    maxRange: 1180,
+    weight: 1.5,
+    staminaDamage: 28,
+    knockback: 185,
+    screenShake: 26,
   },
 ];
 
@@ -756,13 +830,13 @@ const WORLD_BOSS_MATTS = {
     levelMax: 16,
     captureDifficulty: 4.6,
     damageScale: 1.58,
-    aggroRadius: 860,
-    walkSpeed: 168,
-    rushSpeed: 220,
-    preferredDistance: 420,
+    aggroRadius: 930,
+    walkSpeed: 186,
+    rushSpeed: 248,
+    preferredDistance: 440,
     closeDistance: 230,
-    moveIntervalMin: 0.55,
-    moveIntervalMax: 1.35,
+    moveIntervalMin: 0.42,
+    moveIntervalMax: 1.12,
     preBattleRoam: true,
     introAction: "spawn",
     introFrameDuration: 0.095,
@@ -782,13 +856,13 @@ const WORLD_BOSS_MATTS = {
     levelMax: 15,
     captureDifficulty: 4.5,
     damageScale: 1.55,
-    aggroRadius: 920,
-    walkSpeed: 142,
-    rushSpeed: 190,
-    preferredDistance: 460,
+    aggroRadius: 980,
+    walkSpeed: 158,
+    rushSpeed: 214,
+    preferredDistance: 475,
     closeDistance: 270,
-    moveIntervalMin: 0.65,
-    moveIntervalMax: 1.55,
+    moveIntervalMin: 0.5,
+    moveIntervalMax: 1.28,
     preBattleRoam: true,
     introMessage: "Prime Rock Matt shakes loose from the tomb stone.",
     attacks: PRIME_ROCK_MATT_ATTACKS,
@@ -797,7 +871,7 @@ const WORLD_BOSS_MATTS = {
     id: "prime-water-matt",
     name: "Prime Water Matt",
     type: "watermatt",
-    assetKey: "watermatt",
+    assetKey: "primewatermatt",
     x: 3800,
     y: 3000,
     scale: 4.2,
@@ -805,15 +879,38 @@ const WORLD_BOSS_MATTS = {
     levelMax: 14,
     captureDifficulty: 4.35,
     damageScale: 1.48,
-    aggroRadius: 850,
-    walkSpeed: 154,
-    rushSpeed: 205,
-    preferredDistance: 440,
+    aggroRadius: 925,
+    walkSpeed: 172,
+    rushSpeed: 230,
+    preferredDistance: 455,
     closeDistance: 250,
-    moveIntervalMin: 0.6,
-    moveIntervalMax: 1.45,
+    moveIntervalMin: 0.46,
+    moveIntervalMax: 1.18,
     suppressNormalSpawns: true,
     attacks: PRIME_WATER_MATT_ATTACKS,
+  },
+  temple: {
+    id: "prime-mystic-matt",
+    name: "Prime Mystic Matt",
+    type: "mysticmatt",
+    assetKey: "primemysticmatt",
+    x: 3800,
+    y: 3000,
+    scale: 4.75,
+    levelMin: 20,
+    levelMax: 20,
+    captureDifficulty: 7.4,
+    captureHitsBonus: 3,
+    damageScale: 1.92,
+    aggroRadius: 1080,
+    walkSpeed: 184,
+    rushSpeed: 254,
+    preferredDistance: 470,
+    closeDistance: 255,
+    moveIntervalMin: 0.38,
+    moveIntervalMax: 1.02,
+    introMessage: "Prime Mystic Matt bends the temple air around Ivan.",
+    attacks: PRIME_MYSTIC_MATT_ATTACKS,
   },
   grass_tree: {
     id: "prime-grass-matt",
@@ -823,13 +920,13 @@ const WORLD_BOSS_MATTS = {
     x: 3800,
     y: 3000,
     scale: 4.4,
-    aggroRadius: 900,
-    walkSpeed: 156,
-    rushSpeed: 205,
-    preferredDistance: 430,
+    aggroRadius: 970,
+    walkSpeed: 174,
+    rushSpeed: 232,
+    preferredDistance: 445,
     closeDistance: 255,
-    moveIntervalMin: 0.55,
-    moveIntervalMax: 1.4,
+    moveIntervalMin: 0.44,
+    moveIntervalMax: 1.15,
     musicTrack: PRIME_GRASS_MATT_MUSIC,
     musicMode: "primeGrassMatt",
     suppressNormalSpawns: true,
@@ -1442,6 +1539,246 @@ const NPC_MISSIONS = {
   },
 };
 
+const INTRO_QUESTS = {
+  intro_wake_brick: {
+    id: "intro_wake_brick",
+    npcId: "brick",
+    title: "Wake Up at Brick's Inn",
+    objective: "Talk to Brick at the inn.",
+    dialogue:
+      "Brick: Easy, Ivan. I found you in the woods badly beaten and burned. Looked like Fire Matt work. You are in my inn now. I keep the rooms and recovery beds. Ty runs the Matt Store for capture jobs and bonding. Scott manages the arena. Logan stocks supplies. Tom handles forge work. First thing: prove you can still handle a calm capture.",
+    actionLabel: "Ask how to help",
+    next: "intro_bring_5_doggmatts",
+  },
+  intro_bring_5_doggmatts: {
+    id: "intro_bring_5_doggmatts",
+    npcId: "brick",
+    title: "Brick's Recovery Test",
+    objective: "Capture 5 Doggmatts, then return to Brick.",
+    briefing: "Brick wants you to capture 5 Doggmatts before he lets you roam too far from the inn.",
+    readyText: "Brick: Five Doggmatts and steady hands. Good. Take this room key. If the road knocks you flat again, you have a place to recover. Go see Ty at the Matt Store next.",
+    requirements: [{ type: "dogmatt", count: 5 }],
+    rewardItems: [{ id: "room_key", count: 1 }],
+    next: "intro_go_to_ty",
+  },
+  intro_go_to_ty: {
+    id: "intro_go_to_ty",
+    npcId: "ty",
+    title: "Go to Ty",
+    objective: "Talk to Ty at the Matt Store.",
+    dialogue: "Ty: Brick sent you? Good. I handle capture records and bonding. We will go one Matt at a time so your ledger stays clean.",
+    actionLabel: "Start Ty's captures",
+    next: "ty_capture_grass",
+  },
+  ty_capture_grass: {
+    id: "ty_capture_grass",
+    npcId: "ty",
+    title: "Ty's Grass Capture",
+    objective: "Capture 1 Grass Matt, then return to Ty.",
+    briefing: "Ty wants a Grass Matt first. Watch how it moves around roots and open paths.",
+    readyText: "Ty: Grass Matt first, just like the old ledgers. Next is Fire Matt. Do not rush the heat.",
+    requirements: [{ type: "grassmatt", count: 1 }],
+    next: "ty_capture_fire",
+  },
+  ty_capture_fire: {
+    id: "ty_capture_fire",
+    npcId: "ty",
+    title: "Ty's Fire Capture",
+    objective: "Capture 1 Fire Matt, then return to Ty.",
+    briefing: "Ty wants a Fire Matt. Keep distance and do not let panic guide the whip.",
+    readyText: "Ty: Fire Matt logged. That burn pattern matches what Brick described, but this one is ordinary field heat. Next, Water Matt.",
+    requirements: [{ type: "firematt", count: 1 }],
+    next: "ty_capture_water",
+  },
+  ty_capture_water: {
+    id: "ty_capture_water",
+    npcId: "ty",
+    title: "Ty's Water Capture",
+    objective: "Capture 1 Water Matt, then return to Ty.",
+    briefing: "Ty wants a Water Matt so you learn the rhythm of a slower capture.",
+    readyText: "Ty: Water Matt recorded. Good hands. Now bring me a Rock Matt.",
+    requirements: [{ type: "watermatt", count: 1 }],
+    next: "ty_capture_rock",
+  },
+  ty_capture_rock: {
+    id: "ty_capture_rock",
+    npcId: "ty",
+    title: "Ty's Rock Capture",
+    objective: "Capture 1 Rock Matt, then return to Ty.",
+    briefing: "Ty wants a Rock Matt. They test patience more than speed.",
+    readyText: "Ty: Rock Matt recorded. Last capture lesson: Mystic Matt. Stay calm if the air feels wrong.",
+    requirements: [{ type: "rockmatt", count: 1 }],
+    next: "ty_capture_mystic",
+  },
+  ty_capture_mystic: {
+    id: "ty_capture_mystic",
+    npcId: "ty",
+    title: "Ty's Mystic Capture",
+    objective: "Capture 1 Mystic Matt, then return to Ty.",
+    briefing: "Ty wants a Mystic Matt to finish the capture sequence.",
+    readyText: "Ty: Mystic Matt recorded. That completes the capture order. Now we talk bonding.",
+    requirements: [{ type: "mysticmatt", count: 1 }],
+    next: "ty_bonding_tutorial",
+  },
+  ty_bonding_tutorial: {
+    id: "ty_bonding_tutorial",
+    npcId: "ty",
+    title: "Ty's Bonding Lesson",
+    objective: "Talk to Ty about bonding.",
+    dialogue:
+      "Ty: A captured Matt is not finished work. Feed it, walk with it, care for it, and let it learn your voice. Bonded Matts hold steadier in arena battles and follow better in the field. Scott can show you the battle side.",
+    actionLabel: "Go to Scott",
+    next: "intro_go_to_scott",
+  },
+  intro_go_to_scott: {
+    id: "intro_go_to_scott",
+    npcId: "scott",
+    title: "Go to Scott",
+    objective: "Talk to Scott at the arena.",
+    dialogue: "Scott: Ty sent you for the arena lesson. The arena is for restraint, not showing off. I will give you one free practice battle against me.",
+    actionLabel: "Accept practice",
+    next: "scott_practice_battle",
+  },
+  scott_practice_battle: {
+    id: "scott_practice_battle",
+    npcId: "scott",
+    title: "Scott's Practice Battle",
+    objective: "Fight Scott in one free practice arena battle.",
+    dialogue: "Scott: Pick one of your captured Matts. Win or lose, the point is learning turns, energy, and bonds.",
+    actionLabel: "Start practice",
+    practiceBattle: true,
+    next: "intro_go_to_logan",
+  },
+  intro_go_to_logan: {
+    id: "intro_go_to_logan",
+    npcId: "logan",
+    title: "Go to Logan",
+    objective: "Talk to Logan at the General Store.",
+    dialogue: "Logan: Scott sent you because empty pockets end more adventures than monsters do. Bring me a small variety of Matts so I know what supplies you will actually need.",
+    actionLabel: "Take Logan's request",
+    next: "logan_capture_variety",
+  },
+  logan_capture_variety: {
+    id: "logan_capture_variety",
+    npcId: "logan",
+    title: "Logan's Supply Survey",
+    objective: "Capture 1 each: Dogg, Grass, Fire, Water, Rock, and Mystic Matt. Return to Logan.",
+    briefing: "Logan wants a field sample from every basic Matt type before stocking you for longer routes.",
+    readyText: "Logan: That is enough variety to pack smart. Here is your pay, plus a few things from the useful shelf. Take your next problem to Tom.",
+    requirements: [
+      { type: "dogmatt", count: 1 },
+      { type: "grassmatt", count: 1 },
+      { type: "firematt", count: 1 },
+      { type: "watermatt", count: 1 },
+      { type: "rockmatt", count: 1 },
+      { type: "mysticmatt", count: 1 },
+    ],
+    rewardCoins: 180,
+    randomRewardItems: [
+      { id: "health_potion", count: 2 },
+      { id: "stamina_tonic", count: 2 },
+      { id: "matt_snack", count: 2 },
+      { id: "capture_net", count: 1 },
+      { id: "camp_brush", count: 1 },
+    ],
+    randomRewardCount: 3,
+    next: "intro_go_to_tom",
+  },
+  intro_go_to_tom: {
+    id: "intro_go_to_tom",
+    npcId: "tom",
+    title: "Go to Tom",
+    objective: "Talk to Tom at the Blacksmith.",
+    dialogue: "Tom: Logan says you can follow instructions. Good. Bring me a couple of Matts with useful heat and grit, and I can see what your gear needs next.",
+    actionLabel: "Take Tom's request",
+    next: "tom_capture_request",
+  },
+  tom_capture_request: {
+    id: "tom_capture_request",
+    npcId: "tom",
+    title: "Tom's Forge Sample",
+    objective: "Capture 1 Fire Matt and 1 Rock Matt, then return to Tom.",
+    briefing: "Tom wants a Fire Matt and a Rock Matt for a first forge sample.",
+    readyText: "Tom: That will do. Heat, grit, and a trainer who can listen. Your intro work is finished. Now the roads are yours.",
+    requirements: [
+      { type: "firematt", count: 1 },
+      { type: "rockmatt", count: 1 },
+    ],
+    next: "intro_complete",
+  },
+  intro_complete: {
+    id: "intro_complete",
+    title: "Introduction Complete",
+    objective: "Explore Matt Game.",
+  },
+};
+
+const INTRO_QUEST_SEQUENCE = [
+  "intro_wake_brick",
+  "intro_bring_5_doggmatts",
+  "intro_go_to_ty",
+  "ty_capture_grass",
+  "ty_capture_fire",
+  "ty_capture_water",
+  "ty_capture_rock",
+  "ty_capture_mystic",
+  "ty_bonding_tutorial",
+  "intro_go_to_scott",
+  "scott_practice_battle",
+  "intro_go_to_logan",
+  "logan_capture_variety",
+  "intro_go_to_tom",
+  "tom_capture_request",
+  "intro_complete",
+];
+
+const INTRO_WORLD_UNLOCKS = [
+  {
+    questId: "intro_wake_brick",
+    worlds: ["town_inn", "town_inn_rooms", "town", "mainworld"],
+  },
+  {
+    questId: "intro_go_to_ty",
+    worlds: ["town_mattstore"],
+  },
+  {
+    questId: "ty_capture_grass",
+    worlds: ["treeworld"],
+  },
+  {
+    questId: "ty_capture_fire",
+    worlds: ["fireworld"],
+  },
+  {
+    questId: "ty_capture_water",
+    worlds: ["purplewaterworld"],
+  },
+  {
+    questId: "ty_capture_rock",
+    worlds: ["tomb"],
+  },
+  {
+    questId: "ty_capture_mystic",
+    worlds: ["temple"],
+  },
+  {
+    questId: "intro_go_to_scott",
+    worlds: ["town_arena_entrance"],
+  },
+  {
+    questId: "scott_practice_battle",
+    worlds: ["town_arena"],
+  },
+  {
+    questId: "intro_go_to_logan",
+    worlds: ["town_itemshop"],
+  },
+  {
+    questId: "intro_go_to_tom",
+    worlds: ["town_blacksmith"],
+  },
+];
+
 const MATT_SELL_VALUES = {
   dogmatt: 35,
   firematt: 85,
@@ -1980,7 +2317,7 @@ const MUSIC_TRACKS = Array.isArray(window.GAME_MUSIC_TRACKS) && window.GAME_MUSI
 const MOBILE_WORLD_SCALE = 0.5;
 
 const PARTICLES = {
-  max: 360,
+  max: 520,
   ambientRate: 0.16,
 };
 
@@ -1997,6 +2334,10 @@ const ECONOMY_STORAGE_KEY = "ivan-monster-hunt-economy-v1";
 const PROFILE_STORAGE_KEY = "ivan-monster-hunt-profiles-v1";
 const ACTIVE_PROFILE_STORAGE_KEY = "ivan-monster-hunt-active-profile-v1";
 const NEW_GAME_INTRO_STORAGE_KEY = "ivan-monster-hunt-new-game-intro-v1";
+const WAYSTONE_NODE_KIND = "waystone";
+const WAYSTONE_DEFAULT_REWARD = "random";
+const INTRO_START_WORLD_ID = "town_inn";
+const INTRO_NPC_IDS = ["brick", "ty", "scott", "logan", "tom"];
 const MATT_PARTY_LIMIT = 6;
 const STARTING_COINS = 120;
 const SHOP_INTERACT_RADIUS = 310;
@@ -2094,7 +2435,7 @@ const SKILL_BRANCH_DEFS = {
   },
   Hunter: {
     label: "Hunter",
-    description: "Whip control, capture odds, Prime Matt pressure, and better rewards from hard catches.",
+    description: "Whip control, capture odds, boss pressure, and better rewards from hard catches.",
   },
   Bond: {
     label: "Bond",
@@ -2182,7 +2523,7 @@ const PLAYER_SKILLS = {
     tier: 4,
     maxRank: 2,
     requires: { iron_will: 2, field_medic: 1 },
-    description: "Toughen up for Prime fights and other heavy hits.",
+    description: "Toughen up for boss fights and other heavy hits.",
     perRank: "+10 max health, +3% damage reduction",
   },
   whip_mastery: {
@@ -2216,12 +2557,12 @@ const PLAYER_SKILLS = {
   },
   prime_study: {
     id: "prime_study",
-    name: "Prime Study",
+    name: "Boss Study",
     branch: "Hunter",
     tier: 4,
     maxRank: 3,
     requires: { calm_hands: 2, clean_capture: 1 },
-    description: "Learn Prime Matt tells so their openings are easier to punish.",
+    description: "Learn boss Matt tells so their openings are easier to punish.",
     perRank: "+4% boss capture chance, -5% boss damage",
   },
   matt_mentor: {
@@ -2368,6 +2709,25 @@ const ASSETS = {
     rockThrow: numberedFrames("assets/maps/tomb/rockmattprime/attack/rockthrow", 11),
     rollAttack: numberedFrames("assets/maps/tomb/rockmattprime/attack/rollattack", 15),
   },
+  primewatermatt: {
+    idle: numberedFrames("assets/maps/water/primewatermatt/idle", 2),
+    walking: numberedFrames("assets/maps/water/primewatermatt/walking", 12),
+    caught: numberedFrames("assets/maps/water/primewatermatt/idle", 2),
+    attack: numberedFrames("assets/maps/water/primewatermatt/attack/waveblast", 9),
+    acidRain: numberedFrames("assets/maps/water/primewatermatt/attack/acidrain", 8),
+    waterShot: numberedFrames("assets/maps/water/primewatermatt/attack/watershot", 9),
+    waveBlast: numberedFrames("assets/maps/water/primewatermatt/attack/waveblast", 9),
+  },
+  primemysticmatt: {
+    idle: numberedFrames("assets/maps/temple/primemysticmatt/idle/loop", 7),
+    idleEnd: numberedFrames("assets/maps/temple/primemysticmatt/idle/end", 7),
+    walking: numberedFrames("assets/maps/temple/primemysticmatt/walking", 10),
+    caught: numberedFrames("assets/maps/temple/primemysticmatt/idle/loop", 7),
+    attack: numberedFrames("assets/maps/temple/primemysticmatt/attack/swipe", 4),
+    swipe: numberedFrames("assets/maps/temple/primemysticmatt/attack/swipe", 4),
+    mysticPull: numberedFrames("assets/maps/temple/primemysticmatt/attack/mysticpull", 8),
+    teleportBlast: numberedFrames("assets/maps/temple/primemysticmatt/attack/teleportblast", 1),
+  },
   watermatt: {
     idle: numberedFrames("assets/matts/watermatt/idle/loop", 12),
     walking: numberedFrames("assets/matts/watermatt/walking", 12),
@@ -2463,11 +2823,13 @@ const state = {
   coins: STARTING_COINS,
   inventory: {},
   missions: {},
+  intro: null,
   captureStats: { byType: {} },
   playerProgress: { level: 1, xp: 0, skillPoints: 0, skills: {} },
   arenaStats: { wins: 0, losses: 0, streak: 0, bestStreak: 0, rankPoints: 0 },
   friendshipCare: {},
   friendshipWalkTimer: 0,
+  primeMysticGravityWell: null,
   activeShopId: "",
   shopTab: "buy",
   pauseMenuTab: "character",
@@ -2494,6 +2856,7 @@ const state = {
     turn: 1,
     log: [],
     turnLocked: false,
+    introPractice: false,
   },
   toastTimer: null,
   caughtDogmatts: -1,
@@ -2599,6 +2962,25 @@ const images = {
     rockThrow: [],
     rollAttack: [],
   },
+  primewatermatt: {
+    idle: [],
+    walking: [],
+    caught: [],
+    attack: [],
+    acidRain: [],
+    waterShot: [],
+    waveBlast: [],
+  },
+  primemysticmatt: {
+    idle: [],
+    idleEnd: [],
+    walking: [],
+    caught: [],
+    attack: [],
+    swipe: [],
+    mysticPull: [],
+    teleportBlast: [],
+  },
   watermatt: {
     idle: [],
     walking: [],
@@ -2680,6 +3062,8 @@ async function loadAssets() {
     primegrassmattFrames,
     primefiremattFrames,
     primerockmattFrames,
+    primewatermattFrames,
+    primemysticmattFrames,
     watermattFrames,
     rockmattFrames,
     mysticmattFrames,
@@ -2696,6 +3080,8 @@ async function loadAssets() {
     loadAnimationSet(ASSETS.primegrassmatt, GRASSMATT.width, GRASSMATT.height),
     loadAnimationSet(ASSETS.primefirematt, FIREMATT.width, FIREMATT.height),
     loadAnimationSet(ASSETS.primerockmatt, ROCKMATT.width, ROCKMATT.height),
+    loadAnimationSet(ASSETS.primewatermatt, WATERMATT.width, WATERMATT.height),
+    loadAnimationSet(ASSETS.primemysticmatt, MYSTICMATT.width, MYSTICMATT.height),
     loadAnimationSet(ASSETS.watermatt, WATERMATT.width, WATERMATT.height),
     loadAnimationSet(ASSETS.rockmatt, ROCKMATT.width, ROCKMATT.height),
     loadAnimationSet(ASSETS.mysticmatt, MYSTICMATT.width, MYSTICMATT.height),
@@ -2718,6 +3104,8 @@ async function loadAssets() {
   Object.assign(images.primegrassmatt, primegrassmattFrames);
   Object.assign(images.primefirematt, primefiremattFrames);
   Object.assign(images.primerockmatt, primerockmattFrames);
+  Object.assign(images.primewatermatt, primewatermattFrames);
+  Object.assign(images.primemysticmatt, primemysticmattFrames);
   Object.assign(images.watermatt, watermattFrames);
   Object.assign(images.rockmatt, rockmattFrames);
   Object.assign(images.mysticmatt, mysticmattFrames);
@@ -3929,6 +4317,7 @@ function resolveWorldId(id, data = null) {
 function normalizeNode(node, worldId) {
   const map = getWorldMapConfig(worldId);
   const center = getMapCenter(worldId);
+  const waystone = isWaystoneNode(node);
   const nodeWasOffMap =
     !Number.isFinite(node?.x) ||
     !Number.isFinite(node?.y) ||
@@ -3942,10 +4331,13 @@ function normalizeNode(node, worldId) {
     id: node?.id || createId("node"),
     x: nodeWasOffMap ? center.x : clamp(node.x, 0, map.width),
     y: nodeWasOffMap ? center.y : clamp(node.y, 0, map.height),
-    radius: Number.isFinite(node?.radius) ? node.radius : 82,
-    target: WORLD_IDS.includes(target) ? target : DEFAULT_WORLD_ID,
+    radius: Number.isFinite(node?.radius) ? node.radius : waystone ? 74 : 82,
+    target: waystone ? "" : WORLD_IDS.includes(target) ? target : DEFAULT_WORLD_ID,
     name: normalizeNodeName(node?.name),
     locked: Boolean(node?.locked),
+    kind: waystone ? WAYSTONE_NODE_KIND : undefined,
+    questionId: waystone ? String(node?.questionId || "") : undefined,
+    reward: waystone ? normalizeWaystoneReward(node?.reward) : undefined,
   };
 }
 
@@ -4082,6 +4474,340 @@ function normalizeMissions(missions) {
   return normalized;
 }
 
+function createDefaultIntroState(introComplete = false) {
+  return {
+    activeQuestId: introComplete ? "intro_complete" : "intro_wake_brick",
+    introComplete: Boolean(introComplete),
+    captureProgress: {},
+    rewards: {},
+  };
+}
+
+function normalizeIntroState(intro, hasSavedEconomy = false) {
+  if (!intro || typeof intro !== "object") {
+    return createDefaultIntroState(hasSavedEconomy);
+  }
+
+  const activeQuestId = INTRO_QUESTS[intro.activeQuestId] ? intro.activeQuestId : "intro_wake_brick";
+  const captureProgress = {};
+  if (intro.captureProgress && typeof intro.captureProgress === "object") {
+    Object.entries(intro.captureProgress).forEach(([questId, counts]) => {
+      if (!INTRO_QUESTS[questId] || !counts || typeof counts !== "object") {
+        return;
+      }
+      captureProgress[questId] = {};
+      Object.keys(MATT_CONFIGS).forEach((type) => {
+        const count = Math.max(0, Math.floor(Number(counts[type]) || 0));
+        if (count > 0) {
+          captureProgress[questId][type] = count;
+        }
+      });
+    });
+  }
+
+  const rewards = {};
+  if (intro.rewards && typeof intro.rewards === "object") {
+    Object.entries(intro.rewards).forEach(([questId, granted]) => {
+      if (INTRO_QUESTS[questId] && granted) {
+        rewards[questId] = true;
+      }
+    });
+  }
+
+  const introComplete = Boolean(intro.introComplete || activeQuestId === "intro_complete");
+  return {
+    activeQuestId: introComplete ? "intro_complete" : activeQuestId,
+    introComplete,
+    captureProgress,
+    rewards,
+  };
+}
+
+function getIntroState() {
+  if (!state.intro) {
+    state.intro = createDefaultIntroState(false);
+  }
+  return state.intro;
+}
+
+function isIntroComplete() {
+  return Boolean(getIntroState().introComplete);
+}
+
+function isIntroChainActive() {
+  return !isIntroComplete();
+}
+
+function getIntroQuestIndex(questId) {
+  const index = INTRO_QUEST_SEQUENCE.indexOf(questId);
+  return index === -1 ? 0 : index;
+}
+
+function hasReachedIntroQuest(questId) {
+  if (isIntroComplete()) {
+    return true;
+  }
+
+  return getIntroQuestIndex(getActiveIntroQuest().id) >= getIntroQuestIndex(questId);
+}
+
+function getUnlockedIntroWorldIds() {
+  if (!isIntroChainActive()) {
+    return new Set(WORLD_IDS);
+  }
+
+  const unlocked = new Set();
+  INTRO_WORLD_UNLOCKS.forEach((unlock) => {
+    if (hasReachedIntroQuest(unlock.questId)) {
+      unlock.worlds.forEach((worldId) => unlocked.add(worldId));
+    }
+  });
+  return unlocked;
+}
+
+function canEnterWorldDuringIntro(worldId) {
+  return !isIntroChainActive() || getUnlockedIntroWorldIds().has(worldId);
+}
+
+function getIntroWorldLockedMessage(worldId) {
+  const label = getWorldLabel(worldId);
+  return `${label} is not open yet. ${getIntroObjectiveText()}`;
+}
+
+function getActiveIntroQuest() {
+  const intro = getIntroState();
+  return INTRO_QUESTS[intro.activeQuestId] || INTRO_QUESTS.intro_wake_brick;
+}
+
+function getIntroQuestProgress(quest = getActiveIntroQuest()) {
+  const intro = getIntroState();
+  const progress = intro.captureProgress[quest.id] || {};
+  const counts = {};
+  Object.keys(MATT_CONFIGS).forEach((type) => {
+    counts[type] = Math.max(0, Math.floor(Number(progress[type]) || 0));
+  });
+  return counts;
+}
+
+function getIntroRequirementCount(requirement, quest = getActiveIntroQuest()) {
+  return Math.min(getIntroQuestProgress(quest)[requirement.type] || 0, requirement.count);
+}
+
+function getIntroHeldRequirementCount(requirement) {
+  return state.capturedParty.filter((matt) => matt.type === requirement.type).length;
+}
+
+function isIntroQuestReady(quest = getActiveIntroQuest()) {
+  if (!quest || !Array.isArray(quest.requirements) || quest.requirements.length === 0) {
+    return true;
+  }
+  return quest.requirements.every((requirement) => getIntroRequirementCount(requirement, quest) >= requirement.count);
+}
+
+function canTurnInIntroMatt(quest = getActiveIntroQuest()) {
+  return Boolean(
+    quest?.requirements?.some(
+      (requirement) =>
+        getIntroRequirementCount(requirement, quest) < requirement.count &&
+        state.capturedParty.some((matt) => matt.type === requirement.type),
+    ),
+  );
+}
+
+function canUseIntroQuestAction(quest = getActiveIntroQuest()) {
+  if (!quest?.requirements?.length) {
+    return true;
+  }
+
+  return isIntroQuestReady(quest) || canTurnInIntroMatt(quest);
+}
+
+function getIntroObjectiveText() {
+  if (isIntroComplete()) {
+    return "Objective: Explore Matt Game.";
+  }
+
+  const quest = getActiveIntroQuest();
+  if (quest.requirements?.length && isIntroQuestReady(quest)) {
+    const npcName = NPC_DEFS[quest.npcId]?.name || "the right person";
+    return `Objective: Return to ${npcName} for your reward.`;
+  }
+
+  if (quest.requirements?.length) {
+    const progress = quest.requirements
+      .map((requirement) => `${getIntroRequirementCount(requirement, quest)}/${requirement.count} ${MATT_LABELS[requirement.type] || "Matt"}`)
+      .join(", ");
+    return `Objective: ${quest.objective || "Capture and turn in Matts."} Turned in: ${progress}.`;
+  }
+
+  return `Objective: ${quest.objective || "Keep following the tutorial."}`;
+}
+
+function saveIntroProgress() {
+  saveEconomy();
+  updateCaughtHud(countCaughtMatts(), true);
+}
+
+function setIntroQuest(questId) {
+  const intro = getIntroState();
+  const nextQuest = INTRO_QUESTS[questId] || INTRO_QUESTS.intro_complete;
+  intro.activeQuestId = nextQuest.id;
+  intro.introComplete = nextQuest.id === "intro_complete";
+  if (!intro.captureProgress[nextQuest.id]) {
+    intro.captureProgress[nextQuest.id] = {};
+  }
+  saveIntroProgress();
+  setGameMessage(getIntroObjectiveText(), 6200);
+}
+
+function getIntroQuestRewardText(quest) {
+  const rewards = [];
+  if (quest.rewardCoins) {
+    rewards.push(`${quest.rewardCoins} coins`);
+  }
+  (quest.rewardItems || []).forEach((reward) => {
+    const item = ITEM_DEFS[reward.id];
+    if (item) {
+      rewards.push(`${item.name}${reward.count > 1 ? ` x${reward.count}` : ""}`);
+    }
+  });
+  if (quest.randomRewardItems?.length) {
+    rewards.push(`${quest.randomRewardCount || 1} random supplies`);
+  }
+  return rewards.join(", ") || "Tutorial progress";
+}
+
+function grantIntroRewards(quest) {
+  const intro = getIntroState();
+  if (!quest || intro.rewards[quest.id]) {
+    return [];
+  }
+
+  const granted = [];
+  if (quest.rewardCoins) {
+    state.coins += quest.rewardCoins;
+    granted.push(`${quest.rewardCoins} coins`);
+  }
+  (quest.rewardItems || []).forEach((reward) => {
+    addItem(reward.id, reward.count || 1);
+    const item = ITEM_DEFS[reward.id];
+    granted.push(`${item?.name || reward.id}${(reward.count || 1) > 1 ? ` x${reward.count || 1}` : ""}`);
+  });
+  if (quest.randomRewardItems?.length) {
+    const pool = [...quest.randomRewardItems];
+    const count = Math.min(pool.length, quest.randomRewardCount || 1);
+    for (let index = 0; index < count; index += 1) {
+      const pickIndex = Math.floor(Math.random() * pool.length);
+      const reward = pool.splice(pickIndex, 1)[0];
+      addItem(reward.id, reward.count || 1);
+      const item = ITEM_DEFS[reward.id];
+      granted.push(`${item?.name || reward.id}${(reward.count || 1) > 1 ? ` x${reward.count || 1}` : ""}`);
+    }
+  }
+  intro.rewards[quest.id] = true;
+  updateEconomyHud();
+  return granted;
+}
+
+function removeCapturedMattFromParty(partyId) {
+  const index = state.capturedParty.findIndex((matt) => matt.partyId === partyId);
+  if (index === -1) {
+    return null;
+  }
+
+  const [matt] = state.capturedParty.splice(index, 1);
+  state.dogmatts = state.dogmatts.filter((candidate) => candidate.partyId !== partyId);
+  saveCapturedParty();
+  updateCaughtHud(countCaughtMatts(), true);
+  return matt;
+}
+
+function turnInOneIntroMatt(quest = getActiveIntroQuest()) {
+  if (!quest?.requirements?.length) {
+    return null;
+  }
+
+  const requirement = quest.requirements.find((candidate) => {
+    return getIntroRequirementCount(candidate, quest) < candidate.count &&
+      state.capturedParty.some((matt) => matt.type === candidate.type);
+  });
+
+  if (!requirement) {
+    return null;
+  }
+
+  const matt = state.capturedParty.find((candidate) => candidate.type === requirement.type);
+  if (!matt) {
+    return null;
+  }
+
+  const removed = removeCapturedMattFromParty(matt.partyId);
+  if (!removed) {
+    return null;
+  }
+
+  const intro = getIntroState();
+  intro.captureProgress[quest.id] = intro.captureProgress[quest.id] || {};
+  intro.captureProgress[quest.id][requirement.type] = Math.min(
+    requirement.count,
+    (intro.captureProgress[quest.id][requirement.type] || 0) + 1,
+  );
+  saveIntroProgress();
+  return removed;
+}
+
+function advanceIntroQuest(questId = getActiveIntroQuest().id) {
+  const quest = INTRO_QUESTS[questId];
+  if (!quest || quest.id !== getActiveIntroQuest().id) {
+    renderActiveOverlay(getIntroObjectiveText());
+    return;
+  }
+
+  let turnedIn = null;
+  if (quest.requirements?.length && !isIntroQuestReady(quest)) {
+    turnedIn = turnInOneIntroMatt(quest);
+    if (!turnedIn) {
+      renderActiveOverlay(`Bring an eligible Matt to ${NPC_DEFS[quest.npcId]?.name || "the quest giver"}. ${getIntroObjectiveText()}`);
+      return;
+    }
+
+    if (!isIntroQuestReady(quest)) {
+      renderActiveOverlay(`${NPC_DEFS[quest.npcId]?.name || "Quest"} accepted ${getCapturedMattDisplayName(turnedIn)}. ${getIntroObjectiveText()}`);
+      return;
+    }
+  }
+
+  if (quest.practiceBattle) {
+    startIntroPracticeBattle();
+    return;
+  }
+
+  const granted = grantIntroRewards(quest);
+  const nextQuestId = quest.next || "intro_complete";
+  setIntroQuest(nextQuestId);
+  if (nextQuestId === "intro_complete") {
+    getIntroState().introComplete = true;
+    saveIntroProgress();
+  }
+  const detail = granted.length ? ` Reward: ${granted.join(", ")}.` : "";
+  const handoff = turnedIn ? `${NPC_DEFS[quest.npcId]?.name || "Quest"} accepted ${getCapturedMattDisplayName(turnedIn)}. ` : "";
+  renderActiveOverlay(`${handoff}${quest.readyText || quest.dialogue || "Done."}${detail}`);
+}
+
+function recordIntroCapture(type) {
+  if (!isIntroChainActive() || !type || !MATT_CONFIGS[type]) {
+    return;
+  }
+
+  const quest = getActiveIntroQuest();
+  if (!quest.requirements?.some((requirement) => requirement.type === type)) {
+    return;
+  }
+
+  saveIntroProgress();
+  setGameMessage(getIntroObjectiveText(), 7200);
+}
+
 function normalizeCaptureStats(stats) {
   const byType = {};
 
@@ -4160,6 +4886,7 @@ function loadEconomy() {
       state.coins = Math.max(0, Math.floor(Number(data.coins) || 0));
       state.inventory = normalizeInventory(data.inventory);
       state.missions = normalizeMissions(data.missions);
+      state.intro = normalizeIntroState(data.intro, true);
       state.captureStats = normalizeCaptureStats(data.captureStats);
       state.playerProgress = normalizePlayerProgress(data.playerProgress);
       state.arenaStats = normalizeArenaStats(data.arenaStats);
@@ -4173,6 +4900,7 @@ function loadEconomy() {
   state.coins = STARTING_COINS;
   state.inventory = {};
   state.missions = {};
+  state.intro = createDefaultIntroState(false);
   state.captureStats = normalizeCaptureStats();
   state.playerProgress = normalizePlayerProgress();
   state.arenaStats = normalizeArenaStats();
@@ -4188,6 +4916,7 @@ function saveEconomy() {
         coins: state.coins,
         inventory: state.inventory,
         missions: state.missions,
+        intro: state.intro,
         captureStats: state.captureStats,
         playerProgress: state.playerProgress,
         arenaStats: state.arenaStats,
@@ -4231,14 +4960,29 @@ function getSkillBonus(skillId, perRank) {
 }
 
 function updatePlayerProgressHud() {
-  if (!playerCounter) {
-    return;
-  }
-
   const level = getPlayerLevel();
   const xp = Math.max(0, Math.floor(Number(state.playerProgress?.xp) || 0));
-  const next = level >= MAX_PLAYER_LEVEL ? "MAX" : `${xp} / ${getPlayerXpToNext(level)}`;
-  playerCounter.textContent = `Ivan Lv ${level} - XP ${next} - SP ${getPlayerSkillPoints()}`;
+  const nextXp = getPlayerXpToNext(level);
+  const xpRatio = level >= MAX_PLAYER_LEVEL ? 1 : clamp(xp / Math.max(1, nextXp), 0, 1);
+
+  if (playerCounter) {
+    const next = level >= MAX_PLAYER_LEVEL ? "MAX" : `${xp} / ${nextXp}`;
+    playerCounter.textContent = `Lv ${level} - XP ${next} - SP ${getPlayerSkillPoints()}`;
+  }
+
+  if (xpCounter) {
+    xpCounter.textContent = level >= MAX_PLAYER_LEVEL ? "MAX" : `${Math.round(xpRatio * 100)}%`;
+  }
+
+  if (xpFill) {
+    xpFill.style.width = `${xpRatio * 100}%`;
+  }
+
+  if (xpMeter) {
+    xpMeter.setAttribute("aria-valuemin", "0");
+    xpMeter.setAttribute("aria-valuemax", level >= MAX_PLAYER_LEVEL ? "100" : String(nextXp));
+    xpMeter.setAttribute("aria-valuenow", level >= MAX_PLAYER_LEVEL ? "100" : String(xp));
+  }
 }
 
 function awardPlayerXp(amount, reason = "") {
@@ -4378,13 +5122,35 @@ function updatePlayerStatusHud() {
   const maxStamina = getPlayerMaxStamina();
   state.player.health = clamp(state.player.health ?? maxHealth, 0, maxHealth);
   state.player.stamina = clamp(state.player.stamina ?? maxStamina, 0, maxStamina);
+  const healthRatio = clamp(state.player.health / Math.max(1, maxHealth), 0, 1);
+  const staminaRatio = clamp(state.player.stamina / Math.max(1, maxStamina), 0, 1);
 
   if (healthCounter) {
-    healthCounter.textContent = `Health: ${Math.ceil(state.player.health)} / ${maxHealth}`;
+    healthCounter.textContent = `${Math.ceil(state.player.health)} / ${maxHealth}`;
   }
 
   if (staminaCounter) {
-    staminaCounter.textContent = `Stamina: ${Math.ceil(state.player.stamina)} / ${maxStamina}`;
+    staminaCounter.textContent = `${Math.ceil(state.player.stamina)} / ${maxStamina}`;
+  }
+
+  if (healthFill) {
+    healthFill.style.width = `${healthRatio * 100}%`;
+  }
+
+  if (staminaFill) {
+    staminaFill.style.width = `${staminaRatio * 100}%`;
+  }
+
+  if (healthMeter) {
+    healthMeter.setAttribute("aria-valuemin", "0");
+    healthMeter.setAttribute("aria-valuemax", String(maxHealth));
+    healthMeter.setAttribute("aria-valuenow", String(Math.ceil(state.player.health)));
+  }
+
+  if (staminaMeter) {
+    staminaMeter.setAttribute("aria-valuemin", "0");
+    staminaMeter.setAttribute("aria-valuemax", String(maxStamina));
+    staminaMeter.setAttribute("aria-valuenow", String(Math.ceil(state.player.stamina)));
   }
 }
 
@@ -4497,7 +5263,8 @@ function getWildMattCaptureHits(matt) {
   const difficulty = Number(matt?.captureDifficulty) || 1;
   if (matt?.boss) {
     const underLevelPenalty = Math.max(0, 10 - getPlayerLevel());
-    return clamp(Math.round(9 + difficulty + level / 4 + underLevelPenalty * 1.15), 12, 24);
+    const bossBonus = Math.max(0, Math.floor(Number(matt.captureHitsBonus) || 0));
+    return clamp(Math.round(9 + difficulty + level / 4 + underLevelPenalty * 1.15 + bossBonus), 12, 24);
   }
 
   return clamp(Math.round(2 + difficulty + level / 9), 3, 8);
@@ -5409,7 +6176,70 @@ function getShopTabs(shop) {
   return tabs;
 }
 
+function renderIntroTalk(parent, shopId) {
+  const quest = getActiveIntroQuest();
+  const isQuestNpc = quest.npcId === shopId;
+  const speaker = NPC_DEFS[shopId]?.name || shopId;
+  const scene = document.createElement("section");
+  scene.className = "dialogue-scene";
+
+  const speakerCard = document.createElement("aside");
+  speakerCard.className = "dialogue-speaker";
+  const portrait = document.createElement("div");
+  portrait.className = "dialogue-portrait";
+  portrait.textContent = speaker.slice(0, 1).toUpperCase();
+  const speakerName = document.createElement("strong");
+  speakerName.textContent = speaker;
+  const role = document.createElement("span");
+  role.textContent = NPC_DIALOGUE[shopId]?.role || getShopDef(shopId)?.title || "Town guide";
+  const mood = document.createElement("em");
+  mood.textContent = isQuestNpc ? "tutorial lead" : "waiting";
+  speakerCard.append(portrait, speakerName, role, mood);
+
+  const conversation = document.createElement("div");
+  conversation.className = "dialogue-conversation";
+  const line = document.createElement("p");
+  line.className = "dialogue-line";
+  if (isQuestNpc) {
+    line.textContent = isIntroQuestReady(quest)
+      ? quest.readyText || quest.dialogue || quest.briefing || getIntroObjectiveText()
+      : quest.briefing || quest.dialogue || getIntroObjectiveText();
+  } else {
+    const activeNpc = NPC_DEFS[quest.npcId]?.name || "your current guide";
+    line.textContent = `${speaker}: Keep your focus on the tutorial. ${activeNpc} is handling your next step.`;
+  }
+  conversation.append(line);
+
+  const note = document.createElement("p");
+  note.className = "dialogue-note";
+  note.textContent = getIntroObjectiveText();
+  conversation.append(note);
+
+  const choices = document.createElement("div");
+  choices.className = "dialogue-choices";
+  if (isQuestNpc) {
+    const label = quest.practiceBattle
+      ? "Start Practice"
+      : quest.requirements?.length
+        ? isIntroQuestReady(quest) ? "Claim Reward" : "Turn In 1 Matt"
+        : quest.actionLabel || "Continue";
+    choices.append(makeShopButton(label, "intro-advance", quest.id, !canUseIntroQuestAction(quest)));
+  }
+  choices.append(makeShopButton("Mission", "shop-tab", "mission"), makeShopButton("Trade", "shop-tab", "buy"));
+  if (shopId === "ty") {
+    choices.append(makeShopButton("Followers", "shop-tab", "followers"));
+  }
+  conversation.append(choices);
+  scene.append(speakerCard, conversation);
+  parent.append(scene);
+}
+
 function renderTalk(parent, shopId) {
+  if (isIntroChainActive() && INTRO_NPC_IDS.includes(shopId)) {
+    renderIntroTalk(parent, shopId);
+    return;
+  }
+
   const dialogue = NPC_DIALOGUE[shopId];
   if (!dialogue) {
     appendEmptyShopMessage(parent, "They do not have much to say right now.");
@@ -5546,7 +6376,53 @@ function getMissionRewardText(mission) {
   return rewards.join(", ");
 }
 
+function renderIntroMission(parent, shopId) {
+  const quest = getActiveIntroQuest();
+  const isQuestNpc = quest.npcId === shopId;
+  appendShopTextCard(parent, quest.title, getIntroObjectiveText());
+
+  if (!isQuestNpc) {
+    const activeNpc = NPC_DEFS[quest.npcId]?.name || "your current guide";
+    appendShopTextCard(parent, "Current Guide", `Talk to ${activeNpc} to continue the tutorial chain.`);
+    return;
+  }
+
+  if (quest.requirements?.length) {
+    quest.requirements.forEach((requirement) => {
+      const held = getIntroHeldRequirementCount(requirement);
+      appendShopTextCard(
+        parent,
+        MATT_LABELS[requirement.type] || "Matt",
+        `${getIntroRequirementCount(requirement, quest)} / ${requirement.count} turned in. You have ${held}.`,
+      );
+    });
+  } else {
+    appendShopTextCard(parent, "Next Step", quest.dialogue || quest.briefing || "Talk to continue.");
+  }
+
+  appendShopTextCard(
+    parent,
+    "Reward",
+    getIntroQuestRewardText(quest),
+    makeShopButton(
+      quest.practiceBattle
+        ? "Start Practice"
+        : quest.requirements?.length
+          ? isIntroQuestReady(quest) ? "Claim Reward" : "Turn In 1 Matt"
+          : quest.actionLabel || "Continue",
+      "intro-advance",
+      quest.id,
+      !canUseIntroQuestAction(quest),
+    ),
+  );
+}
+
 function renderMission(parent, shopId) {
+  if (isIntroChainActive() && INTRO_NPC_IDS.includes(shopId)) {
+    renderIntroMission(parent, shopId);
+    return;
+  }
+
   const mission = getMissionDef(shopId);
   if (!mission) {
     appendEmptyShopMessage(parent, "No work available right now.");
@@ -6512,7 +7388,7 @@ function drawPauseMap(canvas) {
     mapCtx.stroke();
   };
 
-  getWorld().nodes.forEach((node) => drawDot(node.x, node.y, 5, node.locked ? "#ff7a5c" : "#8bd3ff"));
+  getWorld().nodes.forEach((node) => drawDot(node.x, node.y, isWaystoneNode(node) ? 6 : 5, node.locked ? "#ff7a5c" : isWaystoneNode(node) ? "#ffd66f" : "#8bd3ff"));
   state.npcs.forEach((npc) => drawDot(npc.x, npc.y, 4, "#a0d8ff"));
   state.dogmatts.forEach((matt) => drawDot(matt.x, matt.y, matt.boss ? 7 : 4, matt.caught ? "#79f1b9" : "#9cec6e"));
   drawDot(state.player.x, state.player.y, 7, "#fff0a8", "rgba(8, 13, 12, 0.92)");
@@ -6549,7 +7425,13 @@ function renderPauseMap(parent) {
     "compact",
   );
   appendMenuCard(grid, "Position", `${Math.round(state.player.x)}, ${Math.round(state.player.y)}`, "compact");
-  appendMenuCard(grid, "Connections", getWorld().nodes.map((node) => getWorldLabel(node.target)).join(", ") || "None", "compact");
+  appendMenuCard(
+    grid,
+    "Connections",
+    getWorld().nodes.filter((node) => !isWaystoneNode(node)).map((node) => getWorldLabel(node.target)).join(", ") || "None",
+    "compact",
+  );
+  appendMenuCard(grid, "Waystones", String(countWaystones()), "compact");
   window.requestAnimationFrame(() => drawPauseMap(canvasEl));
 }
 
@@ -6588,6 +7470,19 @@ function getMissionProgressText(mission) {
 
 function renderPauseMissions(parent) {
   const grid = createMenuGrid(parent);
+  if (isIntroChainActive()) {
+    const quest = getActiveIntroQuest();
+    appendMenuRow(
+      grid,
+      quest.title,
+      `${getIntroObjectiveText()} ${quest.requirements?.length ? quest.requirements.map((requirement) => `${MATT_LABELS[requirement.type] || "Matt"} turned in ${getIntroRequirementCount(requirement, quest)}/${requirement.count}, held ${getIntroHeldRequirementCount(requirement)}`).join(", ") : ""}`,
+      isIntroQuestReady(quest) ? "Ready" : "Active",
+      null,
+      "full",
+    );
+    return;
+  }
+
   Object.values(NPC_MISSIONS).forEach((mission) => {
     const completed = isMissionComplete(mission);
     const ready = canCompleteMission(mission);
@@ -6783,6 +7678,7 @@ function createArenaState() {
     turn: 1,
     log: [],
     turnLocked: false,
+    introPractice: false,
   };
 }
 
@@ -7524,6 +8420,39 @@ function chooseOpponentArenaAbility() {
     .sort((a, b) => b.score - a.score)[0].ability;
 }
 
+function startIntroPracticeBattle() {
+  const quest = getActiveIntroQuest();
+  if (quest.id !== "scott_practice_battle") {
+    return;
+  }
+
+  const playerMatt = state.capturedParty[0];
+  if (!playerMatt) {
+    renderActiveOverlay("Scott: Bring at least one captured Matt so we can practice properly.");
+    return;
+  }
+
+  const waitingOpponent = {
+    id: "scott",
+    name: "Scott",
+    mattType: "dogmatt",
+    title: "Practice Coach",
+    strategy: "guard",
+    level: Math.max(1, getMattLevel(playerMatt)),
+    friendship: 30,
+  };
+
+  if (state.currentWorld !== "town_arena") {
+    setWorld("town_arena", true, "town_arena_entrance");
+  }
+
+  resetArenaBattle(false);
+  state.arena.opponent = waitingOpponent;
+  startArenaBattle(playerMatt.partyId);
+  state.arena.introPractice = true;
+  saveIntroProgress();
+}
+
 function startArenaBattle(partyId) {
   const playerMatt = state.capturedParty.find((matt) => matt.partyId === partyId);
   if (!playerMatt) {
@@ -7600,10 +8529,20 @@ function awardArenaXp(won = true) {
 
 function finishArenaBattle(won) {
   const arena = state.arena;
+  const introPractice = Boolean(arena.introPractice);
   arena.phase = won ? "won" : "lost";
   arena.turnLocked = false;
 
   const stats = normalizeArenaStats(state.arenaStats);
+  if (introPractice) {
+    arena.log.unshift("Scott: Good. Practice is for learning, not chasing a record. Level up before serious arena battles, then go see Logan.");
+    setIntroQuest("intro_go_to_logan");
+    saveEconomy();
+    updateEconomyHud();
+    renderArenaBattle(won ? "Practice won. Scott sends you to Logan." : "Practice finished. Scott sends you to Logan.");
+    return;
+  }
+
   if (won) {
     stats.wins += 1;
     stats.streak += 1;
@@ -8027,13 +8966,41 @@ function getWorldLabel(id) {
   return WORLD_LABELS[id] || id;
 }
 
+function isWaystoneNode(node) {
+  return node?.kind === WAYSTONE_NODE_KIND || node?.type === WAYSTONE_NODE_KIND;
+}
+
+function normalizeWaystoneReward(reward) {
+  return ["xp", "item", "random"].includes(reward) ? reward : WAYSTONE_DEFAULT_REWARD;
+}
+
+function countWaystones(world = getWorld()) {
+  return Array.isArray(world?.nodes) ? world.nodes.filter(isWaystoneNode).length : 0;
+}
+
+function countAllWaystones() {
+  return Object.values(state.worlds || {}).reduce((total, world) => total + countWaystones(world), 0);
+}
+
+function getWaystoneCountStatus(world = getWorld()) {
+  return `Waystones: ${countWaystones(world)} here / ${countAllWaystones()} total.`;
+}
+
+function getDefaultWaystoneName(world = getWorld()) {
+  return `Waystone ${countWaystones(world) + 1}`;
+}
+
 function getNodeLabel(node) {
+  if (isWaystoneNode(node)) {
+    return normalizeNodeName(node?.name) || "Waystone";
+  }
+
   return normalizeNodeName(node?.name) || getWorldLabel(node?.target);
 }
 
 function updateWorldLabel() {
   if (worldLabel) {
-    worldLabel.textContent = `World: ${getWorldLabel(state.currentWorld)}`;
+    worldLabel.textContent = getWorldLabel(state.currentWorld);
   }
 }
 
@@ -8105,6 +9072,7 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
 
   closeShop();
   closePauseMenu();
+  clearPrimeMysticGravityWell();
   state.cameraFocus = null;
   state.currentWorld = id;
   state.lastPreloadKey = "";
@@ -8458,7 +9426,7 @@ function initDevPanel() {
     if (node) {
       node.name = normalizeNodeName(devNodeName.value);
       saveWorlds();
-      setDevStatus(`Node renamed to ${getNodeLabel(node)}.`);
+      setDevStatus(`${isWaystoneNode(node) ? "Waystone" : "Node"} renamed to ${getNodeLabel(node)}. ${getWaystoneCountStatus()}`);
     }
   });
 
@@ -8529,8 +9497,16 @@ function setDevTool(tool) {
     state.dev.activeWallId = null;
   }
 
-  if (tool !== "node") {
+  if (tool !== "node" && tool !== "waystone") {
     state.dev.activeNodeId = null;
+  }
+
+  if (devNodeTarget) {
+    devNodeTarget.disabled = tool === "waystone";
+  }
+
+  if (devNodeName) {
+    devNodeName.placeholder = tool === "waystone" ? "Example: Moon Waystone" : "Example: Fire Gate";
   }
 
   if (devTools) {
@@ -8548,7 +9524,9 @@ function setDevTool(tool) {
           ? " Click to place the selected NPC."
           : tool === "node"
             ? " Type a node name, choose its target, then click the map."
-          : "";
+            : tool === "waystone"
+              ? ` Type a name if you want one, then click the map. ${getWaystoneCountStatus()}`
+              : "";
   setDevStatus(`${getWorldLabel(state.currentWorld)}: ${tool} tool selected.${extra}`);
 }
 
@@ -8833,38 +9811,65 @@ function handleDevPointerDown(event) {
     return;
   }
 
-  if (state.dev.tool === "node") {
-    const target = devNodeTarget?.value || "town";
-    const name = normalizeNodeName(devNodeName?.value);
+  if (state.dev.tool === "node" || state.dev.tool === "waystone") {
+    const isWaystoneTool = state.dev.tool === "waystone";
+    const target = isWaystoneTool ? "" : devNodeTarget?.value || "town";
+    const requestedName = normalizeNodeName(devNodeName?.value);
     const existingNode = world.nodes.find(
-      (candidate) => Math.hypot(candidate.x - point.x, candidate.y - point.y) <= candidate.radius + 30,
+      (candidate) =>
+        isWaystoneNode(candidate) === isWaystoneTool &&
+        Math.hypot(candidate.x - point.x, candidate.y - point.y) <= candidate.radius + 30,
     );
+    const name = requestedName || (isWaystoneTool ? existingNode?.name || getDefaultWaystoneName(world) : "");
 
     if (existingNode) {
-      existingNode.target = target;
+      if (isWaystoneTool) {
+        existingNode.kind = WAYSTONE_NODE_KIND;
+        existingNode.target = "";
+        existingNode.radius = existingNode.radius || 74;
+        existingNode.questionId = existingNode.questionId || "";
+        existingNode.reward = normalizeWaystoneReward(existingNode.reward);
+      } else {
+        delete existingNode.kind;
+        delete existingNode.questionId;
+        delete existingNode.reward;
+        existingNode.target = target;
+        existingNode.radius = existingNode.radius || 82;
+      }
       existingNode.name = name;
       state.dev.activeNodeId = existingNode.id;
       if (devNodeName) {
         devNodeName.value = existingNode.name;
       }
       saveWorlds();
-      setDevStatus(`${getNodeLabel(existingNode)} node updated. Target: ${getWorldLabel(target)}.`);
+      setDevStatus(
+        isWaystoneTool
+          ? `${getNodeLabel(existingNode)} waystone updated. ${getWaystoneCountStatus()}`
+          : `${getNodeLabel(existingNode)} node updated. Target: ${getWorldLabel(target)}.`,
+      );
       return;
     }
 
     const node = {
-      id: createId("node"),
+      id: createId(isWaystoneTool ? "waystone" : "node"),
       x: point.x,
       y: point.y,
-      radius: 82,
+      radius: isWaystoneTool ? 74 : 82,
       target,
       name,
+      kind: isWaystoneTool ? WAYSTONE_NODE_KIND : undefined,
+      questionId: isWaystoneTool ? "" : undefined,
+      reward: isWaystoneTool ? WAYSTONE_DEFAULT_REWARD : undefined,
     };
 
     world.nodes.push(node);
     state.dev.activeNodeId = node.id;
     saveWorlds();
-    setDevStatus(`${getNodeLabel(node)} node added. Target: ${getWorldLabel(target)}.`);
+    setDevStatus(
+      isWaystoneTool
+        ? `${getNodeLabel(node)} waystone added. ${getWaystoneCountStatus()}`
+        : `${getNodeLabel(node)} node added. Target: ${getWorldLabel(target)}.`,
+    );
     return;
   }
 
@@ -8954,9 +9959,14 @@ function eraseNearestDevObject(point) {
     });
 
     if (index !== -1) {
+      const erased = collection[index];
       collection.splice(index, 1);
       saveWorlds();
-      setDevStatus(`${name} item erased.`);
+      setDevStatus(
+        name === "nodes" && isWaystoneNode(erased)
+          ? `Waystone erased. ${getWaystoneCountStatus()}`
+          : `${name} item erased.`,
+      );
       return;
     }
   }
@@ -9198,7 +10208,7 @@ function hasWorldBossRequirement(boss) {
 
 function createBossMatt(worldId, profile, random = Math.random) {
   const boss = WORLD_BOSS_MATTS[worldId];
-  if (!boss) {
+  if (!boss || isIntroChainActive()) {
     return null;
   }
 
@@ -9241,6 +10251,7 @@ function createBossMatt(worldId, profile, random = Math.random) {
     captureDifficulty: bossProfile.captureDifficulty,
     captureChance: 0,
     captureHitsRequired: 0,
+    captureHitsBonus: boss.captureHitsBonus || 0,
     damageScale: bossProfile.damageScale,
     hitCount: 0,
     hitCooldown: 0,
@@ -9438,7 +10449,7 @@ function spawnDogmatts() {
 
 function trySpawnUnlockedWorldBoss(capturedMatt) {
   const boss = WORLD_BOSS_MATTS[state.currentWorld];
-  if (!boss || capturedMatt?.boss || !hasWorldBossRequirement(boss) || isBossCaptured(state.currentWorld, boss)) {
+  if (isIntroChainActive() || !boss || capturedMatt?.boss || !hasWorldBossRequirement(boss) || isBossCaptured(state.currentWorld, boss)) {
     return false;
   }
 
@@ -9890,6 +10901,258 @@ function isPlayerHitByMattAttack(matt, attack) {
   return distance <= (attack.attackRadius || 0) + 42;
 }
 
+function getBossPressure(matt) {
+  if (!matt?.boss) {
+    return 0;
+  }
+
+  const threshold = Math.max(1, getCaptureHitThreshold(matt) - 1);
+  return clamp((Math.max(0, Number(matt.hitCount) || 0)) / threshold, 0, 1);
+}
+
+function getPrimeAttackPalette(matt, attack = {}) {
+  if (attack.effect?.includes("mystic") || attack.effect === "teleportBlast" || matt?.assetKey === "primemysticmatt") {
+    return {
+      main: "rgba(196, 111, 255, 0.92)",
+      alt: "rgba(244, 209, 255, 0.86)",
+      dark: "rgba(82, 29, 137, 0.68)",
+    };
+  }
+  if (matt?.type === "firematt") {
+    return {
+      main: "rgba(255, 111, 53, 0.92)",
+      alt: "rgba(255, 223, 140, 0.86)",
+      dark: "rgba(157, 45, 28, 0.66)",
+    };
+  }
+  if (matt?.type === "rockmatt") {
+    return {
+      main: "rgba(220, 198, 157, 0.9)",
+      alt: "rgba(255, 238, 188, 0.82)",
+      dark: "rgba(93, 83, 70, 0.62)",
+    };
+  }
+  if (matt?.type === "watermatt") {
+    return {
+      main: "rgba(91, 212, 255, 0.9)",
+      alt: "rgba(214, 250, 255, 0.84)",
+      dark: "rgba(32, 96, 145, 0.62)",
+    };
+  }
+
+  return {
+    main: "rgba(151, 255, 111, 0.9)",
+    alt: "rgba(245, 255, 161, 0.82)",
+    dark: "rgba(58, 127, 53, 0.62)",
+  };
+}
+
+function spawnPrimeAttackAmbient(matt, attack, target, originX, originY) {
+  if (!matt?.boss) {
+    return;
+  }
+
+  const palette = getPrimeAttackPalette(matt, attack);
+  const angle = Math.atan2(target.y - matt.y, target.x - matt.x);
+  const distance = Math.hypot(target.x - matt.x, target.y - matt.y);
+  const ringCount = attack.hitShape === "targetCircle" || attack.effect === "mysticPull" ? 3 : 1;
+
+  for (let i = 0; i < ringCount; i += 1) {
+    addParticle({
+      type: "ring",
+      x: i === 0 ? target.x : originX,
+      y: i === 0 ? target.y : originY,
+      vx: 0,
+      vy: 0,
+      life: 0.36 + i * 0.08,
+      size: 40 + i * 38,
+      color: i % 2 === 0 ? palette.main : palette.alt,
+    });
+  }
+
+  if (attack.hitShape === "beam" || attack.hitShape === "charge" || attack.effect === "teleportBlast") {
+    addParticle({
+      type: "beam",
+      x: originX,
+      y: originY,
+      x2: target.x,
+      y2: target.y - 30,
+      life: 0.24,
+      size: attack.beamWidth ? Math.min(42, attack.beamWidth * 0.32) : 28,
+      color: palette.main,
+    });
+  }
+
+  for (let i = 0; i < 10; i += 1) {
+    const along = distance > 0 ? randomBetween(0.18, 0.92) * distance : 0;
+    const side = randomBetween(-70, 70);
+    const perp = angle + Math.PI / 2;
+    addParticle({
+      type: "spark",
+      x: originX + Math.cos(angle) * along + Math.cos(perp) * side,
+      y: originY + Math.sin(angle) * along + Math.sin(perp) * side,
+      vx: Math.cos(angle) * randomBetween(20, 130) + Math.cos(perp) * randomBetween(-60, 60),
+      vy: Math.sin(angle) * randomBetween(20, 130) + Math.sin(perp) * randomBetween(-60, 60) - randomBetween(20, 90),
+      gravity: randomBetween(40, 190),
+      life: randomBetween(0.32, 0.72),
+      size: randomBetween(4, 10),
+      color: Math.random() < 0.55 ? palette.main : palette.alt,
+    });
+  }
+}
+
+function spawnPrimeAttackWindupEffect(matt, attack, dt) {
+  if (!matt?.boss || !attack) {
+    return;
+  }
+
+  matt.primeWindupParticleTimer = Math.max(0, (matt.primeWindupParticleTimer || 0) - dt);
+  if (matt.primeWindupParticleTimer > 0) {
+    return;
+  }
+
+  matt.primeWindupParticleTimer = 0.055;
+  const palette = getPrimeAttackPalette(matt, attack);
+  const target = getPrimeAttackTarget(matt);
+  const originX = matt.x;
+  const originY = matt.y - 62 * (Number(matt.scale) || 1);
+  const angle = Math.atan2(target.y - matt.y, target.x - matt.x);
+  const radius = randomBetween(48, 130);
+
+  addParticle({
+    type: "spark",
+    x: originX + Math.cos(angle + randomBetween(-1.4, 1.4)) * radius,
+    y: originY + Math.sin(angle + randomBetween(-1.4, 1.4)) * radius,
+    vx: Math.cos(angle) * randomBetween(30, 110),
+    vy: Math.sin(angle) * randomBetween(30, 110) - randomBetween(10, 70),
+    gravity: randomBetween(20, 120),
+    life: randomBetween(0.34, 0.62),
+    size: randomBetween(4, 9),
+    color: Math.random() < 0.5 ? palette.main : palette.alt,
+  });
+
+  if (attack.hitShape === "targetCircle" || attack.effect === "mysticPull") {
+    addParticle({
+      type: "ring",
+      x: target.x + randomBetween(-30, 30),
+      y: target.y + randomBetween(-30, 30),
+      vx: 0,
+      vy: 0,
+      life: 0.22,
+      size: randomBetween(16, 34),
+      color: palette.dark,
+    });
+  }
+}
+
+function clearPrimeMysticGravityWell() {
+  state.primeMysticGravityWell = null;
+  state.dogmatts.forEach((matt) => {
+    matt.mysticBerserkTimer = 0;
+    matt.mysticBerserkCooldown = 0;
+  });
+}
+
+function startPrimeMysticGravityWell(matt, attack) {
+  const duration = attack.gravityDuration || PRIME_MYSTIC_GRAVITY_WELL.duration;
+  state.primeMysticGravityWell = {
+    bossId: matt.id,
+    x: matt.x,
+    y: matt.y,
+    life: duration,
+    maxLife: duration,
+    radius: attack.gravityRadius || PRIME_MYSTIC_GRAVITY_WELL.radius,
+    pullStrength: attack.pullStrength || PRIME_MYSTIC_GRAVITY_WELL.pullStrength,
+    pulseTimer: 0,
+    messageShown: false,
+  };
+
+  state.dogmatts.forEach((candidate) => {
+    if (candidate.caught && !candidate.arenaBattler && !candidate.arenaOpponent) {
+      candidate.mysticBerserkTimer = duration;
+      candidate.mysticBerserkCooldown = 0;
+      candidate.caughtAnimationPaused = false;
+    }
+  });
+}
+
+function getPrimeMysticTeleportPoint(matt, distance = 165) {
+  const angleToBoss = Math.atan2(matt.y - state.player.y, matt.x - state.player.x);
+  const options = [0, Math.PI * 0.42, -Math.PI * 0.42, Math.PI * 0.82, -Math.PI * 0.82];
+
+  for (const offset of options) {
+    const angle = angleToBoss + offset;
+    const x = clamp(state.player.x + Math.cos(angle) * distance, 80, getMapWidth() - 80);
+    const y = clamp(state.player.y + Math.sin(angle) * distance, 80, getMapHeight() - 80);
+    if (Math.hypot(x - state.player.x, y - state.player.y) > 82) {
+      return { x, y };
+    }
+  }
+
+  return {
+    x: clamp(state.player.x + distance, 80, getMapWidth() - 80),
+    y: clamp(state.player.y, 80, getMapHeight() - 80),
+  };
+}
+
+function spawnPrimeMysticTeleportBurst(x, y, size = 78) {
+  for (let i = 0; i < 3; i += 1) {
+    addParticle({
+      type: "ring",
+      x,
+      y: y - 36,
+      vx: 0,
+      vy: 0,
+      life: 0.34 + i * 0.09,
+      size: size + i * 42,
+      color: i % 2 === 0 ? "rgba(196, 111, 255, 0.9)" : "rgba(244, 209, 255, 0.78)",
+    });
+  }
+
+  for (let i = 0; i < 28; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    addParticle({
+      type: i % 4 === 0 ? "slash" : "spark",
+      x: x + Math.cos(angle) * randomBetween(8, 62),
+      y: y - randomBetween(12, 90) + Math.sin(angle) * randomBetween(8, 54),
+      vx: Math.cos(angle) * randomBetween(110, 360),
+      vy: Math.sin(angle) * randomBetween(110, 360) - randomBetween(80, 220),
+      gravity: 330,
+      life: randomBetween(0.32, 0.74),
+      size: randomBetween(8, 24),
+      color: Math.random() < 0.55 ? "rgba(196, 111, 255, 0.92)" : "rgba(244, 209, 255, 0.88)",
+      rotation: angle,
+      spin: randomBetween(-5, 5),
+    });
+  }
+}
+
+function performPrimeMysticTeleportBlast(matt, attack) {
+  spawnPrimeMysticTeleportBurst(matt.x, matt.y, 58);
+  const destination = getPrimeMysticTeleportPoint(matt);
+  matt.x = destination.x;
+  matt.y = destination.y;
+  matt.attackTarget = { x: state.player.x, y: state.player.y };
+  matt.activeAttack = { ...attack, action: "swipe", hitShape: "circle", effect: "mysticSwipe" };
+  matt.frameIndex = 0;
+  matt.frameTimer = 0;
+  facePlayer(matt);
+  setAction(matt, "swipe");
+  spawnPrimeMysticTeleportBurst(matt.x, matt.y, 86);
+  spawnPrimeAttackEffect(matt, { ...attack, effect: "mysticSwipe", hitShape: "circle" });
+  addScreenShake(attack.screenShake || 24);
+
+  if (!isPlayerHitByMattAttack(matt, { ...attack, hitShape: "circle", attackRadius: attack.attackRadius || 390 })) {
+    return;
+  }
+
+  if (damagePlayer(getWildMattAttackDamage(matt, attack), matt) === "defeated") {
+    return;
+  }
+  drainPlayerStamina(attack.staminaDamage || 0);
+  knockPlayerAwayFrom(matt, attack.knockback || 0);
+}
+
 function addImageProjectile(imageKey, x, y, angle, speed, size, life) {
   addParticle({
     type: "image",
@@ -9908,6 +11171,67 @@ function spawnPrimeAttackEffect(matt, attack) {
   const target = getPrimeAttackTarget(matt);
   const originX = matt.x;
   const originY = matt.y - 60 * (Number(matt.scale) || 1);
+  spawnPrimeAttackAmbient(matt, attack, target, originX, originY);
+
+  if (attack.effect === "mysticSwipe") {
+    const centerAngle = Math.atan2(target.y - matt.y, target.x - matt.x);
+    for (let i = 0; i < 9; i += 1) {
+      const angle = centerAngle + randomBetween(-0.7, 0.7);
+      addParticle({
+        type: "slash",
+        x: matt.x + Math.cos(centerAngle) * randomBetween(90, 260),
+        y: matt.y - randomBetween(30, 110) + Math.sin(centerAngle) * randomBetween(40, 190),
+        vx: Math.cos(angle) * randomBetween(130, 340),
+        vy: Math.sin(angle) * randomBetween(130, 340) - randomBetween(20, 100),
+        life: randomBetween(0.18, 0.34),
+        size: randomBetween(28, 58),
+        color: Math.random() < 0.5 ? "rgba(196, 111, 255, 0.94)" : "rgba(244, 209, 255, 0.9)",
+        rotation: angle,
+        spin: randomBetween(-4, 4),
+      });
+    }
+    addScreenShake(attack.screenShake || 14);
+    return;
+  }
+
+  if (attack.effect === "mysticPull") {
+    const radius = attack.gravityRadius || PRIME_MYSTIC_GRAVITY_WELL.radius;
+    for (let i = 0; i < 6; i += 1) {
+      addParticle({
+        type: "ring",
+        x: matt.x,
+        y: matt.y - 18,
+        vx: 0,
+        vy: 0,
+        life: 0.72 + i * 0.08,
+        size: 80 + i * (radius / 9),
+        color: i % 2 === 0 ? "rgba(196, 111, 255, 0.8)" : "rgba(80, 34, 143, 0.72)",
+      });
+    }
+    for (let i = 0; i < 42; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = randomBetween(120, radius);
+      addParticle({
+        type: "spark",
+        x: matt.x + Math.cos(angle) * distance,
+        y: matt.y + Math.sin(angle) * distance - randomBetween(0, 80),
+        vx: -Math.cos(angle) * randomBetween(160, 420),
+        vy: -Math.sin(angle) * randomBetween(160, 420) - randomBetween(20, 120),
+        gravity: 110,
+        life: randomBetween(0.68, 1.35),
+        size: randomBetween(5, 14),
+        color: Math.random() < 0.55 ? "rgba(196, 111, 255, 0.92)" : "rgba(244, 209, 255, 0.86)",
+      });
+    }
+    addScreenShake(attack.screenShake || 20);
+    return;
+  }
+
+  if (attack.effect === "teleportBlast") {
+    spawnPrimeMysticTeleportBurst(target.x, target.y, 64);
+    addScreenShake(attack.screenShake || 18);
+    return;
+  }
 
   if (attack.effect === "surgeBite") {
     const centerAngle = Math.atan2(target.y - matt.y, target.x - matt.x);
@@ -10414,6 +11738,15 @@ function spawnPrimeAttackEffect(matt, attack) {
 function applyMattAttackImpact(matt, attack) {
   spawnPrimeAttackEffect(matt, attack);
 
+  if (attack.effect === "teleportBlast") {
+    performPrimeMysticTeleportBlast(matt, attack);
+    return;
+  }
+
+  if (attack.effect === "mysticPull") {
+    startPrimeMysticGravityWell(matt, attack);
+  }
+
   if (!isPlayerHitByMattAttack(matt, attack)) {
     return;
   }
@@ -10475,7 +11808,7 @@ function chooseMattAttack(matt, config) {
 function getMattAttackTriggerRadius(matt, config) {
   const baseRadius = config.attackRadius || 0;
   const specialRadius = Array.isArray(matt.attacks)
-    ? Math.max(0, ...matt.attacks.map((attack) => attack.attackRadius || 0))
+    ? Math.max(0, ...matt.attacks.map((attack) => attack.maxRange || attack.attackRadius || 0))
     : 0;
   return Math.max(baseRadius, specialRadius);
 }
@@ -10487,9 +11820,11 @@ function startMattAttack(matt, config) {
   matt.attackTimer = Math.max(0.45, (attackConfig.attackWindup || 0.24) + 0.42);
   matt.attackElapsed = 0;
   matt.attackApplied = false;
-  matt.attackCooldown = attackConfig.attackCooldown || 1.8;
+  const pressureCooldownScale = matt.boss ? 1 - getBossPressure(matt) * 0.16 : 1;
+  matt.attackCooldown = (attackConfig.attackCooldown || 1.8) * pressureCooldownScale;
   matt.frameIndex = 0;
   matt.frameTimer = 0;
+  matt.primeWindupParticleTimer = 0;
   facePlayer(matt);
   setAction(matt, attackConfig.action || "attack");
 }
@@ -10507,6 +11842,7 @@ function updateMattAttack(matt, config, distance, dt) {
     facePlayer(matt);
 
     const activeAttack = matt.activeAttack || config;
+    spawnPrimeAttackWindupEffect(matt, activeAttack, dt);
     setAction(matt, activeAttack.action || "attack");
     if (!matt.attackApplied && matt.attackElapsed >= (activeAttack.attackWindup || 0.24)) {
       matt.attackApplied = true;
@@ -10563,7 +11899,7 @@ function setWildMattBaseAction(matt, action, dt) {
     return;
   }
 
-  if (matt.type === "mysticmatt") {
+  if (matt.type === "mysticmatt" && !matt.boss) {
     if (isMysticMattSpecialIdle(matt.action)) {
       return;
     }
@@ -10675,16 +12011,21 @@ function updateAwakenedBossMovement(matt, config, distance, dt) {
   const safeDistance = distance || 1;
   const preferredDistance = matt.bossPreferredDistance || 360;
   const closeDistance = matt.bossCloseDistance || 220;
+  const pressure = getBossPressure(matt);
 
   if (matt.bossMoveTimer <= 0) {
     const modes = safeDistance > preferredDistance * 1.45
-      ? ["rush", "rush", "flank"]
+      ? pressure > 0.45 ? ["rush", "rush", "rush", "flank"] : ["rush", "rush", "flank"]
       : safeDistance < closeDistance
-        ? ["retreat", "retreat", "flank"]
-        : ["orbit", "flank", "rush", "retreat"];
+        ? pressure > 0.55 ? ["retreat", "flank", "rush"] : ["retreat", "retreat", "flank"]
+        : pressure > 0.55 ? ["orbit", "flank", "rush", "rush", "retreat"] : ["orbit", "flank", "rush", "retreat"];
     matt.bossMoveMode = modes[Math.floor(Math.random() * modes.length)];
     matt.bossOrbitDirection = Math.random() < 0.5 ? -1 : 1;
-    matt.bossMoveTimer = randomBetween(matt.bossMoveIntervalMin || 0.8, matt.bossMoveIntervalMax || 1.8);
+    const timerScale = 1 - pressure * 0.16;
+    matt.bossMoveTimer = randomBetween(
+      (matt.bossMoveIntervalMin || 0.8) * timerScale,
+      (matt.bossMoveIntervalMax || 1.8) * timerScale,
+    );
   }
 
   const toPlayerX = (state.player.x - matt.x) / safeDistance;
@@ -10694,12 +12035,12 @@ function updateAwakenedBossMovement(matt, config, distance, dt) {
   const tangentY = toPlayerX * orbitDirection;
   let moveX = tangentX;
   let moveY = tangentY;
-  let speed = matt.bossWalkSpeed || config.wanderSpeed;
+  let speed = (matt.bossWalkSpeed || config.wanderSpeed) * (1 + pressure * 0.12);
 
   if (matt.bossMoveMode === "rush") {
-    moveX = toPlayerX * 1.05 + tangentX * 0.18;
-    moveY = toPlayerY * 1.05 + tangentY * 0.18;
-    speed = matt.bossRushSpeed || speed * 1.25;
+    moveX = toPlayerX * (1.05 + pressure * 0.12) + tangentX * 0.18;
+    moveY = toPlayerY * (1.05 + pressure * 0.12) + tangentY * 0.18;
+    speed = (matt.bossRushSpeed || speed * 1.25) * (1 + pressure * 0.08);
   } else if (matt.bossMoveMode === "retreat") {
     moveX = -toPlayerX * 0.82 + tangentX * 0.62;
     moveY = -toPlayerY * 0.82 + tangentY * 0.62;
@@ -11013,7 +12354,11 @@ function followerStrikeTarget(follower, target) {
   const progressed = previousHits < captureHitThreshold - 1;
   target.hitCount = Math.min(captureHitThreshold - 1, previousHits + 1);
   target.hitCooldown = Math.max(target.hitCooldown || 0, 0.18);
-  target.hitReactionTimer = Math.max(target.hitReactionTimer || 0, 0.34);
+  target.hitReactionTimer = Math.max(target.hitReactionTimer || 0, target.boss ? 0.24 : 0.34);
+  if (target.boss) {
+    target.attackCooldown = Math.min(target.attackCooldown || 0, 0.2);
+    target.bossMoveTimer = 0;
+  }
   target.pathPanicTimer = target.rooted ? 0 : Math.max(target.pathPanicTimer || 0, 1.8);
   target.pathRoamTarget = null;
   target.frameIndex = 0;
@@ -11070,8 +12415,195 @@ function updateCombatFollower(follower, target, config, dt) {
   return true;
 }
 
+function pullEntityToward(entity, x, y, radius, strength, dt, collisionRadius = 28) {
+  const dx = x - entity.x;
+  const dy = y - entity.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  if (distance > radius || distance < 24) {
+    return false;
+  }
+
+  const falloff = clamp(1 - distance / radius, 0.08, 1);
+  const amount = Math.min(distance - 18, strength * (0.35 + falloff) * dt);
+  if (amount <= 0) {
+    return false;
+  }
+
+  moveWithWalls(entity, (dx / distance) * amount, (dy / distance) * amount, collisionRadius);
+  return true;
+}
+
+function spawnPrimeMysticGravityWellAmbient(well, dt) {
+  well.pulseTimer = Math.max(0, (well.pulseTimer || 0) - dt);
+  if (well.pulseTimer > 0) {
+    return;
+  }
+
+  well.pulseTimer = 0.075;
+  const progress = 1 - well.life / Math.max(1, well.maxLife);
+  const swirl = progress * Math.PI * 4;
+
+  if (Math.random() < 0.42) {
+    addParticle({
+      type: "ring",
+      x: well.x,
+      y: well.y - 18,
+      vx: 0,
+      vy: 0,
+      life: 0.42,
+      size: randomBetween(90, 210),
+      color: Math.random() < 0.5 ? "rgba(196, 111, 255, 0.68)" : "rgba(74, 31, 134, 0.62)",
+    });
+  }
+
+  for (let i = 0; i < 5; i += 1) {
+    const angle = swirl + Math.random() * Math.PI * 2;
+    const distance = randomBetween(120, well.radius || PRIME_MYSTIC_GRAVITY_WELL.radius);
+    addParticle({
+      type: "spark",
+      x: well.x + Math.cos(angle) * distance,
+      y: well.y + Math.sin(angle) * distance - randomBetween(12, 80),
+      vx: -Math.cos(angle) * randomBetween(110, 300),
+      vy: -Math.sin(angle) * randomBetween(110, 300) - randomBetween(10, 100),
+      gravity: 80,
+      life: randomBetween(0.42, 0.9),
+      size: randomBetween(4, 10),
+      color: Math.random() < 0.6 ? "rgba(196, 111, 255, 0.9)" : "rgba(244, 209, 255, 0.82)",
+    });
+  }
+}
+
+function updatePrimeMysticGravityWell(dt) {
+  const well = state.primeMysticGravityWell;
+  if (!well) {
+    return;
+  }
+
+  const boss = state.dogmatts.find((matt) => matt.id === well.bossId && !matt.caught);
+  if (!boss) {
+    clearPrimeMysticGravityWell();
+    return;
+  }
+
+  well.life = Math.max(0, well.life - dt);
+  well.x = boss.x;
+  well.y = boss.y;
+  const radius = well.radius || PRIME_MYSTIC_GRAVITY_WELL.radius;
+  const pullStrength = well.pullStrength || PRIME_MYSTIC_GRAVITY_WELL.pullStrength;
+  const affectedFollowers = state.dogmatts.filter((matt) => matt.caught && !matt.arenaBattler && !matt.arenaOpponent);
+
+  spawnPrimeMysticGravityWellAmbient(well, dt);
+  if (pullEntityToward(state.player, well.x, well.y, radius, pullStrength, dt, 28)) {
+    state.player.stamina = Math.max(0, state.player.stamina - 4.5 * dt);
+    seedPlayerTrail();
+    updatePlayerStatusHud();
+  }
+
+  affectedFollowers.forEach((matt) => {
+    matt.mysticBerserkTimer = Math.max(matt.mysticBerserkTimer || 0, well.life);
+    pullEntityToward(matt, well.x, well.y, radius, pullStrength * 0.88, dt, Math.max(32, getMattConfig(matt.type).width * 0.35));
+  });
+
+  if (!well.messageShown && affectedFollowers.length > 0) {
+    well.messageShown = true;
+    setGameMessage("Prime Mystic Matt turns Ivan's Matts against him.");
+  }
+
+  if (well.life <= 0) {
+    clearPrimeMysticGravityWell();
+  }
+}
+
+function isPrimeMysticBerserk(matt) {
+  return Boolean(matt?.caught && (matt.mysticBerserkTimer || 0) > 0);
+}
+
+function spawnBerserkFollowerStrikeEffect(follower) {
+  const angle = Math.atan2(state.player.y - follower.y, state.player.x - follower.x);
+  addParticle({
+    type: "beam",
+    x: follower.x,
+    y: follower.y - 42,
+    x2: state.player.x,
+    y2: state.player.y - 48,
+    life: 0.18,
+    size: 20,
+    color: "rgba(196, 111, 255, 0.88)",
+  });
+
+  for (let i = 0; i < 12; i += 1) {
+    const spread = angle + randomBetween(-0.85, 0.85);
+    addParticle({
+      type: "slash",
+      x: state.player.x + Math.cos(spread) * randomBetween(12, 52),
+      y: state.player.y - randomBetween(16, 86) + Math.sin(spread) * randomBetween(8, 32),
+      vx: Math.cos(spread) * randomBetween(90, 230),
+      vy: Math.sin(spread) * randomBetween(90, 230) - randomBetween(20, 120),
+      life: randomBetween(0.14, 0.3),
+      size: randomBetween(16, 36),
+      color: Math.random() < 0.55 ? "rgba(196, 111, 255, 0.94)" : "rgba(244, 209, 255, 0.9)",
+      rotation: spread,
+      spin: randomBetween(-5, 5),
+    });
+  }
+}
+
+function getBerserkFollowerDamage(follower) {
+  return Math.round(
+    PRIME_MYSTIC_GRAVITY_WELL.followerDamage +
+      getMattLevel(follower) * 1.15 +
+      Math.floor((Number(follower.friendship) || 0) / 18),
+  );
+}
+
+function updateBerserkCapturedMatt(dogmatt, config, dt) {
+  dogmatt.mysticBerserkTimer = Math.max(0, (dogmatt.mysticBerserkTimer || 0) - dt);
+  dogmatt.mysticBerserkCooldown = Math.max(0, (dogmatt.mysticBerserkCooldown || 0) - dt);
+  if (!isPrimeMysticBerserk(dogmatt)) {
+    return false;
+  }
+
+  const dx = state.player.x - dogmatt.x;
+  const dy = state.player.y - dogmatt.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  const attackRange = PRIME_MYSTIC_GRAVITY_WELL.followerAttackRange + Math.min(60, getMattLevel(dogmatt) * 2);
+  dogmatt.caughtAnimationPaused = false;
+
+  if (distance > attackRange) {
+    const speed = Math.min((config.followSpeed + 300) * dt, distance - attackRange + 22);
+    dogmatt.x = clamp(dogmatt.x + (dx / distance) * speed, 0, getMapWidth());
+    dogmatt.y = clamp(dogmatt.y + (dy / distance) * speed, 0, getMapHeight());
+    dogmatt.direction = dx < 0 ? "left" : "right";
+    setAction(dogmatt, getFollowerMoveAction(dogmatt));
+    return true;
+  }
+
+  dogmatt.direction = dx < 0 ? "left" : "right";
+  if (dogmatt.mysticBerserkCooldown <= 0) {
+    dogmatt.mysticBerserkCooldown = PRIME_MYSTIC_GRAVITY_WELL.followerAttackCooldown;
+    spawnBerserkFollowerStrikeEffect(dogmatt);
+    const source = {
+      ...dogmatt,
+      name: `Enthralled ${getCapturedMattDisplayName(dogmatt)}`,
+    };
+    if (damagePlayer(getBerserkFollowerDamage(dogmatt), source) !== "defeated") {
+      knockPlayerAwayFrom(dogmatt, 54);
+      drainPlayerStamina(8);
+    }
+    setAction(dogmatt, getFollowerAttackAction(dogmatt));
+  } else {
+    setAction(dogmatt, getCapturedMattTravelAction(dogmatt));
+  }
+
+  return true;
+}
+
 function updateCaughtDogmatt(dogmatt, dt, caughtIndex) {
   const config = getMattConfig(dogmatt.type);
+  if (updateBerserkCapturedMatt(dogmatt, config, dt)) {
+    return;
+  }
+
   const combatTarget = getFollowerCombatTarget(dogmatt);
   if (combatTarget && updateCombatFollower(dogmatt, combatTarget, config, dt)) {
     return;
@@ -11158,7 +12690,7 @@ function advanceMattAnimation(matt, dt) {
     return;
   }
 
-  if (matt.type === "mysticmatt" && isMysticMattSpecialIdle(matt.action)) {
+  if (matt.type === "mysticmatt" && !matt.boss && isMysticMattSpecialIdle(matt.action)) {
     const frameDuration = matt.action === "mysticIdleFloat" ? 0.11 : 0.09;
     matt.frameTimer += dt;
 
@@ -11250,15 +12782,17 @@ function countCaughtMatts() {
   return state.capturedParty.length;
 }
 
-function updateCaughtHud(caughtCount) {
-  if (state.caughtDogmatts === caughtCount) {
+function updateCaughtHud(caughtCount, force = false) {
+  if (!force && state.caughtDogmatts === caughtCount) {
     return;
   }
 
   state.caughtDogmatts = caughtCount;
 
   if (caughtCounter) {
-    caughtCounter.textContent = `Matts caught: ${caughtCount} / ${MATT_PARTY_LIMIT}`;
+    caughtCounter.textContent = isIntroChainActive()
+      ? getIntroObjectiveText()
+      : `Matts caught: ${caughtCount} / ${MATT_PARTY_LIMIT}`;
   }
 
   monsterSlots.forEach((slot, index) => {
@@ -11553,6 +13087,7 @@ function update(dt) {
   updatePlayer(dt);
   updateAutomaticNodeTravel(dt);
   updateNpcs(dt);
+  updatePrimeMysticGravityWell(dt);
   updateDogmatts(dt);
   updateFriendshipWalking(dt);
   updateParticles(dt);
@@ -11564,7 +13099,11 @@ function hitDogmatt(dogmatt) {
   const captureHitThreshold = getCaptureHitThreshold(dogmatt);
   awakenBossMatt(dogmatt);
   dogmatt.hitCooldown = 0.25;
-  dogmatt.hitReactionTimer = 0.55;
+  dogmatt.hitReactionTimer = dogmatt.boss ? 0.32 : 0.55;
+  if (dogmatt.boss) {
+    dogmatt.attackCooldown = Math.min(dogmatt.attackCooldown || 0, 0.22);
+    dogmatt.bossMoveTimer = 0;
+  }
   dogmatt.pathPanicTimer = dogmatt.rooted ? 0 : Math.max(dogmatt.pathPanicTimer || 0, 2.2);
   dogmatt.pathRoamTarget = null;
   dogmatt.hitCount += 1;
@@ -11621,9 +13160,11 @@ function hitDogmatt(dogmatt) {
     dogmatt.friendship = Math.max(dogmatt.friendship || 0, 14 + (snackUsed ? 4 : 0) + (netUsed ? 2 : 0) + fluteBonus);
     setAction(dogmatt, "caught");
     recordCapturedMattType(dogmatt.type);
+    recordIntroCapture(dogmatt.type);
     state.capturedParty.push(serializeCapturedMatt(dogmatt));
     state.capturedParty = state.capturedParty.slice(0, MATT_PARTY_LIMIT);
     if (dogmatt.boss) {
+      clearPrimeMysticGravityWell();
       resumeAmbientMusicFromPrimeGrassMatt();
     }
     spawnCaptureEffect(dogmatt);
@@ -12203,22 +13744,52 @@ function drawParticles() {
   ctx.globalAlpha = 1;
 }
 
-function getNearbyNode() {
+function getNearbyNode(predicate = () => true) {
   return getWorld().nodes.find(
-    (node) => Math.hypot(node.x - state.player.x, node.y - state.player.y) <= node.radius + 44,
+    (node) => predicate(node) && Math.hypot(node.x - state.player.x, node.y - state.player.y) <= node.radius + 44,
   );
 }
 
-function getOverlappingNode() {
+function getOverlappingNode(predicate = () => true) {
   return getWorld().nodes.find(
-    (node) => Math.hypot(node.x - state.player.x, node.y - state.player.y) <= node.radius + 28,
+    (node) => predicate(node) && Math.hypot(node.x - state.player.x, node.y - state.player.y) <= node.radius + 28,
   );
 }
 
-function tryEnterNode(node = getNearbyNode()) {
+function getNearbyWaystone() {
+  return getNearbyNode(isWaystoneNode);
+}
+
+function activateWaystoneNode(node) {
+  if (!node || !isWaystoneNode(node)) {
+    return false;
+  }
+
+  if (node.locked) {
+    setGameMessage(`${getNodeLabel(node)} is quiet and locked for now.`);
+    state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.75);
+    return false;
+  }
+
+  state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.75);
+  spawnCaptureEffect({ x: node.x, y: node.y });
+  addScreenShake(3);
+  setGameMessage(`${getNodeLabel(node)} is ready for a question. No question has been added yet.`);
+  return true;
+}
+
+function tryInteractNearbyWaystone() {
+  return activateWaystoneNode(getNearbyWaystone());
+}
+
+function tryEnterNode(node = getNearbyNode((candidate) => !isWaystoneNode(candidate))) {
 
   if (!node) {
     return false;
+  }
+
+  if (isWaystoneNode(node)) {
+    return activateWaystoneNode(node);
   }
 
   if (node.locked) {
@@ -12227,7 +13798,19 @@ function tryEnterNode(node = getNearbyNode()) {
     return false;
   }
 
+  if (!canEnterWorldDuringIntro(node.target)) {
+    setGameMessage(getIntroWorldLockedMessage(node.target), 5200);
+    state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.9);
+    return false;
+  }
+
   if (state.currentWorld === "town_arena_entrance" && node.target === "town_arena") {
+    if (isIntroChainActive()) {
+      setGameMessage("Scott will open the arena when the tutorial reaches practice.");
+      state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.9);
+      return false;
+    }
+
     if (!hasItem("arena_ticket")) {
       setGameMessage("Scott sells arena tickets. Buy one before entering.");
       state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.9);
@@ -12267,7 +13850,7 @@ function updateAutomaticNodeTravel(dt) {
     return;
   }
 
-  const node = getOverlappingNode();
+  const node = getOverlappingNode((candidate) => !isWaystoneNode(candidate));
   if (
     state.nodeTravelExitNodeId &&
     state.currentWorld === state.nodeTravelExitWorld &&
@@ -12297,26 +13880,46 @@ function drawWorldNodes() {
   for (const node of getWorld().nodes) {
     const active = node === nearbyNode;
     const locked = Boolean(node.locked);
-    ctx.globalAlpha = active ? 0.88 : 0.38;
+    const waystone = isWaystoneNode(node);
+    ctx.globalAlpha = active ? 0.9 : waystone ? 0.5 : 0.38;
     ctx.fillStyle = locked
       ? active
         ? "rgba(170, 170, 170, 0.22)"
         : "rgba(120, 120, 120, 0.16)"
-      : active
-        ? "rgba(143, 243, 197, 0.25)"
-        : "rgba(150, 108, 255, 0.2)";
+      : waystone
+        ? active
+          ? "rgba(255, 220, 123, 0.3)"
+          : "rgba(255, 189, 92, 0.18)"
+        : active
+          ? "rgba(143, 243, 197, 0.25)"
+          : "rgba(150, 108, 255, 0.2)";
     ctx.strokeStyle = locked
       ? active
         ? "rgba(230, 230, 230, 0.82)"
         : "rgba(190, 190, 190, 0.55)"
-      : active
-        ? "rgba(143, 243, 197, 0.95)"
-        : "rgba(210, 188, 255, 0.72)";
+      : waystone
+        ? active
+          ? "rgba(255, 244, 181, 0.96)"
+          : "rgba(255, 206, 112, 0.78)"
+        : active
+          ? "rgba(143, 243, 197, 0.95)"
+          : "rgba(210, 188, 255, 0.72)";
     ctx.lineWidth = active ? 4 : 2;
     ctx.beginPath();
     ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
+
+    if (waystone) {
+      ctx.save();
+      ctx.translate(node.x, node.y);
+      ctx.rotate(Math.PI / 4);
+      ctx.strokeStyle = locked ? "rgba(230, 230, 230, 0.7)" : "rgba(255, 244, 181, 0.88)";
+      ctx.lineWidth = active ? 5 : 3;
+      const markSize = node.radius * 0.48;
+      ctx.strokeRect(-markSize / 2, -markSize / 2, markSize, markSize);
+      ctx.restore();
+    }
 
     if (active) {
       ctx.globalAlpha = 1;
@@ -12459,14 +14062,25 @@ function drawWorldEditorObjects() {
   }
 
   for (const node of world.nodes) {
-    ctx.fillStyle = "rgba(172, 123, 255, 0.28)";
-    ctx.strokeStyle = "rgba(230, 210, 255, 0.95)";
+    const waystone = isWaystoneNode(node);
+    ctx.fillStyle = waystone ? "rgba(255, 193, 87, 0.32)" : "rgba(172, 123, 255, 0.28)";
+    ctx.strokeStyle = waystone ? "rgba(255, 241, 176, 0.96)" : "rgba(230, 210, 255, 0.95)";
     ctx.lineWidth = 34;
     ctx.beginPath();
     ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#f6edff";
+    if (waystone) {
+      ctx.save();
+      ctx.translate(node.x, node.y);
+      ctx.rotate(Math.PI / 4);
+      ctx.strokeStyle = "rgba(91, 61, 24, 0.72)";
+      ctx.lineWidth = 22;
+      const markSize = node.radius * 0.62;
+      ctx.strokeRect(-markSize / 2, -markSize / 2, markSize, markSize);
+      ctx.restore();
+    }
+    ctx.fillStyle = waystone ? "#fff1b4" : "#f6edff";
     const labelSize = Math.max(46, Math.min(170, getMapWidth() * 0.014));
     ctx.font = `800 ${labelSize}px Inter, system-ui, sans-serif`;
     ctx.textAlign = "center";
@@ -12821,7 +14435,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "e" && !event.repeat) {
     event.preventDefault();
     if (!state.dev.enabled) {
-      tryOpenNearbyShop();
+      tryInteractNearbyWaystone() || tryOpenNearbyShop();
     }
     return;
   }
@@ -12945,6 +14559,8 @@ pauseMenuContent?.addEventListener("click", (event) => {
     useInventoryItem(id);
   } else if (action === "complete-mission") {
     completeMission(id);
+  } else if (action === "intro-advance") {
+    advanceIntroQuest(id);
   } else if (action === "bond-care") {
     careForMatt(id);
   } else if (action === "bond-treat") {
@@ -13014,6 +14630,8 @@ shopList?.addEventListener("click", (event) => {
     setShopTab(id);
   } else if (action === "complete-mission") {
     completeMission(id);
+  } else if (action === "intro-advance") {
+    advanceIntroQuest(id);
   } else if (action === "bond-care") {
     careForMatt(id);
   } else if (action === "bond-treat") {
@@ -13107,6 +14725,13 @@ async function startGameForProfile(profileId) {
   const showIntro = shouldShowNewGameIntro();
   state.capturedParty = loadCapturedParty();
   loadEconomy();
+  if (isIntroChainActive() && getActiveIntroQuest().id === "intro_wake_brick") {
+    state.capturedParty = [];
+    state.captureStats = normalizeCaptureStats();
+  }
+  if (isFreshSave && isIntroChainActive()) {
+    state.currentWorld = INTRO_START_WORLD_ID;
+  }
   state.caughtDogmatts = -1;
   state.clockMinutes = CLOCK.startHour * 60;
   state.lastNightState = isNightTime();
@@ -13114,10 +14739,15 @@ async function startGameForProfile(profileId) {
   state.npcs = [];
   state.particles = [];
   state.screenShake = 0;
+  state.primeMysticGravityWell = null;
   state.cameraFocus = null;
   resetArenaBattle(false);
 
-  const start = isFreshSave ? getNewGameStartPoint() : getMapCenter(state.currentWorld);
+  const start = isFreshSave && isIntroChainActive()
+    ? { ...INN_RECOVERY_POINT }
+    : isFreshSave
+      ? getNewGameStartPoint()
+      : getMapCenter(state.currentWorld);
   state.player.x = start.x;
   state.player.y = start.y;
   state.player.direction = "down";
@@ -13165,7 +14795,9 @@ async function startGameForProfile(profileId) {
       requestAnimationFrame(loop);
     }
 
-    if (showIntro) {
+    if (isFreshSave && isIntroChainActive()) {
+      window.setTimeout(() => openShop("brick"), 0);
+    } else if (showIntro) {
       showNewGameIntro();
     }
   } catch (error) {

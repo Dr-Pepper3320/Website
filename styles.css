@@ -269,63 +269,237 @@ canvas {
 
 .hud {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  inset: 16px 16px auto;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: minmax(300px, 420px) minmax(260px, 520px) minmax(240px, auto);
+  align-items: start;
+  gap: 12px;
   pointer-events: none;
 }
 
-.brand,
-.monster-slots,
-.controls {
+.hud-left,
+.hud-center {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.brand {
+  display: grid;
+  gap: 8px;
+  min-height: 70px;
+  padding: 12px;
+  border: 1px solid rgba(244, 237, 198, 0.22);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(17, 25, 23, 0.9), rgba(24, 28, 22, 0.76)),
+    rgba(7, 11, 10, 0.74);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(12px);
+}
+
+.brand-title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.brand-title span,
+.objective-card span,
+.vital-row span {
+  color: #b7c7b4;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.brand strong {
+  color: #fff8cc;
+  font-size: 22px;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hud-meta span,
+.player-card-head span {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  padding: 3px 8px;
+  border: 1px solid rgba(244, 237, 198, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.075);
+  color: #cbd6c4;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.player-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(244, 237, 198, 0.2);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(16, 20, 18, 0.86), rgba(8, 12, 11, 0.72)),
+    rgba(7, 11, 10, 0.74);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(12px);
+}
+
+.player-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.player-card-head strong {
+  color: #f5f7ef;
+  font-size: 15px;
+}
+
+.player-card-head span {
+  margin-left: auto;
+}
+
+.vitals {
+  display: grid;
+  gap: 8px;
+}
+
+.vital {
+  display: grid;
+  gap: 5px;
+}
+
+.vital-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vital-row strong {
+  color: #f5f7ef;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.vital-track {
+  position: relative;
+  height: 13px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.42);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.18)),
+    rgba(0, 0, 0, 0.38);
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.55);
+}
+
+.vital-track span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  min-width: 3px;
+  border-radius: inherit;
+  transition: width 180ms ease;
+}
+
+.vital.health .vital-track span {
+  background:
+    linear-gradient(90deg, #9c2c35, #ef5950 58%, #ffad6b),
+    #ef5950;
+  box-shadow: 0 0 14px rgba(255, 93, 77, 0.42);
+}
+
+.vital.stamina .vital-track span {
+  background:
+    linear-gradient(90deg, #237c62, #49d39a 62%, #d5ef87),
+    #49d39a;
+  box-shadow: 0 0 14px rgba(73, 211, 154, 0.34);
+}
+
+.vital.xp .vital-track {
+  height: 9px;
+}
+
+.vital.xp .vital-track span {
+  background:
+    linear-gradient(90deg, #7b64d7, #6eb7ff 62%, #fff0a8),
+    #6eb7ff;
+}
+
+.objective-card {
+  display: grid;
+  gap: 6px;
+  min-height: 70px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 238, 143, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(60, 49, 25, 0.86), rgba(10, 15, 13, 0.74)),
+    rgba(9, 13, 12, 0.76);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(12px);
+}
+
+.objective-card strong {
+  color: #fff8cc;
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.monster-slots {
   min-height: 48px;
   display: flex;
   align-items: center;
-  background: rgba(10, 15, 13, 0.72);
+  justify-content: center;
+  gap: 7px;
+  width: max-content;
+  max-width: 100%;
+  justify-self: center;
+  padding: 8px 10px;
   border: 1px solid rgba(235, 240, 219, 0.18);
   border-radius: 8px;
+  background: rgba(10, 15, 13, 0.7);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(10px);
 }
 
-.brand {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  min-width: 204px;
-  padding: 8px 12px;
-}
-
-.brand strong {
-  font-size: 15px;
-  line-height: 1.1;
-}
-
-.brand span,
-.controls span {
-  color: #cbd6c4;
-  font-size: 12px;
-  line-height: 1.2;
-}
-
-.monster-slots {
-  justify-content: center;
-  gap: 8px;
-  padding: 8px;
-}
-
 .slot {
-  width: 30px;
-  height: 30px;
+  position: relative;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 2px solid rgba(239, 231, 177, 0.62);
   background:
     linear-gradient(145deg, rgba(250, 247, 215, 0.18), rgba(127, 84, 54, 0.1)),
     rgba(5, 8, 7, 0.64);
+}
+
+.slot::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: rgba(244, 237, 198, 0.18);
 }
 
 .slot.caught {
@@ -337,28 +511,44 @@ canvas {
 }
 
 .controls {
-  gap: 10px;
-  padding: 8px 12px;
+  justify-self: end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(84px, auto));
+  gap: 7px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(235, 240, 219, 0.16);
+  border-radius: 8px;
+  background: rgba(10, 15, 13, 0.62);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(10px);
   pointer-events: auto;
 }
 
 .controls span {
-  display: inline-grid;
-  min-width: 56px;
-  min-height: 28px;
-  place-items: center;
-  padding: 0 8px;
+  display: grid;
+  gap: 1px;
+  min-height: 34px;
+  padding: 5px 8px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.08);
-  color: #f3f2de;
-  font-weight: 700;
+  color: #cbd6c4;
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.controls span b {
+  color: #fff8cc;
+  font-size: 11px;
 }
 
 #inventory-button,
 #profile-menu {
-  min-width: 68px;
-  min-height: 28px;
-  padding: 0 8px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 10px;
+  border-color: rgba(121, 241, 185, 0.38);
+  background: rgba(65, 151, 111, 0.24);
 }
 
 .shop-overlay {
@@ -1760,20 +1950,76 @@ canvas {
   }
 
   .hud {
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    align-items: flex-start;
+    inset: 10px 10px auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .hud-left {
+    grid-template-columns: minmax(120px, 0.75fr) minmax(160px, 1fr);
+    align-items: stretch;
+  }
+
+  .brand,
+  .player-card,
+  .objective-card {
+    padding: 9px;
   }
 
   .brand {
-    min-width: 142px;
+    min-height: 0;
+  }
+
+  .brand strong {
+    font-size: 16px;
+  }
+
+  .hud-meta {
+    gap: 4px;
+  }
+
+  .hud-meta span,
+  .player-card-head span {
+    min-height: 20px;
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+
+  .player-card-head {
+    display: grid;
+    gap: 4px;
+  }
+
+  .player-card-head span {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .vitals {
+    gap: 6px;
+  }
+
+  .vital.xp {
+    display: none;
+  }
+
+  .objective-card {
+    min-height: 0;
+  }
+
+  .objective-card strong {
+    font-size: 12px;
   }
 
   .monster-slots {
-    position: absolute;
-    top: 56px;
-    left: 0;
+    justify-self: start;
+    min-height: 40px;
+    padding: 6px 8px;
+  }
+
+  .slot {
+    width: 26px;
+    height: 26px;
   }
 
   .controls {
@@ -1904,16 +2150,31 @@ canvas {
 
 @media (max-height: 520px) and (orientation: landscape) {
   .hud {
-    top: 8px;
+    inset: 8px 8px auto;
+    grid-template-columns: minmax(300px, 420px) minmax(240px, 1fr);
+    gap: 8px;
+  }
+
+  .controls {
+    display: none;
   }
 
   .brand,
-  .monster-slots {
-    min-height: 42px;
+  .player-card,
+  .objective-card {
+    padding: 8px;
   }
 
-  .brand {
-    min-width: 174px;
+  .brand strong {
+    font-size: 16px;
+  }
+
+  .vital.xp {
+    display: none;
+  }
+
+  .monster-slots {
+    min-height: 40px;
   }
 
   .touch-stick {
