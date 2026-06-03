@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Matt Game</title>
-    <link rel="stylesheet" href="styles.css?v=player-ui-bars" />
+    <link rel="stylesheet" href="styles.css?v=follower-commands-brock-dev" />
   </head>
   <body>
     <main class="game-shell">
@@ -206,6 +206,8 @@
           <button type="button" data-tool="path">Path</button>
           <button type="button" data-tool="npc">NPC</button>
           <button type="button" data-tool="npcpath">NPC Path</button>
+          <button type="button" data-tool="brock-captured">Captured Brock</button>
+          <button type="button" data-tool="brock-path">Free Brock Path</button>
           <button type="button" data-tool="node">Node</button>
           <button type="button" data-tool="waystone">Waystone</button>
           <button type="button" data-tool="erase">Erase</button>
@@ -242,6 +244,16 @@
         <p id="dev-status">F1 toggles Dev Mode. Walk onto a node to enter it.</p>
       </section>
 
+      <section class="follower-command-bar" id="follower-command-bar" aria-label="Follower commands" hidden>
+        <span id="follower-command-status">No active follower</span>
+        <div class="follower-command-actions">
+          <button type="button" data-follower-command="follow" title="Call follower back (Q)">Call</button>
+          <button type="button" data-follower-command="stay" title="Hold position (R)">Stay</button>
+          <button type="button" data-follower-command="guard" title="Guard Ivan (F)">Guard</button>
+          <button type="button" data-follower-command="attack" title="Choose a target (T)">Attack</button>
+        </div>
+      </section>
+
       <section class="touch-controls" aria-label="Touch controls">
         <div class="touch-stick" id="touch-joystick" aria-label="Move Ivan">
           <span id="touch-knob"></span>
@@ -258,8 +270,8 @@
       <div class="game-toast" id="game-toast" hidden></div>
     </main>
 
-    <script src="assets/worlds/default-worlds.js?v=treeworld-pathing-bundle"></script>
+    <script src="assets/worlds/default-worlds.js?v=brock-dev-pathing"></script>
     <script src="assets/music/music-tracks.js?v=arena-friendship-overhaul"></script>
-    <script src="game.js?v=waystone-dev-nodes"></script>
+    <script src="game.js?v=ty-bonding-mission-set"></script>
   </body>
 </html>

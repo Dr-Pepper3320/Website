@@ -52,6 +52,9 @@ const touchKnob = document.querySelector("#touch-knob");
 const touchInventory = document.querySelector("#touch-inventory");
 const touchWhip = document.querySelector("#touch-whip");
 const touchSprint = document.querySelector("#touch-sprint");
+const followerCommandBar = document.querySelector("#follower-command-bar");
+const followerCommandStatus = document.querySelector("#follower-command-status");
+const followerCommandButtons = [...document.querySelectorAll("[data-follower-command]")];
 const devPanel = document.querySelector("#dev-panel");
 const devClose = document.querySelector("#dev-close");
 const devWorld = document.querySelector("#dev-world");
@@ -225,7 +228,8 @@ const WORLD_MAPS = {
     width: 7600,
     height: 6000,
     type: "image",
-    image: "assets/maps/grass/grasscave.jfif",
+    image: "assets/maps/grass/evilcave.jpg",
+    rescuedImage: "assets/maps/grass/grasscave.jfif",
     fill: "#172515",
   },
   home: {
@@ -408,6 +412,20 @@ const FOLLOWER_ASSIST = {
   bondFriendship: 1,
   bondXp: 7,
 };
+
+const FOLLOWER_COMMAND_LABELS = {
+  follow: "Following",
+  stay: "Staying",
+  guard: "Guarding",
+  attack: "Attack target",
+};
+const FOLLOWER_COMMAND_KEYS = {
+  q: "follow",
+  r: "stay",
+  f: "guard",
+  t: "attack",
+};
+const FOLLOWER_COMMAND_TARGET_RADIUS = 96;
 
 const PRIME_MYSTIC_GRAVITY_WELL = {
   duration: 4.3,
@@ -963,6 +981,13 @@ const NPC_DEFS = {
     x: 2860,
     y: 2120,
   },
+  brock: {
+    id: "brock",
+    name: "Brock",
+    homeWorld: "town_inn",
+    x: 2409,
+    y: 2466,
+  },
   logan: {
     id: "logan",
     name: "Logan",
@@ -973,6 +998,36 @@ const NPC_DEFS = {
 };
 
 const NPC_IDS = Object.keys(NPC_DEFS);
+const BROCK_CAPTURED_WORLD_ID = "grass_cave";
+const BROCK_FREE_PATH_WORLD_ID = "town_inn";
+const BROCK_FREE_PATH_WORLD_IDS = new Set([BROCK_FREE_PATH_WORLD_ID, BROCK_CAPTURED_WORLD_ID]);
+const BROCK_FREE_PATH_ID = "brock-free-path";
+const BROCK_MISSION_STATUS = {
+  LOCKED: "",
+  TALK_TO_BRICK: "talk_to_brick",
+  SEARCH_GRASSLAND: "search_grassland",
+  RESCUED: "rescued",
+};
+const BROCK_MISSION_STATUSES = new Set(Object.values(BROCK_MISSION_STATUS));
+const BROCK_MISSION_TITLE = "Brock Is Missing";
+const BROCK_MISSION_BRICK_DIALOGUE =
+  "Brick: Ivan, I need you. My brother Brock is missing. Last time I saw him, he was in the Grassland. That is all I know. Please go there and start looking.";
+const BROCK_MISSION_REACH_OUT =
+  "Brick reaches out: Ivan, come back to the inn. My brother Brock is missing, and I need your help.";
+const BROCK_MISSION_SEARCH_OBJECTIVE = "Objective: Go to the Grassland and start looking for Brock.";
+const BROCK_CAVE_LANTERN = {
+  innerRadius: 130,
+  outerRadius: 290,
+  darkness: 0.96,
+};
+const BROCK_RESCUE_RADIUS = 170;
+const BROCK_DEFAULT_FREE_PATH = [
+  { x: 2409.178386380459, y: 2466.3212435233163 },
+  { x: 2860, y: 2120 },
+  { x: 3288.5270170244257, y: 2350.8512213175427 },
+  { x: 3090.155440414507, y: 2555.144337527757 },
+  { x: 2409.178386380459, y: 2466.3212435233163 },
+];
 
 const MATT_LABELS = {
   dogmatt: "Mattdogs",
@@ -1624,9 +1679,52 @@ const INTRO_QUESTS = {
     id: "ty_bonding_tutorial",
     npcId: "ty",
     title: "Ty's Bonding Lesson",
-    objective: "Talk to Ty about bonding.",
+    objective: "Talk to Ty about why bonding matters.",
     dialogue:
-      "Ty: A captured Matt is not finished work. Feed it, walk with it, care for it, and let it learn your voice. Bonded Matts hold steadier in arena battles and follow better in the field. Scott can show you the battle side.",
+      "Ty: A captured Matt is not finished work. Bonding is how it learns your voice instead of just your commands. A better bond means steadier arena turns, stronger follower help, and new skills that only open when a Matt trusts you.",
+    actionLabel: "Take Ty's starter kit",
+    rewardItems: [
+      { id: "matt_treat", count: 2 },
+      { id: "camp_brush", count: 1 },
+    ],
+    rewardMatts: [
+      { type: "dogmatt", name: "Ty's Pup", friendship: 12 },
+    ],
+    next: "ty_bonding_tame_follower",
+  },
+  ty_bonding_tame_follower: {
+    id: "ty_bonding_tame_follower",
+    npcId: "ty",
+    title: "Ty's Taming Lesson",
+    objective: "Use Ty's Followers tab to tame one Matt into an active follower.",
+    briefing:
+      "Ty: First lesson is taming. Open Followers, pick a captured Matt, and let me teach it a name. A tamed Matt can follow you, rest, or be renamed.",
+    readyText:
+      "Ty: Good. Once a Matt knows its name, it stops being cargo and starts being a partner. Now we care for that bond directly.",
+    readyWhen: "has_tamed_follower",
+    actionLabel: "Learn care",
+    next: "ty_bonding_care",
+  },
+  ty_bonding_care: {
+    id: "ty_bonding_care",
+    npcId: "ty",
+    title: "Ty's Care Lesson",
+    objective: "Use the Bond tab to care for, treat, brush, mint, or spar with a Matt once.",
+    briefing:
+      "Ty: Open Bond. Care is free once per Matt each day. Treats, brushes, mints, sparring, walking together, and field assists all raise friendship. Higher friendship improves arena stats and unlocks bond skills.",
+    readyText:
+      "Ty: See the bond move? Small care, repeated often, changes how a Matt fights and follows. Do not save it only for emergencies.",
+    readyWhen: "bond_care_used",
+    actionLabel: "Learn follower commands",
+    next: "ty_bonding_field_commands",
+  },
+  ty_bonding_field_commands: {
+    id: "ty_bonding_field_commands",
+    npcId: "ty",
+    title: "Ty's Field Bonding Lesson",
+    objective: "Talk to Ty about follower commands and field bonding.",
+    dialogue:
+      "Ty: In the field, a follower can return, stay, guard you, or attack a target you choose. Walking with it builds trust over time, and helping in fights gives friendship and XP. Scott handles the arena side, where that bond becomes health, power, energy, and ability unlocks.",
     actionLabel: "Go to Scott",
     next: "intro_go_to_scott",
   },
@@ -1723,6 +1821,9 @@ const INTRO_QUEST_SEQUENCE = [
   "ty_capture_rock",
   "ty_capture_mystic",
   "ty_bonding_tutorial",
+  "ty_bonding_tame_follower",
+  "ty_bonding_care",
+  "ty_bonding_field_commands",
   "intro_go_to_scott",
   "scott_practice_battle",
   "intro_go_to_logan",
@@ -2771,6 +2872,11 @@ const ASSETS = {
       idleSpecial: numberedFrames("assets/maps/town/characters/brickinn/idle/drink", 11),
       walking: numberedFrames("assets/maps/town/characters/brickinn/walk", 5),
     },
+    brock: {
+      idle: ["assets/addedcharacters/brock/free.png"],
+      walking: numberedFrames("assets/addedcharacters/brock/walking", 6),
+      captured: numberedFrames("assets/addedcharacters/brock/captured", 12),
+    },
     logan: {
       idle: ["assets/maps/town/characters/loganstore/idle/main.png"],
       idleSpecial: numberedFrames("assets/maps/town/characters/loganstore/idle", 12),
@@ -2824,12 +2930,19 @@ const state = {
   inventory: {},
   missions: {},
   intro: null,
+  storyFlags: {},
   captureStats: { byType: {} },
   playerProgress: { level: 1, xp: 0, skillPoints: 0, skills: {} },
   arenaStats: { wins: 0, losses: 0, streak: 0, bestStreak: 0, rankPoints: 0 },
   friendshipCare: {},
   friendshipWalkTimer: 0,
   primeMysticGravityWell: null,
+  followerCommand: {
+    mode: "follow",
+    targeting: false,
+    targetId: "",
+    stayPoint: null,
+  },
   activeShopId: "",
   shopTab: "buy",
   pauseMenuTab: "character",
@@ -2903,6 +3016,8 @@ const state = {
     panelReady: false,
   },
 };
+
+let followerCommandUiKey = "";
 
 const images = {
   worldMaps: {},
@@ -3051,8 +3166,24 @@ async function loadAnimationSet(assetSet, width, height) {
   return Object.fromEntries(entries);
 }
 
+function getWorldImageEntries() {
+  const entries = [];
+
+  Object.entries(WORLD_MAPS).forEach(([id, map]) => {
+    if (map.type === "image" || map.overview) {
+      entries.push([id, map.overview || map.image]);
+    }
+
+    if (map.rescuedImage) {
+      entries.push([`${id}:rescued`, map.rescuedImage]);
+    }
+  });
+
+  return entries;
+}
+
 async function loadAssets() {
-  const worldImageEntries = Object.entries(WORLD_MAPS).filter(([, map]) => map.type === "image" || map.overview);
+  const worldImageEntries = getWorldImageEntries();
   const [
     worldImages,
     ivanFrames,
@@ -3071,7 +3202,7 @@ async function loadAssets() {
     npcFrames,
   ] = await Promise.all([
     Promise.all(
-      worldImageEntries.map(async ([id, map]) => [id, await loadImage(map.overview || map.image)]),
+      worldImageEntries.map(async ([id, src]) => [id, await loadImage(src)]),
     ),
     loadAnimationSet(ASSETS.ivan, PLAYER.width, PLAYER.height),
     loadAnimationSet(ASSETS.dogmatt, DOGMATT.width, DOGMATT.height),
@@ -3145,6 +3276,18 @@ function clamp(value, min, max) {
 
 function getWorldMapConfig(worldId = state.currentWorld) {
   return WORLD_MAPS[worldId] || WORLD_MAPS[DEFAULT_WORLD_ID];
+}
+
+function getWorldMapImageKey(worldId = state.currentWorld) {
+  if (worldId === BROCK_CAPTURED_WORLD_ID && isBrockRescued()) {
+    return `${worldId}:rescued`;
+  }
+
+  return worldId;
+}
+
+function getWorldMapImage(worldId = state.currentWorld) {
+  return images.worldMaps[getWorldMapImageKey(worldId)] || images.worldMaps[worldId] || null;
 }
 
 function getMapWidth(worldId = state.currentWorld) {
@@ -3926,6 +4069,7 @@ function createEmptyWorld(id) {
     spawnAreas: [],
     paths: [],
     npcPaths: [],
+    brock: { capturedPosition: null, freePath: [] },
     npcs: [],
     nodes: [],
   };
@@ -3987,6 +4131,48 @@ function normalizePath(path, prefix = "path") {
           .map((point) => ({ x: point.x, y: point.y }))
       : [],
   };
+}
+
+function normalizeBrockPoint(point, worldId) {
+  if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) {
+    return null;
+  }
+
+  return {
+    x: clamp(point.x, 0, getMapWidth(worldId)),
+    y: clamp(point.y, 0, getMapHeight(worldId)),
+  };
+}
+
+function normalizeBrockData(data, worldId) {
+  return {
+    capturedPosition: normalizeBrockPoint(data?.capturedPosition, worldId),
+    freePath: Array.isArray(data?.freePath)
+      ? data.freePath.map((point) => normalizeBrockPoint(point, worldId)).filter(Boolean)
+      : [],
+  };
+}
+
+function canPlaceCapturedBrock(worldId = state.currentWorld) {
+  return worldId === BROCK_CAPTURED_WORLD_ID;
+}
+
+function canEditBrockFreePath(worldId = state.currentWorld) {
+  return BROCK_FREE_PATH_WORLD_IDS.has(worldId);
+}
+
+function seedDefaultBrockData(world) {
+  if (!world || world.id !== BROCK_FREE_PATH_WORLD_ID) {
+    return;
+  }
+
+  world.brock = normalizeBrockData(
+    {
+      capturedPosition: world.brock?.capturedPosition || null,
+      freePath: world.brock?.freePath?.length ? world.brock.freePath : BROCK_DEFAULT_FREE_PATH,
+    },
+    BROCK_FREE_PATH_WORLD_ID,
+  );
 }
 
 function normalizeNodeName(name) {
@@ -4062,6 +4248,7 @@ function createDefaultWorlds() {
   }
 
   addDefaultTownStructure(worlds);
+  seedDefaultBrockData(worlds.town_inn);
   removeDuplicateDefaultNodes(worlds);
   applyCoreWorldFixups(worlds);
   return worlds;
@@ -4115,6 +4302,9 @@ function applyCoreWorldFixups(worlds) {
   upsertNodeByTarget(worlds.town_itemshop, "node-itemshop-to-town", 3800, 5480, "town", 120);
   if (worlds.town_itemshop) {
     ensureNpc(worlds.town_itemshop, "logan", 3800, 3180);
+  }
+  if (worlds.town_inn) {
+    ensureNpc(worlds.town_inn, "brock", 2409, 2466);
   }
   upsertNodeByTarget(
     worlds.purplewaterworld,
@@ -4353,6 +4543,7 @@ function normalizeWorldData(data) {
         : sourceWorlds && sourceWorlds[id]
           ? sourceWorlds[id]
           : {};
+    const hasBrockData = Boolean(world && Object.prototype.hasOwnProperty.call(world, "brock"));
     worlds[id] = {
       id,
       walls: Array.isArray(world.walls) ? world.walls.map(normalizeWall) : [],
@@ -4361,11 +4552,16 @@ function normalizeWorldData(data) {
       npcPaths: Array.isArray(world.npcPaths)
         ? world.npcPaths.map((path) => normalizePath(path, "npcpath"))
         : [],
+      brock: normalizeBrockData(world.brock, id),
       npcs: Array.isArray(world.npcs)
         ? world.npcs.map((npc) => normalizeNpc(npc, id)).filter(Boolean)
         : [],
       nodes: Array.isArray(world.nodes) ? world.nodes.map((node) => normalizeNode(node, id)) : [],
     };
+
+    if (id === BROCK_FREE_PATH_WORLD_ID && !hasBrockData) {
+      seedDefaultBrockData(worlds[id]);
+    }
   }
 
   if (legacyTownAsMainWorld) {
@@ -4480,6 +4676,7 @@ function createDefaultIntroState(introComplete = false) {
     introComplete: Boolean(introComplete),
     captureProgress: {},
     rewards: {},
+    lessonFlags: {},
   };
 }
 
@@ -4514,13 +4711,154 @@ function normalizeIntroState(intro, hasSavedEconomy = false) {
     });
   }
 
+  const lessonFlags = {};
+  if (intro.lessonFlags && typeof intro.lessonFlags === "object") {
+    ["bondCareUsed"].forEach((flagId) => {
+      if (intro.lessonFlags[flagId]) {
+        lessonFlags[flagId] = true;
+      }
+    });
+  }
+
   const introComplete = Boolean(intro.introComplete || activeQuestId === "intro_complete");
   return {
     activeQuestId: introComplete ? "intro_complete" : activeQuestId,
     introComplete,
     captureProgress,
     rewards,
+    lessonFlags,
   };
+}
+
+function normalizeStoryFlags(flags) {
+  const status = BROCK_MISSION_STATUSES.has(flags?.brockMissionStatus)
+    ? flags.brockMissionStatus
+    : BROCK_MISSION_STATUS.LOCKED;
+  return {
+    brockRescued: Boolean(flags?.brockRescued),
+    brockMissionStatus: Boolean(flags?.brockRescued) ? BROCK_MISSION_STATUS.RESCUED : status,
+  };
+}
+
+function isBrockRescued() {
+  return Boolean(state.storyFlags?.brockRescued);
+}
+
+function setBrockMissionStatus(status) {
+  const nextStatus = BROCK_MISSION_STATUSES.has(status) ? status : BROCK_MISSION_STATUS.LOCKED;
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    brockMissionStatus: nextStatus,
+  });
+  saveEconomy();
+  updateCaughtHud(countCaughtMatts(), true);
+}
+
+function setBrockRescued(rescued = true) {
+  const previousStatus = state.storyFlags?.brockMissionStatus;
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    brockRescued: Boolean(rescued),
+    brockMissionStatus: rescued
+      ? BROCK_MISSION_STATUS.RESCUED
+      : previousStatus === BROCK_MISSION_STATUS.RESCUED
+        ? BROCK_MISSION_STATUS.SEARCH_GRASSLAND
+        : previousStatus,
+  });
+  saveEconomy();
+  updateCaughtHud(countCaughtMatts(), true);
+}
+
+function canStartBrockMission() {
+  return isIntroComplete() && !isBrockRescued();
+}
+
+function getBrockMissionStatus() {
+  if (!canStartBrockMission()) {
+    return isBrockRescued() ? BROCK_MISSION_STATUS.RESCUED : BROCK_MISSION_STATUS.LOCKED;
+  }
+
+  if (state.storyFlags?.brockMissionStatus === BROCK_MISSION_STATUS.RESCUED) {
+    return BROCK_MISSION_STATUS.SEARCH_GRASSLAND;
+  }
+
+  return state.storyFlags?.brockMissionStatus || BROCK_MISSION_STATUS.TALK_TO_BRICK;
+}
+
+function isBrockMissionActive() {
+  const status = getBrockMissionStatus();
+  return status === BROCK_MISSION_STATUS.TALK_TO_BRICK || status === BROCK_MISSION_STATUS.SEARCH_GRASSLAND;
+}
+
+function getBrockMissionObjectiveText() {
+  const status = getBrockMissionStatus();
+  if (status === BROCK_MISSION_STATUS.TALK_TO_BRICK) {
+    return "Objective: Talk to Brick at the inn about Brock.";
+  }
+
+  if (status === BROCK_MISSION_STATUS.SEARCH_GRASSLAND) {
+    return BROCK_MISSION_SEARCH_OBJECTIVE;
+  }
+
+  return "";
+}
+
+function ensureBrockMissionStarted() {
+  if (!canStartBrockMission()) {
+    return false;
+  }
+
+  if (!state.storyFlags?.brockMissionStatus) {
+    state.storyFlags = normalizeStoryFlags({
+      ...state.storyFlags,
+      brockMissionStatus: BROCK_MISSION_STATUS.TALK_TO_BRICK,
+    });
+    updateCaughtHud(countCaughtMatts(), true);
+    return true;
+  }
+
+  return false;
+}
+
+function startBrockMissionSearch() {
+  if (!canStartBrockMission()) {
+    renderActiveOverlay("Brock's trail is not ready yet.");
+    return;
+  }
+
+  if (getBrockMissionStatus() === BROCK_MISSION_STATUS.TALK_TO_BRICK) {
+    setBrockMissionStatus(BROCK_MISSION_STATUS.SEARCH_GRASSLAND);
+  }
+
+  renderActiveOverlay(`${BROCK_MISSION_BRICK_DIALOGUE} ${BROCK_MISSION_SEARCH_OBJECTIVE}`);
+  setGameMessage(BROCK_MISSION_SEARCH_OBJECTIVE, 7200);
+}
+
+function getNearbyCapturedBrock() {
+  if (getBrockMissionStatus() !== BROCK_MISSION_STATUS.SEARCH_GRASSLAND) {
+    return null;
+  }
+
+  const brock = getCapturedBrockPosition();
+  if (!brock) {
+    return null;
+  }
+
+  return Math.hypot(brock.x - state.player.x, brock.y - state.player.y) <= BROCK_RESCUE_RADIUS ? brock : null;
+}
+
+function tryRescueNearbyBrock() {
+  const brock = getNearbyCapturedBrock();
+  if (!brock) {
+    return false;
+  }
+
+  setBrockRescued(true);
+  spawnCaptureEffect({ x: brock.x, y: brock.y });
+  addScreenShake(4);
+  setGameMessage("Brock: Ivan? You found me. Get me out of here.", 7800);
+  draw();
+  return true;
 }
 
 function getIntroState() {
@@ -4598,6 +4936,10 @@ function getIntroHeldRequirementCount(requirement) {
 }
 
 function isIntroQuestReady(quest = getActiveIntroQuest()) {
+  if (quest?.readyWhen && !isIntroLessonRequirementMet(quest.readyWhen)) {
+    return false;
+  }
+
   if (!quest || !Array.isArray(quest.requirements) || quest.requirements.length === 0) {
     return true;
   }
@@ -4615,6 +4957,10 @@ function canTurnInIntroMatt(quest = getActiveIntroQuest()) {
 }
 
 function canUseIntroQuestAction(quest = getActiveIntroQuest()) {
+  if (quest?.readyWhen) {
+    return isIntroLessonRequirementMet(quest.readyWhen);
+  }
+
   if (!quest?.requirements?.length) {
     return true;
   }
@@ -4622,12 +4968,43 @@ function canUseIntroQuestAction(quest = getActiveIntroQuest()) {
   return isIntroQuestReady(quest) || canTurnInIntroMatt(quest);
 }
 
+function isIntroLessonRequirementMet(requirementId) {
+  if (requirementId === "has_tamed_follower") {
+    return state.capturedParty.some((matt) => matt.tamed && matt.follower);
+  }
+
+  if (requirementId === "bond_care_used") {
+    return Boolean(getIntroState().lessonFlags?.bondCareUsed);
+  }
+
+  return true;
+}
+
+function markIntroLessonFlag(flagId) {
+  const intro = getIntroState();
+  intro.lessonFlags = intro.lessonFlags || {};
+
+  if (flagId === "bond_care_used") {
+    intro.lessonFlags.bondCareUsed = true;
+    saveIntroProgress();
+  }
+}
+
 function getIntroObjectiveText() {
   if (isIntroComplete()) {
-    return "Objective: Explore Matt Game.";
+    return getBrockMissionObjectiveText() || "Objective: Explore Matt Game.";
   }
 
   const quest = getActiveIntroQuest();
+  if (quest.readyWhen && !isIntroQuestReady(quest)) {
+    return `Objective: ${quest.objective || "Complete Ty's bonding lesson."}`;
+  }
+
+  if (quest.readyWhen && isIntroQuestReady(quest)) {
+    const npcName = NPC_DEFS[quest.npcId]?.name || "the right person";
+    return `Objective: Return to ${npcName} for the next bonding step.`;
+  }
+
   if (quest.requirements?.length && isIntroQuestReady(quest)) {
     const npcName = NPC_DEFS[quest.npcId]?.name || "the right person";
     return `Objective: Return to ${npcName} for your reward.`;
@@ -4671,10 +5048,49 @@ function getIntroQuestRewardText(quest) {
       rewards.push(`${item.name}${reward.count > 1 ? ` x${reward.count}` : ""}`);
     }
   });
+  (quest.rewardMatts || []).forEach((reward) => {
+    if (MATT_CONFIGS[reward.type]) {
+      rewards.push(reward.name || MATT_LABELS[reward.type] || "Starter Matt");
+    }
+  });
   if (quest.randomRewardItems?.length) {
     rewards.push(`${quest.randomRewardCount || 1} random supplies`);
   }
   return rewards.join(", ") || "Tutorial progress";
+}
+
+function addRewardMattToParty(reward) {
+  if (!reward || !MATT_CONFIGS[reward.type] || state.capturedParty.length >= MATT_PARTY_LIMIT) {
+    return null;
+  }
+
+  const originalId = reward.id || `${reward.type}-ty-lesson-${Date.now()}`;
+  const member = normalizeCapturedPartyMember(
+    {
+      id: originalId,
+      originalId,
+      sourceWorld: "town_mattstore",
+      type: reward.type,
+      name: reward.name,
+      x: state.player.x,
+      y: state.player.y,
+      direction: state.player.direction === "left" ? "left" : "right",
+      friendship: reward.friendship || 0,
+      tamed: Boolean(reward.tamed),
+      follower: Boolean(reward.follower),
+    },
+    state.capturedParty.length,
+  );
+
+  if (!member) {
+    return null;
+  }
+
+  state.capturedParty.push(member);
+  state.dogmatts.push(hydrateCapturedMatt(member, state.capturedParty.length - 1));
+  saveCapturedParty();
+  updateCaughtHud(countCaughtMatts(), true);
+  return member;
 }
 
 function grantIntroRewards(quest) {
@@ -4692,6 +5108,12 @@ function grantIntroRewards(quest) {
     addItem(reward.id, reward.count || 1);
     const item = ITEM_DEFS[reward.id];
     granted.push(`${item?.name || reward.id}${(reward.count || 1) > 1 ? ` x${reward.count || 1}` : ""}`);
+  });
+  (quest.rewardMatts || []).forEach((reward) => {
+    const member = addRewardMattToParty(reward);
+    if (member) {
+      granted.push(getCapturedMattDisplayName(member));
+    }
   });
   if (quest.randomRewardItems?.length) {
     const pool = [...quest.randomRewardItems];
@@ -4777,6 +5199,11 @@ function advanceIntroQuest(questId = getActiveIntroQuest().id) {
     }
   }
 
+  if (quest.readyWhen && !isIntroQuestReady(quest)) {
+    renderActiveOverlay(getIntroObjectiveText());
+    return;
+  }
+
   if (quest.practiceBattle) {
     startIntroPracticeBattle();
     return;
@@ -4785,13 +5212,15 @@ function advanceIntroQuest(questId = getActiveIntroQuest().id) {
   const granted = grantIntroRewards(quest);
   const nextQuestId = quest.next || "intro_complete";
   setIntroQuest(nextQuestId);
+  const startedBrockMission = nextQuestId === "intro_complete" && ensureBrockMissionStarted();
   if (nextQuestId === "intro_complete") {
     getIntroState().introComplete = true;
     saveIntroProgress();
   }
   const detail = granted.length ? ` Reward: ${granted.join(", ")}.` : "";
   const handoff = turnedIn ? `${NPC_DEFS[quest.npcId]?.name || "Quest"} accepted ${getCapturedMattDisplayName(turnedIn)}. ` : "";
-  renderActiveOverlay(`${handoff}${quest.readyText || quest.dialogue || "Done."}${detail}`);
+  const brockHandoff = startedBrockMission ? ` ${BROCK_MISSION_REACH_OUT} ${getBrockMissionObjectiveText()}` : "";
+  renderActiveOverlay(`${handoff}${quest.readyText || quest.dialogue || "Done."}${detail}${brockHandoff}`);
 }
 
 function recordIntroCapture(type) {
@@ -4887,6 +5316,8 @@ function loadEconomy() {
       state.inventory = normalizeInventory(data.inventory);
       state.missions = normalizeMissions(data.missions);
       state.intro = normalizeIntroState(data.intro, true);
+      state.storyFlags = normalizeStoryFlags(data.storyFlags);
+      ensureBrockMissionStarted();
       state.captureStats = normalizeCaptureStats(data.captureStats);
       state.playerProgress = normalizePlayerProgress(data.playerProgress);
       state.arenaStats = normalizeArenaStats(data.arenaStats);
@@ -4901,6 +5332,8 @@ function loadEconomy() {
   state.inventory = {};
   state.missions = {};
   state.intro = createDefaultIntroState(false);
+  state.storyFlags = normalizeStoryFlags();
+  ensureBrockMissionStarted();
   state.captureStats = normalizeCaptureStats();
   state.playerProgress = normalizePlayerProgress();
   state.arenaStats = normalizeArenaStats();
@@ -4912,11 +5345,12 @@ function saveEconomy() {
     localStorage.setItem(
       getEconomyStorageKey(),
       JSON.stringify({
-        version: 4,
+        version: 5,
         coins: state.coins,
         inventory: state.inventory,
         missions: state.missions,
         intro: state.intro,
+        storyFlags: state.storyFlags,
         captureStats: state.captureStats,
         playerProgress: state.playerProgress,
         arenaStats: state.arenaStats,
@@ -5488,6 +5922,7 @@ function updateCapturedMattById(partyId, updater) {
   state.capturedParty.forEach(syncCapturedMattRuntime);
   saveCapturedParty();
   updateCaughtHud(countCaughtMatts());
+  updateFollowerCommandUi(true);
   return updated;
 }
 
@@ -5809,9 +6244,13 @@ function openShop(shopId) {
   }
 
   closePauseMenu();
+  keys.clear();
+  touchInput.sprint = false;
+  resetTouchJoystick();
   state.activeShopId = shopId;
   state.shopTab = "talk";
   state.activeDialogueTopic = "";
+  document.body.classList.add("shop-open");
   shopOverlay.hidden = false;
   renderShop(shop.greeting);
   return true;
@@ -5829,6 +6268,7 @@ function closeShop() {
   state.activeShopId = "";
   state.shopTab = "buy";
   state.activeDialogueTopic = "";
+  document.body.classList.remove("shop-open");
   if (shopOverlay) {
     shopOverlay.hidden = true;
   }
@@ -6234,9 +6674,57 @@ function renderIntroTalk(parent, shopId) {
   parent.append(scene);
 }
 
+function renderBrockMissionTalk(parent) {
+  const status = getBrockMissionStatus();
+  const scene = document.createElement("section");
+  scene.className = "dialogue-scene";
+
+  const speakerCard = document.createElement("aside");
+  speakerCard.className = "dialogue-speaker";
+  const portrait = document.createElement("div");
+  portrait.className = "dialogue-portrait";
+  portrait.textContent = "B";
+  const speakerName = document.createElement("strong");
+  speakerName.textContent = "Brick";
+  const role = document.createElement("span");
+  role.textContent = "Inn keeper";
+  const mood = document.createElement("em");
+  mood.textContent = status === BROCK_MISSION_STATUS.TALK_TO_BRICK ? "worried" : "waiting for news";
+  speakerCard.append(portrait, speakerName, role, mood);
+
+  const conversation = document.createElement("div");
+  conversation.className = "dialogue-conversation";
+  const line = document.createElement("p");
+  line.className = "dialogue-line";
+  line.textContent = status === BROCK_MISSION_STATUS.TALK_TO_BRICK
+    ? BROCK_MISSION_BRICK_DIALOGUE
+    : "Brick: Last I saw Brock, he was in the Grassland. Start there and look for anything that does not belong.";
+  conversation.append(line);
+
+  const note = document.createElement("p");
+  note.className = "dialogue-note";
+  note.textContent = getBrockMissionObjectiveText();
+  conversation.append(note);
+
+  const choices = document.createElement("div");
+  choices.className = "dialogue-choices";
+  if (status === BROCK_MISSION_STATUS.TALK_TO_BRICK) {
+    choices.append(makeShopButton("Start Looking", "brock-mission-advance"));
+  }
+  choices.append(makeShopButton("Mission", "shop-tab", "mission"), makeShopButton("Trade", "shop-tab", "buy"));
+  conversation.append(choices);
+  scene.append(speakerCard, conversation);
+  parent.append(scene);
+}
+
 function renderTalk(parent, shopId) {
   if (isIntroChainActive() && INTRO_NPC_IDS.includes(shopId)) {
     renderIntroTalk(parent, shopId);
+    return;
+  }
+
+  if (shopId === "brick" && isBrockMissionActive()) {
+    renderBrockMissionTalk(parent);
     return;
   }
 
@@ -6396,6 +6884,14 @@ function renderIntroMission(parent, shopId) {
         `${getIntroRequirementCount(requirement, quest)} / ${requirement.count} turned in. You have ${held}.`,
       );
     });
+  } else if (quest.readyWhen) {
+    appendShopTextCard(
+      parent,
+      isIntroQuestReady(quest) ? "Lesson Complete" : "Lesson Step",
+      isIntroQuestReady(quest)
+        ? quest.readyText || "Ty is ready for the next bonding step."
+        : quest.briefing || quest.objective || "Complete the bonding step.",
+    );
   } else {
     appendShopTextCard(parent, "Next Step", quest.dialogue || quest.briefing || "Talk to continue.");
   }
@@ -6417,9 +6913,35 @@ function renderIntroMission(parent, shopId) {
   );
 }
 
+function renderBrockMission(parent, shopId) {
+  appendShopTextCard(parent, BROCK_MISSION_TITLE, getBrockMissionObjectiveText());
+
+  if (shopId !== "brick") {
+    appendShopTextCard(parent, "Current Guide", "Brick is waiting at the inn with the details about Brock.");
+    return;
+  }
+
+  const status = getBrockMissionStatus();
+  appendShopTextCard(
+    parent,
+    "Brick's Lead",
+    status === BROCK_MISSION_STATUS.TALK_TO_BRICK
+      ? "Brick needs to tell Ivan what happened before the search starts."
+      : "Brock was last seen in the Grassland. Start there and look for any sign of where he went.",
+    status === BROCK_MISSION_STATUS.TALK_TO_BRICK
+      ? makeShopButton("Hear Brick Out", "brock-mission-advance")
+      : null,
+  );
+}
+
 function renderMission(parent, shopId) {
   if (isIntroChainActive() && INTRO_NPC_IDS.includes(shopId)) {
     renderIntroMission(parent, shopId);
+    return;
+  }
+
+  if (isBrockMissionActive()) {
+    renderBrockMission(parent, shopId);
     return;
   }
 
@@ -6566,6 +7088,7 @@ function careForMatt(partyId) {
 
   state.friendshipCare[partyId] = getCareDay();
   const result = applyCapturedMattProgress(partyId, { friendship: 4 });
+  markIntroLessonFlag("bond_care_used");
   saveEconomy();
   renderActiveOverlay(`${getArenaMattName(result?.matt || matt)} settles in. Friendship +${result?.friendshipGain || 0}.`);
 }
@@ -6584,6 +7107,7 @@ function useBondItemOnMatt(partyId, itemId, friendship, xp = 0) {
   }
 
   removeItem(itemId);
+  markIntroLessonFlag("bond_care_used");
   saveEconomy();
   updateEconomyHud();
   renderActiveOverlay(
@@ -6605,6 +7129,7 @@ function sparWithMatt(partyId) {
   }
 
   state.player.stamina = Math.max(0, state.player.stamina - staminaCost);
+  markIntroLessonFlag("bond_care_used");
   const ivanProgress = awardPlayerXp(12 + getPlayerLevel(), "sparring");
   updatePlayerStatusHud();
   renderActiveOverlay(
@@ -6696,6 +7221,8 @@ function setActiveFollower(partyId) {
   }));
   state.capturedParty.forEach(syncCapturedMattRuntime);
   saveCapturedParty();
+  resetFollowerCommandState("follow");
+  updateFollowerCommandUi(true);
   renderActiveOverlay(`${getCapturedMattDisplayName(matt)} is now your active follower.`);
 }
 
@@ -6704,11 +7231,196 @@ function clearActiveFollower(partyId = "") {
   state.capturedParty = state.capturedParty.map((candidate) => ({ ...candidate, follower: false }));
   state.capturedParty.forEach(syncCapturedMattRuntime);
   saveCapturedParty();
+  resetFollowerCommandState("follow");
+  updateFollowerCommandUi(true);
   renderActiveOverlay(
     matt
       ? `${getCapturedMattDisplayName(matt)} is resting from follower duty.`
       : "Your follower is resting.",
   );
+}
+
+function resetFollowerCommandState(mode = "follow") {
+  state.followerCommand.mode = FOLLOWER_COMMAND_LABELS[mode] ? mode : "follow";
+  state.followerCommand.targeting = false;
+  state.followerCommand.targetId = "";
+  state.followerCommand.stayPoint = null;
+}
+
+function getActiveFollowerPartyMember() {
+  return state.capturedParty.find((matt) => matt.tamed && matt.follower) || null;
+}
+
+function getActiveFollowerRuntime() {
+  return (
+    state.dogmatts.find(
+      (matt) => matt.caught && matt.tamed && matt.follower && !matt.arenaBattler && !matt.arenaOpponent,
+    ) || null
+  );
+}
+
+function hasActiveFollower() {
+  return Boolean(getActiveFollowerPartyMember() || getActiveFollowerRuntime());
+}
+
+function getActiveFollowerDisplayName() {
+  return getCapturedMattDisplayName(getActiveFollowerRuntime() || getActiveFollowerPartyMember() || { name: "Follower" });
+}
+
+function updateFollowerCommandUi(force = false) {
+  if (!followerCommandBar) {
+    return;
+  }
+
+  const follower = getActiveFollowerRuntime();
+  const partyFollower = getActiveFollowerPartyMember();
+  const active = follower || partyFollower;
+
+  if (!active) {
+    resetFollowerCommandState("follow");
+    followerCommandBar.hidden = true;
+    followerCommandUiKey = "";
+    return;
+  }
+
+  const mode = FOLLOWER_COMMAND_LABELS[state.followerCommand.mode] ? state.followerCommand.mode : "follow";
+  const label = state.followerCommand.targeting ? "Choose target" : FOLLOWER_COMMAND_LABELS[mode];
+  const key = [
+    active.partyId || active.id,
+    mode,
+    state.followerCommand.targeting ? "targeting" : "",
+    state.followerCommand.targetId,
+    state.dev.enabled ? "dev" : "",
+    state.arena.active ? "arena" : "",
+  ].join(":");
+
+  if (!force && followerCommandUiKey === key) {
+    return;
+  }
+
+  followerCommandUiKey = key;
+  followerCommandBar.hidden = false;
+
+  if (followerCommandStatus) {
+    followerCommandStatus.textContent = `${getCapturedMattDisplayName(active)} - ${label}`;
+  }
+
+  for (const button of followerCommandButtons) {
+    const command = button.dataset.followerCommand;
+    button.classList.toggle("active", !state.followerCommand.targeting && command === mode);
+    button.classList.toggle("targeting", command === "attack" && state.followerCommand.targeting);
+    button.disabled = false;
+  }
+}
+
+function setFollowerCommandMode(mode, options = {}) {
+  if (!FOLLOWER_COMMAND_LABELS[mode]) {
+    return false;
+  }
+
+  const follower = getActiveFollowerRuntime();
+  if (!hasActiveFollower()) {
+    resetFollowerCommandState("follow");
+    updateFollowerCommandUi(true);
+    if (!options.silent) {
+      setGameMessage("Ty needs to tame a Matt before you can command a follower.");
+    }
+    return false;
+  }
+
+  state.followerCommand.mode = mode;
+  state.followerCommand.targeting = false;
+  state.followerCommand.targetId = "";
+
+  if (mode === "follow") {
+    state.followerCommand.stayPoint = null;
+    if (follower) {
+      follower.returnBoostTimer = 2.5;
+      const target = getFollowTarget(0, getMattConfig(follower.type));
+      if (Math.hypot(target.x - follower.x, target.y - follower.y) > 2200) {
+        follower.x = clamp(target.x + randomBetween(-60, 60), 0, getMapWidth());
+        follower.y = clamp(target.y + randomBetween(-60, 60), 0, getMapHeight());
+      }
+    }
+    if (!options.silent) {
+      setGameMessage(`${getActiveFollowerDisplayName()} returns to Ivan.`);
+    }
+  } else if (mode === "stay") {
+    state.followerCommand.stayPoint = follower
+      ? { x: follower.x, y: follower.y }
+      : { x: state.player.x, y: state.player.y };
+    if (!options.silent) {
+      setGameMessage(`${getActiveFollowerDisplayName()} holds this spot.`);
+    }
+  } else if (mode === "guard") {
+    state.followerCommand.stayPoint = null;
+    if (!options.silent) {
+      setGameMessage(`${getActiveFollowerDisplayName()} will guard nearby targets.`);
+    }
+  } else if (mode === "attack") {
+    state.followerCommand.stayPoint = null;
+    state.followerCommand.targeting = true;
+    if (!options.silent) {
+      setGameMessage("Tap or click a wild Matt for your follower to attack.");
+    }
+  }
+
+  updateFollowerCommandUi(true);
+  return true;
+}
+
+function isFollowerCommandTargetCandidate(target) {
+  if (!target || target.caught || target.arenaBattler || target.arenaOpponent || target.introPlaying) {
+    return false;
+  }
+
+  return !target.boss || target.awakened || target.hitCount > 0 || target.attackTimer > 0;
+}
+
+function getFollowerCommandTargetAt(point) {
+  let bestTarget = null;
+  let bestDistance = Infinity;
+
+  for (const target of state.dogmatts) {
+    if (!isFollowerCommandTargetCandidate(target)) {
+      continue;
+    }
+
+    const config = getMattConfig(target.type);
+    const scale = Number(target.scale) || 1;
+    const radius = Math.max(FOLLOWER_COMMAND_TARGET_RADIUS, config.width * scale * 0.65);
+    const distance = Math.hypot(target.x - point.x, target.y - point.y);
+
+    if (distance <= radius && distance < bestDistance) {
+      bestDistance = distance;
+      bestTarget = target;
+    }
+  }
+
+  return bestTarget;
+}
+
+function handleFollowerTargetPointer(event) {
+  if (!state.followerCommand.targeting) {
+    return false;
+  }
+
+  event.preventDefault();
+  const target = getFollowerCommandTargetAt(screenToWorld(event.clientX, event.clientY));
+
+  if (!target) {
+    setGameMessage("No wild Matt targeted. Tap directly on one, or press Q to call your follower back.");
+    updateFollowerCommandUi(true);
+    return true;
+  }
+
+  state.followerCommand.mode = "attack";
+  state.followerCommand.targeting = false;
+  state.followerCommand.targetId = target.id;
+  state.followerCommand.stayPoint = null;
+  setGameMessage(`${getActiveFollowerDisplayName()} attacks ${target.name || MATT_LABELS[target.type] || "that Matt"}.`);
+  updateFollowerCommandUi(true);
+  return true;
 }
 
 function renderFollowerActions(parent, matt, makeButton) {
@@ -7370,7 +8082,7 @@ function drawPauseMap(canvas) {
   mapCtx.fillStyle = map.fill || "#18201d";
   mapCtx.fillRect(0, 0, width, height);
 
-  const image = images.worldMaps[state.currentWorld];
+  const image = getWorldMapImage();
   if (image) {
     mapCtx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
   }
@@ -7390,6 +8102,14 @@ function drawPauseMap(canvas) {
 
   getWorld().nodes.forEach((node) => drawDot(node.x, node.y, isWaystoneNode(node) ? 6 : 5, node.locked ? "#ff7a5c" : isWaystoneNode(node) ? "#ffd66f" : "#8bd3ff"));
   state.npcs.forEach((npc) => drawDot(npc.x, npc.y, 4, "#a0d8ff"));
+  const capturedBrockPoint = getCapturedBrockPosition();
+  if (capturedBrockPoint) {
+    drawDot(capturedBrockPoint.x, capturedBrockPoint.y, 5, "#ffb36d");
+  }
+  const rescuedBrock = getRescuedBrockActor();
+  if (rescuedBrock) {
+    drawDot(rescuedBrock.x, rescuedBrock.y, 5, "#7cd8ff");
+  }
   state.dogmatts.forEach((matt) => drawDot(matt.x, matt.y, matt.boss ? 7 : 4, matt.caught ? "#79f1b9" : "#9cec6e"));
   drawDot(state.player.x, state.player.y, 7, "#fff0a8", "rgba(8, 13, 12, 0.92)");
 }
@@ -7477,6 +8197,18 @@ function renderPauseMissions(parent) {
       quest.title,
       `${getIntroObjectiveText()} ${quest.requirements?.length ? quest.requirements.map((requirement) => `${MATT_LABELS[requirement.type] || "Matt"} turned in ${getIntroRequirementCount(requirement, quest)}/${requirement.count}, held ${getIntroHeldRequirementCount(requirement)}`).join(", ") : ""}`,
       isIntroQuestReady(quest) ? "Ready" : "Active",
+      null,
+      "full",
+    );
+    return;
+  }
+
+  if (isBrockMissionActive()) {
+    appendMenuRow(
+      grid,
+      BROCK_MISSION_TITLE,
+      getBrockMissionObjectiveText(),
+      "Active",
       null,
       "full",
     );
@@ -9059,6 +9791,26 @@ function getTransitionSpawnPoint(destinationWorldId, fromWorldId = "") {
   return getMapCenter(destinationWorldId);
 }
 
+function maybeShowBrockMissionArrivalHint(worldId, previousWorldId = "") {
+  if (
+    previousWorldId !== worldId &&
+    worldId === BROCK_CAPTURED_WORLD_ID &&
+    getBrockMissionStatus() === BROCK_MISSION_STATUS.SEARCH_GRASSLAND &&
+    !isBrockRescued()
+  ) {
+    setGameMessage("The Grass Cave goes almost black. Keep Ivan's lantern close and look for Brock.", 7600);
+    return;
+  }
+
+  if (
+    previousWorldId !== worldId &&
+    worldId === "treeworld" &&
+    getBrockMissionStatus() === BROCK_MISSION_STATUS.SEARCH_GRASSLAND
+  ) {
+    setGameMessage("You reached the Grassland. Start looking for any sign of Brock.", 7200);
+  }
+}
+
 function setWorld(id, movePlayer = true, fromWorldId = "") {
   if (!WORLD_IDS.includes(id)) {
     return;
@@ -9114,6 +9866,7 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
     spawnDogmatts();
     spawnNpcs();
     updateCaughtHud(countCaughtMatts());
+    maybeShowBrockMissionArrivalHint(id, previousWorld);
     syncCamera();
     preloadNearbyTiles(2);
     draw();
@@ -9162,6 +9915,35 @@ function refreshDogmattPaths() {
   });
 }
 
+function getWorldBrockData(world = getWorld()) {
+  if (!world.brock || typeof world.brock !== "object") {
+    world.brock = normalizeBrockData(null, world.id);
+  }
+
+  return world.brock;
+}
+
+function getBrockFreePath(world = getWorld()) {
+  const brock = getWorldBrockData(world);
+  if (!canEditBrockFreePath(world.id) || !brock.freePath?.length) {
+    return null;
+  }
+
+  return {
+    id: BROCK_FREE_PATH_ID,
+    npcId: "brock",
+    points: brock.freePath,
+  };
+}
+
+function findNpcPathById(id, world = getWorld()) {
+  if (id === BROCK_FREE_PATH_ID) {
+    return getBrockFreePath(world);
+  }
+
+  return world.npcPaths.find((candidate) => candidate.id === id) || null;
+}
+
 function refreshNpcPaths() {
   const world = getWorld();
   state.npcs.forEach((npc) => {
@@ -9180,6 +9962,13 @@ function areNpcPathsActiveForWorld(world = getWorld()) {
 function chooseNpcPath(npcId, world = getWorld()) {
   if (!areNpcPathsActiveForWorld(world)) {
     return null;
+  }
+
+  if (npcId === "brock") {
+    const brockPath = getBrockFreePath(world);
+    if (brockPath) {
+      return brockPath;
+    }
   }
 
   const paths = world.npcPaths.filter((path) => path.npcId === npcId && path.points.length > 0);
@@ -9328,6 +10117,20 @@ function respawnWorldEnemies() {
 }
 
 function startNewEditorLine() {
+  if (state.dev.tool === "brock-path") {
+    if (!canEditBrockFreePath()) {
+      setDevStatus("Brock free path belongs in Grass Cave or Brick's Inn. Switch worlds first.");
+      return;
+    }
+
+    const brock = getWorldBrockData();
+    brock.freePath = [];
+    saveWorlds();
+    refreshNpcPaths();
+    setDevStatus("Brock free path cleared. Click his new route points.");
+    return;
+  }
+
   state.dev.activeWallId = null;
   state.dev.activePathId = null;
   state.dev.activeNpcPathId = null;
@@ -9378,6 +10181,32 @@ function undoActiveEditorPoint() {
       }
       saveWorlds();
       setDevStatus("Last NPC path point removed.");
+      return;
+    }
+  }
+
+  if (state.dev.tool === "brock-path") {
+    const brock = getWorldBrockData(world);
+    if (brock.freePath.length > 0) {
+      brock.freePath.pop();
+      saveWorlds();
+      refreshNpcPaths();
+      setDevStatus("Last Brock free path point removed.");
+      return;
+    }
+  }
+
+  if (state.dev.tool === "brock-captured") {
+    if (!canPlaceCapturedBrock()) {
+      setDevStatus("Captured Brock belongs in Grass Cave. Switch to Grass Cave first.");
+      return;
+    }
+
+    const brock = getWorldBrockData(world);
+    if (brock.capturedPosition) {
+      brock.capturedPosition = null;
+      saveWorlds();
+      setDevStatus("Captured Brock position cleared.");
       return;
     }
   }
@@ -9467,6 +10296,7 @@ function initDevPanel() {
 
 function setDevMode(enabled) {
   state.dev.enabled = enabled;
+  document.body.classList.toggle("dev-open", enabled);
 
   if (devPanel) {
     devPanel.hidden = !enabled;
@@ -9520,6 +10350,10 @@ function setDevTool(tool) {
       ? " Click points. New Line starts another wall."
       : tool === "npcpath"
         ? " Click points for the selected NPC route. New Line starts another route."
+        : tool === "brock-captured"
+          ? " Switch to Grass Cave, then click where captured Brock should appear."
+          : tool === "brock-path"
+            ? " Switch to Grass Cave or Brick's Inn, then click Brock's free-walk route. New Line clears it."
         : tool === "npc"
           ? " Click to place the selected NPC."
           : tool === "node"
@@ -9811,6 +10645,39 @@ function handleDevPointerDown(event) {
     return;
   }
 
+  if (state.dev.tool === "brock-captured") {
+    if (!canPlaceCapturedBrock()) {
+      setDevStatus("Captured Brock belongs in Grass Cave. Switch to Grass Cave first.");
+      return;
+    }
+
+    const brock = getWorldBrockData(world);
+    brock.capturedPosition = { x: point.x, y: point.y };
+    saveWorlds();
+    setDevStatus(`Captured Brock position set at ${Math.round(point.x)}, ${Math.round(point.y)}.`);
+    return;
+  }
+
+  if (state.dev.tool === "brock-path") {
+    if (!canEditBrockFreePath()) {
+      setDevStatus("Free Brock path belongs in Grass Cave or Brick's Inn. Switch worlds first.");
+      return;
+    }
+
+    const brock = getWorldBrockData(world);
+    brock.freePath.push({ x: point.x, y: point.y });
+    const npc = world.npcs.find((candidate) => candidate.id === "brock");
+    if (npc) {
+      npc.pathId = BROCK_FREE_PATH_ID;
+      npc.pathPointIndex = 0;
+      npc.targetPointIndex = null;
+    }
+    saveWorlds();
+    refreshNpcPaths();
+    setDevStatus(`Brock free path point added (${brock.freePath.length}).`);
+    return;
+  }
+
   if (state.dev.tool === "node" || state.dev.tool === "waystone") {
     const isWaystoneTool = state.dev.tool === "waystone";
     const target = isWaystoneTool ? "" : devNodeTarget?.value || "town";
@@ -9940,6 +10807,32 @@ function eraseNearestDevObject(point) {
       world.walls = world.walls.filter((candidate) => candidate !== wall);
       saveWorlds();
       setDevStatus("Wall line erased.");
+      return;
+    }
+  }
+
+  const brock = getWorldBrockData(world);
+  if (
+    canPlaceCapturedBrock() &&
+    brock.capturedPosition &&
+    Math.hypot(brock.capturedPosition.x - point.x, brock.capturedPosition.y - point.y) < hitRadius
+  ) {
+    brock.capturedPosition = null;
+    saveWorlds();
+    setDevStatus("Captured Brock position erased.");
+    return;
+  }
+
+  if (canEditBrockFreePath() && brock.freePath.length > 0) {
+    const brockPointIndex = brock.freePath.findIndex(
+      (pathPoint) => Math.hypot(pathPoint.x - point.x, pathPoint.y - point.y) < hitRadius,
+    );
+
+    if (brockPointIndex !== -1) {
+      brock.freePath.splice(brockPointIndex, 1);
+      saveWorlds();
+      refreshNpcPaths();
+      setDevStatus("Brock free path point erased.");
       return;
     }
   }
@@ -10461,12 +11354,20 @@ function trySpawnUnlockedWorldBoss(capturedMatt) {
   return true;
 }
 
+function canSpawnNpc(npcId) {
+  return npcId !== "brock" || isBrockRescued();
+}
+
 function spawnNpcs() {
   const world = getWorld();
-  const npcs = [...world.npcs];
+  const npcs = world.npcs.filter((npc) => canSpawnNpc(npc.id));
 
   if (state.currentWorld === "town" && isNightTime()) {
     for (const npcId of NPC_IDS) {
+      if (!canSpawnNpc(npcId)) {
+        continue;
+      }
+
       if (npcs.some((npc) => npc.id === npcId)) {
         continue;
       }
@@ -12227,12 +13128,16 @@ function getFollowerAttackAction(matt) {
   return frameSet.attack?.length > 0 ? "attack" : "caught";
 }
 
-function isFollowerCombatTarget(target) {
+function isFollowerCombatTarget(target, allowCalm = false) {
   if (!target || target.caught || target.arenaBattler || target.arenaOpponent || target.introPlaying) {
     return false;
   }
 
-  return Boolean(target.awakened || target.hitCount > 0 || target.hitReactionTimer > 0 || target.attackTimer > 0);
+  if (!isFollowerCommandTargetCandidate(target)) {
+    return false;
+  }
+
+  return allowCalm || Boolean(target.awakened || target.hitCount > 0 || target.hitReactionTimer > 0 || target.attackTimer > 0);
 }
 
 function getFollowerCombatTarget(follower) {
@@ -12240,17 +13145,45 @@ function getFollowerCombatTarget(follower) {
     return null;
   }
 
+  if (state.followerCommand.mode === "stay") {
+    return null;
+  }
+
+  if (state.followerCommand.mode === "attack" && state.followerCommand.targetId) {
+    const target = state.dogmatts.find((candidate) => candidate.id === state.followerCommand.targetId);
+    if (target && isFollowerCommandTargetCandidate(target)) {
+      const playerDistance = Math.hypot(target.x - state.player.x, target.y - state.player.y);
+      const followerDistance = Math.hypot(target.x - follower.x, target.y - follower.y);
+      const manualRange = target.boss ? FOLLOWER_ASSIST.leashRadius * 1.3 : FOLLOWER_ASSIST.leashRadius * 1.75;
+
+      if (playerDistance <= manualRange || followerDistance <= manualRange) {
+        return target;
+      }
+    }
+
+    state.followerCommand.targetId = "";
+    state.followerCommand.mode = "guard";
+    updateFollowerCommandUi(true);
+    setGameMessage(`${getCapturedMattDisplayName(follower)} lost the target and switched to guard.`);
+    return null;
+  }
+
+  const guardMode = state.followerCommand.mode === "guard";
   let bestTarget = null;
   let bestScore = Infinity;
 
   for (const target of state.dogmatts) {
-    if (target === follower || !isFollowerCombatTarget(target)) {
+    if (target === follower || !isFollowerCombatTarget(target, guardMode)) {
       continue;
     }
 
     const playerDistance = Math.hypot(target.x - state.player.x, target.y - state.player.y);
     const followerDistance = Math.hypot(target.x - follower.x, target.y - follower.y);
-    const searchRadius = target.boss ? FOLLOWER_ASSIST.leashRadius : FOLLOWER_ASSIST.searchRadius;
+    const searchRadius = guardMode
+      ? FOLLOWER_ASSIST.searchRadius * 0.9
+      : target.boss
+        ? FOLLOWER_ASSIST.leashRadius
+        : FOLLOWER_ASSIST.searchRadius;
 
     if (playerDistance > searchRadius && followerDistance > FOLLOWER_ASSIST.leashRadius) {
       continue;
@@ -12412,6 +13345,35 @@ function updateCombatFollower(follower, target, config, dt) {
     setAction(follower, getCapturedMattTravelAction(follower));
   }
 
+  return true;
+}
+
+function updateStayFollower(follower, config, dt) {
+  if (!state.followerCommand.stayPoint) {
+    state.followerCommand.stayPoint = { x: follower.x, y: follower.y };
+  }
+
+  const target = state.followerCommand.stayPoint;
+  const dx = target.x - follower.x;
+  const dy = target.y - follower.y;
+  const distance = Math.hypot(dx, dy) || 1;
+
+  if (distance > Math.max(18, config.followStopDistance * 0.75)) {
+    const speed = Math.min((config.followSpeed + 90) * dt, distance);
+    follower.x = clamp(follower.x + (dx / distance) * speed, 0, getMapWidth());
+    follower.y = clamp(follower.y + (dy / distance) * speed, 0, getMapHeight());
+    follower.direction = dx < 0 ? "left" : "right";
+    follower.caughtAnimationPaused = false;
+    setAction(follower, getFollowerMoveAction(follower));
+    return true;
+  }
+
+  follower.caughtAnimationPaused = !shouldUseWildFollowerFrames(follower);
+  setAction(follower, getCapturedMattRestAction(follower));
+  if (follower.caughtAnimationPaused && shouldCapturedMattUseWalkingLoop(follower)) {
+    follower.frameIndex = 0;
+    follower.frameTimer = 0;
+  }
   return true;
 }
 
@@ -12604,11 +13566,17 @@ function updateCaughtDogmatt(dogmatt, dt, caughtIndex) {
     return;
   }
 
+  if (dogmatt.tamed && dogmatt.follower && state.followerCommand.mode === "stay") {
+    updateStayFollower(dogmatt, config, dt);
+    return;
+  }
+
   const combatTarget = getFollowerCombatTarget(dogmatt);
   if (combatTarget && updateCombatFollower(dogmatt, combatTarget, config, dt)) {
     return;
   }
 
+  dogmatt.returnBoostTimer = Math.max(0, (dogmatt.returnBoostTimer || 0) - dt);
   const target = getFollowTarget(caughtIndex, config);
   const dx = target.x - dogmatt.x;
   const dy = target.y - dogmatt.y;
@@ -12617,7 +13585,8 @@ function updateCaughtDogmatt(dogmatt, dt, caughtIndex) {
 
   if (distance > config.followStopDistance) {
     const catchup = Math.min(620, distance * 2.6);
-    const speed = Math.min((config.followSpeed + catchup) * dt, distance);
+    const returnBoost = dogmatt.returnBoostTimer > 0 ? 520 : 0;
+    const speed = Math.min((config.followSpeed + catchup + returnBoost) * dt, distance);
     dogmatt.x = clamp(dogmatt.x + (dx / distance) * speed, 0, getMapWidth());
     dogmatt.y = clamp(dogmatt.y + (dy / distance) * speed, 0, getMapHeight());
     dogmatt.direction = dx < 0 ? "left" : "right";
@@ -12783,6 +13752,8 @@ function countCaughtMatts() {
 }
 
 function updateCaughtHud(caughtCount, force = false) {
+  updateFollowerCommandUi();
+
   if (!force && state.caughtDogmatts === caughtCount) {
     return;
   }
@@ -12792,7 +13763,7 @@ function updateCaughtHud(caughtCount, force = false) {
   if (caughtCounter) {
     caughtCounter.textContent = isIntroChainActive()
       ? getIntroObjectiveText()
-      : `Matts caught: ${caughtCount} / ${MATT_PARTY_LIMIT}`;
+      : getBrockMissionObjectiveText() || `Matts caught: ${caughtCount} / ${MATT_PARTY_LIMIT}`;
   }
 
   monsterSlots.forEach((slot, index) => {
@@ -12945,7 +13916,7 @@ function chooseNpcIdleAction(npc) {
 
 function updateNpc(npc, dt) {
   const world = getWorld();
-  let path = npc.pathId ? world.npcPaths.find((candidate) => candidate.id === npc.pathId) : null;
+  let path = npc.pathId ? findNpcPathById(npc.pathId, world) : null;
   let moving = false;
 
   if (!path || !areNpcPathsActiveForWorld(world)) {
@@ -13235,7 +14206,7 @@ function drawMap() {
   ctx.fillRect(0, 0, viewWidth, viewHeight);
 
   if (map.type === "image") {
-    const image = images.worldMaps[state.currentWorld];
+    const image = getWorldMapImage();
     if (image) {
       ctx.drawImage(
         image,
@@ -13282,7 +14253,7 @@ function drawMapOverview() {
   ctx.fillStyle = map.fill || "#18201d";
   ctx.fillRect(0, 0, map.width, map.height);
 
-  const overviewImage = images.worldMaps[state.currentWorld];
+  const overviewImage = getWorldMapImage();
   if (overviewImage) {
     ctx.drawImage(overviewImage, 0, 0, map.width, map.height);
   }
@@ -13322,6 +14293,11 @@ function getPlayerRenderScale() {
   }
 
   return ["town_blacksmith", "town_arena_entrance"].includes(state.currentWorld) ? 3 : getInnActorScale();
+}
+
+function getMattRenderScale(dogmatt) {
+  const worldScale = state.currentWorld === "town_arena_entrance" ? 2 : getInnActorScale();
+  return worldScale * (Number(dogmatt.scale) || 1);
 }
 
 function drawPlayerShadow() {
@@ -13364,7 +14340,7 @@ function drawPlayer() {
 
 function drawDogmattShadow(dogmatt) {
   const config = getMattConfig(dogmatt.type);
-  const scale = getInnActorScale() * (Number(dogmatt.scale) || 1);
+  const scale = getMattRenderScale(dogmatt);
   const screenX = dogmatt.x - state.camera.x;
   const screenY = dogmatt.y - state.camera.y;
 
@@ -13456,6 +14432,42 @@ function drawFollowerBadge(dogmatt, screenX, screenY, config, scale) {
   ctx.restore();
 }
 
+function drawFollowerCommandMarker(dogmatt, screenX, screenY, config, scale) {
+  if (dogmatt.caught || dogmatt.arenaBattler || !isFollowerCommandTargetCandidate(dogmatt)) {
+    return;
+  }
+
+  const selected = state.followerCommand.targetId === dogmatt.id;
+  const targetable = state.followerCommand.targeting && hasActiveFollower();
+  if (!selected && !targetable) {
+    return;
+  }
+
+  const pulse = 0.5 + Math.sin(state.time * 7) * 0.5;
+  const color = selected ? "rgba(255, 111, 88, 0.92)" : "rgba(255, 221, 112, 0.68)";
+  const radiusX = config.width * scale * (selected ? 0.44 : 0.36);
+  const radiusY = config.height * scale * (selected ? 0.13 : 0.1);
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = selected ? 4 : 3;
+  ctx.beginPath();
+  ctx.ellipse(screenX, screenY + 8, radiusX + pulse * 4, radiusY + pulse * 2, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  if (selected) {
+    ctx.fillStyle = "#ffe5d1";
+    ctx.font = "900 12px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(18, 16, 14, 0.84)";
+    ctx.strokeText("TARGET", screenX, screenY - config.height * scale - 30);
+    ctx.fillText("TARGET", screenX, screenY - config.height * scale - 30);
+  }
+
+  ctx.restore();
+}
+
 function drawDogmatt(dogmatt) {
   const config = getMattConfig(dogmatt.type);
   const frames = getMattFrames(dogmatt);
@@ -13464,7 +14476,7 @@ function drawDogmatt(dogmatt) {
   }
 
   const sprite = frames[dogmatt.frameIndex % frames.length];
-  const scale = getInnActorScale() * (Number(dogmatt.scale) || 1);
+  const scale = getMattRenderScale(dogmatt);
   const screenX = Math.round(dogmatt.x - state.camera.x);
   const screenY = Math.round(dogmatt.y - state.camera.y);
   const facingLeft = dogmatt.direction === "left";
@@ -13479,6 +14491,7 @@ function drawDogmatt(dogmatt) {
 
   ctx.drawImage(sprite, -config.width / 2, -config.height + config.footOffset);
   ctx.restore();
+  drawFollowerCommandMarker(dogmatt, screenX, screenY, config, scale);
 
   if (dogmatt.caught && dogmatt.follower && !dogmatt.arenaBattler) {
     drawFollowerBadge(dogmatt, screenX, screenY, config, scale);
@@ -13543,6 +14556,169 @@ function drawNpc(npc) {
     ctx.scale(-1, 1);
   }
 
+  ctx.drawImage(sprite, -NPC.width / 2, -NPC.height + NPC.footOffset);
+  ctx.restore();
+}
+
+function getCapturedBrockPosition(world = getWorld()) {
+  if (!canPlaceCapturedBrock(world.id) || isBrockRescued()) {
+    return null;
+  }
+
+  const brock = getWorldBrockData(world);
+  return brock.capturedPosition || null;
+}
+
+function getRescuedBrockActor(world = getWorld()) {
+  if (!canPlaceCapturedBrock(world.id) || !isBrockRescued()) {
+    return null;
+  }
+
+  const brock = getWorldBrockData(world);
+  const route = Array.isArray(brock.freePath) ? brock.freePath : [];
+  if (route.length === 0) {
+    return brock.capturedPosition ? { ...brock.capturedPosition, direction: "down", frameIndex: 0 } : null;
+  }
+
+  if (route.length === 1) {
+    return { ...route[0], direction: "down", frameIndex: 0 };
+  }
+
+  const segments = [];
+  let totalLength = 0;
+  for (let i = 0; i < route.length; i += 1) {
+    const from = route[i];
+    const to = route[(i + 1) % route.length];
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    if (length > 0) {
+      segments.push({ from, to, length });
+      totalLength += length;
+    }
+  }
+
+  if (segments.length === 0 || totalLength <= 0) {
+    return { ...route[0], direction: "down", frameIndex: 0 };
+  }
+
+  let travel = (state.time * NPC.speed) % totalLength;
+  let segment = segments[0];
+  for (const candidate of segments) {
+    if (travel <= candidate.length) {
+      segment = candidate;
+      break;
+    }
+    travel -= candidate.length;
+  }
+
+  const ratio = clamp(travel / segment.length, 0, 1);
+  const dx = segment.to.x - segment.from.x;
+  const dy = segment.to.y - segment.from.y;
+  return {
+    x: segment.from.x + dx * ratio,
+    y: segment.from.y + dy * ratio,
+    direction: Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : dy < 0 ? "up" : "down",
+    frameIndex: Math.floor(state.time / 0.11),
+  };
+}
+
+function getCapturedBrockFrames() {
+  const brockFrames = images.npcs.brock || {};
+  return brockFrames.captured || brockFrames.idle || [];
+}
+
+function getRescuedBrockFrames() {
+  const brockFrames = images.npcs.brock || {};
+  return brockFrames.walking || brockFrames.idle || [];
+}
+
+function getCapturedBrockRenderScale() {
+  return state.currentWorld === BROCK_CAPTURED_WORLD_ID ? getPlayerRenderScale() : getInnActorScale();
+}
+
+function drawCapturedBrockShadow(point) {
+  const scale = getCapturedBrockRenderScale();
+  const screenX = point.x - state.camera.x;
+  const screenY = point.y - state.camera.y;
+
+  ctx.save();
+  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.beginPath();
+  ctx.ellipse(screenX, screenY + 8, NPC.width * 0.3 * scale, NPC.height * 0.09 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCapturedBrock(point) {
+  const frames = getCapturedBrockFrames();
+  if (!frames || frames.length === 0) {
+    return;
+  }
+
+  const sprite = frames[Math.floor(state.time / 0.14) % frames.length];
+  const scale = getCapturedBrockRenderScale();
+  const screenX = Math.round(point.x - state.camera.x);
+  const screenY = Math.round(point.y - state.camera.y);
+
+  ctx.save();
+  ctx.translate(screenX, screenY);
+  ctx.scale(scale, scale);
+  ctx.drawImage(sprite, -NPC.width / 2, -NPC.height + NPC.footOffset);
+  ctx.restore();
+
+  drawCapturedBrockRescuePrompt(point, screenX, screenY, scale);
+}
+
+function drawCapturedBrockRescuePrompt(point, screenX, screenY, scale) {
+  if (
+    getBrockMissionStatus() !== BROCK_MISSION_STATUS.SEARCH_GRASSLAND ||
+    Math.hypot(point.x - state.player.x, point.y - state.player.y) > BROCK_RESCUE_RADIUS
+  ) {
+    return;
+  }
+
+  const label = isMobileCameraView() ? "Tap: Rescue Brock" : "E: Rescue Brock";
+  const width = 178;
+  const height = 32;
+  const x = Math.round(screenX - width / 2);
+  const y = Math.round(screenY - NPC.height * scale - 42);
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = "rgba(8, 13, 12, 0.78)";
+  ctx.strokeStyle = "rgba(255, 215, 132, 0.5)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(0, 0, width, height, 8);
+  } else {
+    ctx.rect(0, 0, width, height);
+  }
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#fff1b6";
+  ctx.font = "900 13px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(label, width / 2, 21);
+  ctx.restore();
+}
+
+function drawRescuedBrock(actor) {
+  const frames = getRescuedBrockFrames();
+  if (!frames || frames.length === 0) {
+    return;
+  }
+
+  const sprite = frames[actor.frameIndex % frames.length];
+  const scale = getCapturedBrockRenderScale();
+  const screenX = Math.round(actor.x - state.camera.x);
+  const screenY = Math.round(actor.y - state.camera.y);
+
+  ctx.save();
+  ctx.translate(screenX, screenY);
+  ctx.scale(scale, scale);
+  if (actor.direction === "left") {
+    ctx.scale(-1, 1);
+  }
   ctx.drawImage(sprite, -NPC.width / 2, -NPC.height + NPC.footOffset);
   ctx.restore();
 }
@@ -13640,6 +14816,28 @@ function drawOverviewActors() {
     ctx.lineWidth = 14;
     ctx.beginPath();
     ctx.arc(npc.x, npc.y, 46, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  const capturedBrockPoint = getCapturedBrockPosition();
+  if (capturedBrockPoint) {
+    ctx.fillStyle = "rgba(255, 179, 109, 0.92)";
+    ctx.strokeStyle = "rgba(20, 25, 22, 0.78)";
+    ctx.lineWidth = 16;
+    ctx.beginPath();
+    ctx.arc(capturedBrockPoint.x, capturedBrockPoint.y, 58, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  const rescuedBrock = getRescuedBrockActor();
+  if (rescuedBrock) {
+    ctx.fillStyle = "rgba(124, 216, 255, 0.92)";
+    ctx.strokeStyle = "rgba(20, 25, 22, 0.78)";
+    ctx.lineWidth = 16;
+    ctx.beginPath();
+    ctx.arc(rescuedBrock.x, rescuedBrock.y, 58, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
   }
@@ -13742,6 +14940,45 @@ function drawParticles() {
 
   ctx.restore();
   ctx.globalAlpha = 1;
+}
+
+function isBrockSearchLanternActive() {
+  return (
+    state.currentWorld === BROCK_CAPTURED_WORLD_ID &&
+    getBrockMissionStatus() === BROCK_MISSION_STATUS.SEARCH_GRASSLAND &&
+    !isBrockRescued()
+  );
+}
+
+function drawBrockSearchLantern() {
+  if (!isBrockSearchLanternActive()) {
+    return;
+  }
+
+  const viewWidth = getCameraViewWidth();
+  const viewHeight = getCameraViewHeight();
+  const x = state.player.x - state.camera.x;
+  const y = state.player.y - state.camera.y - 22;
+  const { innerRadius, outerRadius, darkness } = BROCK_CAVE_LANTERN;
+
+  ctx.save();
+
+  const shadow = ctx.createRadialGradient(x, y, innerRadius * 0.25, x, y, outerRadius);
+  shadow.addColorStop(0, "rgba(0, 0, 0, 0)");
+  shadow.addColorStop(0.34, "rgba(0, 0, 0, 0.04)");
+  shadow.addColorStop(0.6, "rgba(0, 0, 0, 0.58)");
+  shadow.addColorStop(1, `rgba(0, 0, 0, ${darkness})`);
+  ctx.fillStyle = shadow;
+  ctx.fillRect(0, 0, viewWidth, viewHeight);
+
+  const warmth = ctx.createRadialGradient(x, y, 0, x, y, outerRadius * 0.78);
+  warmth.addColorStop(0, "rgba(255, 215, 132, 0.24)");
+  warmth.addColorStop(0.48, "rgba(255, 164, 76, 0.09)");
+  warmth.addColorStop(1, "rgba(255, 164, 76, 0)");
+  ctx.fillStyle = warmth;
+  ctx.fillRect(0, 0, viewWidth, viewHeight);
+
+  ctx.restore();
 }
 
 function getNearbyNode(predicate = () => true) {
@@ -13975,6 +15212,59 @@ function drawWall(wall) {
   }
 }
 
+function drawBrockEditorObjects(world) {
+  if (!canEditBrockFreePath(world.id) && !canPlaceCapturedBrock(world.id)) {
+    return;
+  }
+
+  const brock = getWorldBrockData(world);
+  const labelSize = Math.max(42, Math.min(150, getMapWidth() * 0.012));
+
+  if (canEditBrockFreePath(world.id) && brock.freePath.length > 0) {
+    ctx.strokeStyle = "rgba(80, 226, 214, 0.9)";
+    ctx.fillStyle = "rgba(80, 226, 214, 0.92)";
+    ctx.lineWidth = 34;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+
+    brock.freePath.forEach((point, index) => {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.lineTo(point.x, point.y);
+      }
+    });
+
+    ctx.stroke();
+
+    for (const point of brock.freePath) {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 52, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = "#d9fffb";
+    ctx.font = `900 ${labelSize}px Inter, system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText("Free Brock", brock.freePath[0].x, brock.freePath[0].y - 86);
+  }
+
+  if (canPlaceCapturedBrock(world.id) && brock.capturedPosition) {
+    ctx.fillStyle = "rgba(255, 147, 92, 0.35)";
+    ctx.strokeStyle = "rgba(255, 232, 184, 0.96)";
+    ctx.lineWidth = 28;
+    ctx.beginPath();
+    ctx.arc(brock.capturedPosition.x, brock.capturedPosition.y, 70, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#ffe8b8";
+    ctx.font = `900 ${labelSize}px Inter, system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText("Captured Brock", brock.capturedPosition.x, brock.capturedPosition.y - 96);
+  }
+}
+
 function drawWorldEditorObjects() {
   const world = getWorld();
 
@@ -14045,6 +15335,8 @@ function drawWorldEditorObjects() {
       ctx.fillText(npcName, path.points[0].x, path.points[0].y - 82);
     }
   }
+
+  drawBrockEditorObjects(world);
 
   for (const npc of world.npcs) {
     ctx.fillStyle = "rgba(124, 205, 255, 0.32)";
@@ -14126,6 +15418,14 @@ function drawActors() {
   state.npcs.forEach((npc) => {
     actors.push({ type: "npc", y: npc.y, entity: npc });
   });
+  const capturedBrockPoint = getCapturedBrockPosition();
+  if (capturedBrockPoint) {
+    actors.push({ type: "capturedBrock", y: capturedBrockPoint.y, entity: capturedBrockPoint });
+  }
+  const rescuedBrock = getRescuedBrockActor();
+  if (rescuedBrock) {
+    actors.push({ type: "rescuedBrock", y: rescuedBrock.y, entity: rescuedBrock });
+  }
   actors.push({ type: "player", y: state.player.y, entity: state.player });
   actors.sort((a, b) => a.y - b.y);
 
@@ -14134,6 +15434,10 @@ function drawActors() {
       drawPlayerShadow();
     } else if (actor.type === "npc") {
       drawNpcShadow(actor.entity);
+    } else if (actor.type === "capturedBrock") {
+      drawCapturedBrockShadow(actor.entity);
+    } else if (actor.type === "rescuedBrock") {
+      drawCapturedBrockShadow(actor.entity);
     } else {
       drawDogmattShadow(actor.entity);
     }
@@ -14144,6 +15448,10 @@ function drawActors() {
       drawPlayer();
     } else if (actor.type === "npc") {
       drawNpc(actor.entity);
+    } else if (actor.type === "capturedBrock") {
+      drawCapturedBrock(actor.entity);
+    } else if (actor.type === "rescuedBrock") {
+      drawRescuedBrock(actor.entity);
     } else {
       drawDogmatt(actor.entity);
     }
@@ -14172,6 +15480,7 @@ function draw() {
   drawActors();
   drawArenaBattleLabels();
   drawParticles();
+  drawBrockSearchLantern();
   drawDevLayer();
   ctx.restore();
 }
@@ -14396,6 +15705,19 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (state.followerCommand.targeting && key === "escape") {
+    event.preventDefault();
+    setFollowerCommandMode("follow");
+    return;
+  }
+
+  const followerCommand = FOLLOWER_COMMAND_KEYS[key];
+  if (followerCommand && !event.repeat) {
+    event.preventDefault();
+    setFollowerCommandMode(followerCommand);
+    return;
+  }
+
   if (key === "escape" && !event.repeat) {
     event.preventDefault();
     openPauseMenu("character");
@@ -14435,7 +15757,7 @@ window.addEventListener("keydown", (event) => {
   if (key === "e" && !event.repeat) {
     event.preventDefault();
     if (!state.dev.enabled) {
-      tryInteractNearbyWaystone() || tryOpenNearbyShop();
+      tryRescueNearbyBrock() || tryInteractNearbyWaystone() || tryOpenNearbyShop();
     }
     return;
   }
@@ -14476,8 +15798,12 @@ canvas.addEventListener("pointerdown", (event) => {
     return;
   }
 
+  if (handleFollowerTargetPointer(event)) {
+    return;
+  }
+
   if (event.pointerType !== "mouse") {
-    if (tryOpenNearbyShop()) {
+    if (tryRescueNearbyBrock() || tryOpenNearbyShop()) {
       event.preventDefault();
       return;
     }
@@ -14508,6 +15834,15 @@ bindTouchButton(
     touchInput.sprint = false;
   },
 );
+
+for (const button of followerCommandButtons) {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    ensureAudio();
+    setFollowerCommandMode(button.dataset.followerCommand);
+  });
+}
 
 inventoryButton?.addEventListener("click", () => {
   openInventory();
@@ -14561,6 +15896,8 @@ pauseMenuContent?.addEventListener("click", (event) => {
     completeMission(id);
   } else if (action === "intro-advance") {
     advanceIntroQuest(id);
+  } else if (action === "brock-mission-advance") {
+    startBrockMissionSearch();
   } else if (action === "bond-care") {
     careForMatt(id);
   } else if (action === "bond-treat") {
@@ -14632,6 +15969,8 @@ shopList?.addEventListener("click", (event) => {
     completeMission(id);
   } else if (action === "intro-advance") {
     advanceIntroQuest(id);
+  } else if (action === "brock-mission-advance") {
+    startBrockMissionSearch();
   } else if (action === "bond-care") {
     careForMatt(id);
   } else if (action === "bond-treat") {

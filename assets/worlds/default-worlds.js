@@ -9579,6 +9579,34 @@ window.DEFAULT_WORLD_DATA = {
           ]
         }
       ],
+      "brock": {
+        "capturedPosition": {
+          "x": 2520,
+          "y": 2540
+        },
+        "freePath": [
+          {
+            "x": 2409.178386380459,
+            "y": 2466.3212435233163
+          },
+          {
+            "x": 2860,
+            "y": 2120
+          },
+          {
+            "x": 3288.5270170244257,
+            "y": 2350.8512213175427
+          },
+          {
+            "x": 3090.155440414507,
+            "y": 2555.144337527757
+          },
+          {
+            "x": 2409.178386380459,
+            "y": 2466.3212435233163
+          }
+        ]
+      },
       "npcs": [
         {
           "id": "brick",
@@ -9594,6 +9622,21 @@ window.DEFAULT_WORLD_DATA = {
           "waitTimer": 9.761660404282065,
           "waitMode": "point",
           "idleCheckTimer": 5.400040702088528
+        },
+        {
+          "id": "brock",
+          "x": 2409.178386380459,
+          "y": 2466.3212435233163,
+          "action": "idle",
+          "frameIndex": 0,
+          "frameTimer": 0,
+          "direction": "right",
+          "pathId": "brock-free-path",
+          "pathPointIndex": 0,
+          "targetPointIndex": null,
+          "waitTimer": 1.8,
+          "waitMode": "point",
+          "idleCheckTimer": 4
         }
       ],
       "nodes": [
