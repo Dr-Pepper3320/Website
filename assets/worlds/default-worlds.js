@@ -25930,7 +25930,29 @@ window.DEFAULT_WORLD_DATA = {
       "walls": [],
       "spawnAreas": [],
       "paths": [],
-      "npcPaths": [],
+      "npcPaths": [
+        {
+          "id": "wizard-grass-cave-path",
+          "npcId": "wizard",
+          "points": [
+            {
+              "x": 1717.098445595855,
+              "y": 1558.8452997779423
+            },
+            {
+              "x": 2529.8297557364917,
+              "y": 2482.6054774241306
+            }
+          ]
+        }
+      ],
+      "brock": {
+        "capturedPosition": {
+          "x": 2734.1228719467063,
+          "y": 2602.516654330126
+        },
+        "freePath": []
+      },
       "npcs": [],
       "nodes": [
         {

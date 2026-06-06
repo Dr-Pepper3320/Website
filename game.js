@@ -380,6 +380,29 @@ const MYSTICMATT = {
   floatDuration: 10,
 };
 
+const DEMENTED_MATT = {
+  type: "dementedmatt",
+  count: 0,
+  width: 150,
+  height: 150,
+  footOffset: 20,
+  wanderSpeed: 190,
+  chaseSpeed: 360,
+  fleeSpeed: 0,
+  followSpeed: 740,
+  noticeRadius: 980,
+  fleeRadius: 0,
+  followStopDistance: 38,
+  followBackSpacing: 82,
+  followSideSpacing: 58,
+  attackRadius: 175,
+  attackDamage: 16,
+  attackCooldown: 1.08,
+  attackWindup: 0.18,
+  defeatHits: 4,
+  bloodlusted: true,
+};
+
 const NPC = {
   width: 126,
   height: 168,
@@ -401,6 +424,7 @@ const MATT_CONFIGS = {
   watermatt: WATERMATT,
   rockmatt: ROCKMATT,
   mysticmatt: MYSTICMATT,
+  dementedmatt: DEMENTED_MATT,
 };
 
 const FOLLOWER_ASSIST = {
@@ -988,6 +1012,14 @@ const NPC_DEFS = {
     x: 2409,
     y: 2466,
   },
+  wizard: {
+    id: "wizard",
+    name: "The Wizard",
+    homeWorld: "grass_cave",
+    x: 1717.098445595855,
+    y: 1558.8452997779423,
+    scale: 2,
+  },
   logan: {
     id: "logan",
     name: "Logan",
@@ -1015,12 +1047,31 @@ const BROCK_MISSION_BRICK_DIALOGUE =
 const BROCK_MISSION_REACH_OUT =
   "Brick reaches out: Ivan, come back to the inn. My brother Brock is missing, and I need your help.";
 const BROCK_MISSION_SEARCH_OBJECTIVE = "Objective: Go to the Grassland and start looking for Brock.";
+const BROCK_RESCUE_DIALOGUE =
+  "Brock: Ivan... I was jumped by some magical energy. I woke up tied up down here. Please, free me before whoever did this comes back.";
 const BROCK_CAVE_LANTERN = {
   innerRadius: 130,
   outerRadius: 290,
   darkness: 0.96,
 };
 const BROCK_RESCUE_RADIUS = 170;
+const WIZARD_NPC_ID = "wizard";
+const WIZARD_AMBUSH_SCRIPT = "brock-rescue-ambush";
+const WIZARD_GRASS_CAVE_PATH_ID = "wizard-grass-cave-path";
+const WIZARD_GRASS_CAVE_DEFAULT_PATH = [
+  { x: 1717.098445595855, y: 1558.8452997779423 },
+  { x: 2529.8297557364917, y: 2482.6054774241306 },
+];
+const DEMENTED_MATT_TYPE = "dementedmatt";
+const DEMENTED_ESSENSE_ITEM_ID = "demented_essense";
+const DEMENTED_MATT_AMBUSH_COUNT = 3;
+const DEMENTED_MATT_AMBUSH_OFFSETS = [
+  { x: -140, y: 74 },
+  { x: 28, y: -128 },
+  { x: 162, y: 92 },
+];
+const WIZARD_AMBUSH_WARNING =
+  "The Wizard: You should have left him in the dark. Now run.";
 const BROCK_DEFAULT_FREE_PATH = [
   { x: 2409.178386380459, y: 2466.3212435233163 },
   { x: 2860, y: 2120 },
@@ -1036,6 +1087,7 @@ const MATT_LABELS = {
   watermatt: "Water Matts",
   rockmatt: "Rock Matts",
   mysticmatt: "Mystic Matts",
+  dementedmatt: "Demented Matts",
 };
 
 const ITEM_DEFS = {
@@ -1328,6 +1380,13 @@ const ITEM_DEFS = {
     sellPrice: 38,
     unique: true,
   },
+  demented_essense: {
+    id: "demented_essense",
+    name: "DementedEssense",
+    description: "A warped residue left behind by a defeated Demented Matt. Brick wants Scott to see it.",
+    sellPrice: 0,
+    stackable: true,
+  },
 };
 
 const INVENTORY_CATEGORIES = [
@@ -1363,6 +1422,11 @@ const SHOP_DEFS = {
     title: "Brick's Inn Counter",
     greeting: "Brick keeps travelers supplied.",
     buy: ["inn_meal", "hearty_stew", "coffee_flask", "river_tea", "inn_elixir", "camp_brush", "focus_mint", "trail_map", "room_key", "health_potion", "stamina_tonic"],
+  },
+  brock: {
+    title: "Brock's Corner",
+    greeting: "Brock is back at the inn, still piecing together what happened in the cave.",
+    buy: [],
   },
   logan: {
     title: "Logan's Item Shop",
@@ -1496,6 +1560,33 @@ const NPC_DIALOGUE = {
         label: "Home",
         text:
           "Home is not the safest map. It is the place you can find again. That is why I keep maps even when they disagree with each other.",
+      },
+    ],
+  },
+  brock: {
+    speaker: "Brock",
+    role: "Recovering traveler",
+    mood: "tired, grateful, and listening for footsteps",
+    intro:
+      "Brock sits near the inn wall with a blanket around his shoulders. He keeps thanking Ivan, then stopping like he is trying to remember a voice from underground.",
+    topics: [
+      {
+        id: "cave",
+        label: "The Cave",
+        text:
+          "The cave did not feel empty. I heard boots, then a voice that sounded like it was smiling at a locked door. After that, nothing until you found me.",
+      },
+      {
+        id: "wizard",
+        label: "The Wizard",
+        text:
+          "I only saw the edge of his robe. He kept saying Brock was bait, like he knew someone would come. He wanted a witness more than a prisoner.",
+      },
+      {
+        id: "inn",
+        label: "The Inn",
+        text:
+          "Brick keeps pretending he is just mad at me for worrying him. That is how I know he was scared. I am staying close to the counter for a while.",
       },
     ],
   },
@@ -1887,6 +1978,7 @@ const MATT_SELL_VALUES = {
   watermatt: 75,
   rockmatt: 95,
   mysticmatt: 120,
+  dementedmatt: 140,
 };
 
 const ARENA_OPPONENTS = [
@@ -2750,6 +2842,8 @@ function numberedFrames(path, count) {
   return Array.from({ length: count }, (_, index) => `${path}/${index + 1}.png`);
 }
 
+const DEMENTED_MATT_RUNNING_FRAMES = numberedFrames("assets/addedcharacters/dementedmatt/running", 17);
+
 const ASSETS = {
   ivan: {
     idle: numberedFrames("assets/ivan/idle", 12),
@@ -2850,6 +2944,9 @@ const ASSETS = {
     caught: numberedFrames("assets/matts/mysticmatt/caught", 8),
     attack: numberedFrames("assets/matts/mysticmatt/attack", 6),
   },
+  dementedmatt: {
+    walking: DEMENTED_MATT_RUNNING_FRAMES,
+  },
   npcs: {
     scott: {
       idle: numberedFrames("assets/maps/town/characters/scottarena/idle", 12),
@@ -2876,6 +2973,11 @@ const ASSETS = {
       idle: ["assets/addedcharacters/brock/free.png"],
       walking: numberedFrames("assets/addedcharacters/brock/walking", 6),
       captured: numberedFrames("assets/addedcharacters/brock/captured", 12),
+    },
+    wizard: {
+      idle: ["assets/addedcharacters/darkwizard/main.png"],
+      walking: numberedFrames("assets/addedcharacters/darkwizard/walking", 7),
+      disappear: numberedFrames("assets/addedcharacters/darkwizard/disappear", 9),
     },
     logan: {
       idle: ["assets/maps/town/characters/loganstore/idle/main.png"],
@@ -3117,6 +3219,9 @@ const images = {
     caught: [],
     attack: [],
   },
+  dementedmatt: {
+    walking: [],
+  },
   effects: {},
   npcs: {},
 };
@@ -3198,6 +3303,7 @@ async function loadAssets() {
     watermattFrames,
     rockmattFrames,
     mysticmattFrames,
+    dementedmattFrames,
     effectImages,
     npcFrames,
   ] = await Promise.all([
@@ -3216,6 +3322,7 @@ async function loadAssets() {
     loadAnimationSet(ASSETS.watermatt, WATERMATT.width, WATERMATT.height),
     loadAnimationSet(ASSETS.rockmatt, ROCKMATT.width, ROCKMATT.height),
     loadAnimationSet(ASSETS.mysticmatt, MYSTICMATT.width, MYSTICMATT.height),
+    loadAnimationSet(ASSETS.dementedmatt, DEMENTED_MATT.width, DEMENTED_MATT.height),
     Promise.all(
       Object.entries(EFFECT_ASSETS).map(async ([id, path]) => [id, await loadImage(path)]),
     ),
@@ -3240,6 +3347,7 @@ async function loadAssets() {
   Object.assign(images.watermatt, watermattFrames);
   Object.assign(images.rockmatt, rockmattFrames);
   Object.assign(images.mysticmatt, mysticmattFrames);
+  Object.assign(images.dementedmatt, dementedmattFrames);
   images.effects = Object.fromEntries(effectImages);
   images.npcs = Object.fromEntries(npcFrames);
 }
@@ -3279,7 +3387,7 @@ function getWorldMapConfig(worldId = state.currentWorld) {
 }
 
 function getWorldMapImageKey(worldId = state.currentWorld) {
-  if (worldId === BROCK_CAPTURED_WORLD_ID && isBrockRescued()) {
+  if (worldId === BROCK_CAPTURED_WORLD_ID && isBrockRescueMapRevealed()) {
     return `${worldId}:rescued`;
   }
 
@@ -4106,7 +4214,9 @@ function normalizeNpc(npc, worldId) {
     id: def.id,
     x: Number.isFinite(npc.x) ? clamp(npc.x, 0, getMapWidth(worldId)) : center.x,
     y: Number.isFinite(npc.y) ? clamp(npc.y, 0, getMapHeight(worldId)) : center.y,
-    action: ["idle", "walking", "idleSpecial", "busy", "talk"].includes(npc.action) ? npc.action : "idle",
+    action: ["idle", "walking", "idleSpecial", "busy", "talk", "disappear"].includes(npc.action)
+      ? npc.action
+      : "idle",
     frameIndex: Number.isFinite(npc.frameIndex) ? npc.frameIndex : 0,
     frameTimer: 0,
     direction: npc.direction === "left" ? "left" : "right",
@@ -4736,12 +4846,47 @@ function normalizeStoryFlags(flags) {
     : BROCK_MISSION_STATUS.LOCKED;
   return {
     brockRescued: Boolean(flags?.brockRescued),
+    brockRescueConversationSeen: Boolean(flags?.brockRescueConversationSeen || flags?.brockRescued),
     brockMissionStatus: Boolean(flags?.brockRescued) ? BROCK_MISSION_STATUS.RESCUED : status,
+    brockRescueMapPending: Boolean(flags?.brockRescueMapPending),
+    brockRescueMapRevealed: Boolean(flags?.brockRescueMapRevealed),
+    wizardAmbushStarted: Boolean(flags?.wizardAmbushStarted),
+    wizardAmbushComplete: Boolean(flags?.wizardAmbushComplete),
+    wizardDementedMattPending: Boolean(flags?.wizardDementedMattPending),
+    wizardDementedMattsSpawned: Boolean(flags?.wizardDementedMattsSpawned),
+    brockWizardTalkSeen: Boolean(flags?.brockWizardTalkSeen),
+    brickWizardTalkSeen: Boolean(flags?.brickWizardTalkSeen),
+    dementedEssenseFound: Boolean(flags?.dementedEssenseFound),
+    dementedEssenseShownToBrick: Boolean(flags?.dementedEssenseShownToBrick),
+    dementedEssenseDiscussedWithScott: Boolean(flags?.dementedEssenseDiscussedWithScott),
   };
 }
 
 function isBrockRescued() {
   return Boolean(state.storyFlags?.brockRescued);
+}
+
+function isBrockRescueMapRevealed() {
+  return isBrockRescued() && Boolean(state.storyFlags?.brockRescueMapRevealed);
+}
+
+function maybeRevealBrockRescueMapOnReturn(worldId, previousWorldId) {
+  if (
+    worldId !== BROCK_CAPTURED_WORLD_ID ||
+    previousWorldId === worldId ||
+    !isBrockRescued() ||
+    !state.storyFlags?.brockRescueMapPending
+  ) {
+    return false;
+  }
+
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    brockRescueMapPending: false,
+    brockRescueMapRevealed: true,
+  });
+  saveEconomy();
+  return true;
 }
 
 function setBrockMissionStatus(status) {
@@ -4756,17 +4901,40 @@ function setBrockMissionStatus(status) {
 
 function setBrockRescued(rescued = true) {
   const previousStatus = state.storyFlags?.brockMissionStatus;
-  state.storyFlags = normalizeStoryFlags({
+  const nextFlags = {
     ...state.storyFlags,
     brockRescued: Boolean(rescued),
+    brockRescueConversationSeen: rescued ? true : false,
+    brockRescueMapPending: rescued ? true : false,
+    brockRescueMapRevealed: false,
     brockMissionStatus: rescued
       ? BROCK_MISSION_STATUS.RESCUED
       : previousStatus === BROCK_MISSION_STATUS.RESCUED
         ? BROCK_MISSION_STATUS.SEARCH_GRASSLAND
         : previousStatus,
+  };
+
+  if (!rescued) {
+    nextFlags.wizardAmbushStarted = false;
+    nextFlags.wizardAmbushComplete = false;
+    nextFlags.wizardDementedMattPending = false;
+    nextFlags.wizardDementedMattsSpawned = false;
+    nextFlags.brockWizardTalkSeen = false;
+    nextFlags.brickWizardTalkSeen = false;
+    nextFlags.dementedEssenseFound = false;
+    nextFlags.dementedEssenseShownToBrick = false;
+    nextFlags.dementedEssenseDiscussedWithScott = false;
+  }
+
+  state.storyFlags = normalizeStoryFlags({
+    ...nextFlags,
   });
   saveEconomy();
   updateCaughtHud(countCaughtMatts(), true);
+}
+
+function hasSeenBrockRescueConversation() {
+  return Boolean(state.storyFlags?.brockRescueConversationSeen);
 }
 
 function canStartBrockMission() {
@@ -4785,9 +4953,50 @@ function getBrockMissionStatus() {
   return state.storyFlags?.brockMissionStatus || BROCK_MISSION_STATUS.TALK_TO_BRICK;
 }
 
+function hasDementedEssenseForBrick() {
+  return hasItem(DEMENTED_ESSENSE_ITEM_ID) && !state.storyFlags?.dementedEssenseShownToBrick;
+}
+
+function isPostBrockStoryActive() {
+  if (!isBrockRescued()) {
+    return false;
+  }
+
+  return Boolean(
+    !state.storyFlags?.brockWizardTalkSeen ||
+      !state.storyFlags?.brickWizardTalkSeen ||
+      hasDementedEssenseForBrick() ||
+      (state.storyFlags?.dementedEssenseShownToBrick && !state.storyFlags?.dementedEssenseDiscussedWithScott),
+  );
+}
+
+function getPostBrockStoryGuideId() {
+  if (!isBrockRescued()) {
+    return "";
+  }
+
+  if (state.storyFlags?.dementedEssenseShownToBrick && !state.storyFlags?.dementedEssenseDiscussedWithScott) {
+    return "scott";
+  }
+  if (hasDementedEssenseForBrick()) {
+    return "brick";
+  }
+  if (!state.storyFlags?.brockWizardTalkSeen) {
+    return "brock";
+  }
+  if (!state.storyFlags?.brickWizardTalkSeen) {
+    return "brick";
+  }
+  return "";
+}
+
 function isBrockMissionActive() {
   const status = getBrockMissionStatus();
-  return status === BROCK_MISSION_STATUS.TALK_TO_BRICK || status === BROCK_MISSION_STATUS.SEARCH_GRASSLAND;
+  return (
+    status === BROCK_MISSION_STATUS.TALK_TO_BRICK ||
+    status === BROCK_MISSION_STATUS.SEARCH_GRASSLAND ||
+    isPostBrockStoryActive()
+  );
 }
 
 function getBrockMissionObjectiveText() {
@@ -4798,6 +5007,19 @@ function getBrockMissionObjectiveText() {
 
   if (status === BROCK_MISSION_STATUS.SEARCH_GRASSLAND) {
     return BROCK_MISSION_SEARCH_OBJECTIVE;
+  }
+
+  if (status === BROCK_MISSION_STATUS.RESCUED) {
+    const guideId = getPostBrockStoryGuideId();
+    if (guideId === "brick" && hasDementedEssenseForBrick()) {
+      return "Objective: Bring DementedEssense to Brick at the inn.";
+    }
+    if (guideId === "brock" || guideId === "brick") {
+      return "Objective: Check on Brick and Brock at the inn about the wizard.";
+    }
+    if (guideId === "scott") {
+      return "Objective: Talk to Scott at the arena about DementedEssense.";
+    }
   }
 
   return "";
@@ -4847,16 +5069,53 @@ function getNearbyCapturedBrock() {
   return Math.hypot(brock.x - state.player.x, brock.y - state.player.y) <= BROCK_RESCUE_RADIUS ? brock : null;
 }
 
+function showBrockRescueConversation() {
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    brockRescueConversationSeen: true,
+  });
+  saveEconomy();
+  openStoryOverlay("Brock", BROCK_RESCUE_DIALOGUE, "Press E near Brock to free him.");
+  setGameMessage("Brock asks you to free him.", 7200);
+}
+
+function maybeStartBrockRescueConversation() {
+  if (
+    state.dev.enabled ||
+    isIntroOpen() ||
+    isPauseMenuOpen() ||
+    isShopOpen() ||
+    state.arena.active ||
+    isBossIntroPlaying() ||
+    hasSeenBrockRescueConversation()
+  ) {
+    return false;
+  }
+
+  if (!getNearbyCapturedBrock()) {
+    return false;
+  }
+
+  showBrockRescueConversation();
+  return true;
+}
+
 function tryRescueNearbyBrock() {
   const brock = getNearbyCapturedBrock();
   if (!brock) {
     return false;
   }
 
+  if (!hasSeenBrockRescueConversation()) {
+    showBrockRescueConversation();
+    return true;
+  }
+
   setBrockRescued(true);
   spawnCaptureEffect({ x: brock.x, y: brock.y });
   addScreenShake(4);
-  setGameMessage("Brock: Ivan? You found me. Get me out of here.", 7800);
+  startWizardAmbushAfterBrockRescue();
+  setGameMessage("Brock is free. A dark figure moves deeper in the cave.", 7800);
   draw();
   return true;
 }
@@ -5693,6 +5952,10 @@ function rollWildMattLevel(profile, random = Math.random) {
 }
 
 function getWildMattCaptureHits(matt) {
+  if (Number.isFinite(matt?.defeatHits)) {
+    return clamp(Math.round(matt.defeatHits), 2, 12);
+  }
+
   const level = getMattLevel(matt);
   const difficulty = Number(matt?.captureDifficulty) || 1;
   if (matt?.boss) {
@@ -5719,6 +5982,9 @@ function getWildMattCaptureChance(matt) {
 
 function getCaptureHitThreshold(matt = null) {
   let threshold = matt ? getWildMattCaptureHits(matt) : 4;
+  if (Number.isFinite(matt?.defeatHits)) {
+    return Math.max(2, threshold);
+  }
   if (hasItem("matt_snack")) {
     threshold -= 1;
   }
@@ -6297,7 +6563,7 @@ function getInventoryCategory(itemId) {
   if (!item) {
     return "misc";
   }
-  if (itemId === "arena_ticket" || itemId === "room_key" || item.mattType) {
+  if (itemId === "arena_ticket" || itemId === "room_key" || itemId === DEMENTED_ESSENSE_ITEM_ID || item.mattType) {
     return "key";
   }
   if (item.bondOnly || itemId === "bond_ribbon" || itemId === "memory_locket" || item.use?.friendship) {
@@ -6552,7 +6818,7 @@ function appendItemRow(parent, itemId, mode) {
         (item.mattType && state.capturedParty.length >= MATT_PARTY_LIMIT),
     );
   } else if (mode === "sell") {
-    action = makeShopButton("Sell", "sell-item", itemId, count <= 0);
+    action = makeShopButton("Sell", "sell-item", itemId, count <= 0 || sellValue <= 0);
   } else if (item.bondOnly) {
     action = makeShopButton("Bond", "shop-tab", "bond", count <= 0 || state.capturedParty.length === 0);
   } else if (item.use) {
@@ -6717,13 +6983,174 @@ function renderBrockMissionTalk(parent) {
   parent.append(scene);
 }
 
+function getPostBrockStoryTalk(shopId) {
+  if (!isBrockRescued()) {
+    return null;
+  }
+
+  if (shopId === "brock" && !state.storyFlags?.brockWizardTalkSeen) {
+    return {
+      id: "brock-wizard-talk",
+      speaker: "Brock",
+      role: "Recovering traveler",
+      mood: "shaken, grateful, and trying to remember",
+      line:
+        "Brock: I heard the wizard before I saw him. He kept saying I was bait, like he wanted you to pull me free and follow the trail. Those demented Matts were not wild. They were pushed past wild.",
+      note: "Brock is safe at the inn, but he remembers the wizard setting a trap.",
+      actionLabel: "Let Brock Rest",
+    };
+  }
+
+  if (shopId === "brick" && !state.storyFlags?.brickWizardTalkSeen) {
+    return {
+      id: "brick-wizard-talk",
+      speaker: "Brick",
+      role: "Innkeeper",
+      mood: "protective and angry under the calm",
+      line:
+        "Brick: Brock made it back because of you. Now tell me about this wizard. If he used my brother as bait, he is not just hiding in that cave. He is testing who comes running.",
+      note: "Brick wants every detail about the wizard's ambush.",
+      actionLabel: "Describe the Wizard",
+    };
+  }
+
+  if (shopId === "brick" && hasDementedEssenseForBrick()) {
+    return {
+      id: "brick-essense-talk",
+      speaker: "Brick",
+      role: "Innkeeper",
+      mood: "grim and studying the strange residue",
+      line:
+        "Brick: That came out of one of those demented Matts? It is not blood, and it is not normal Matt magic. Scott knows arena seals better than anyone. Take the DementedEssense to him and ask what was broken.",
+      note: "Objective: Talk to Scott at the arena about DementedEssense.",
+      actionLabel: "Take It to Scott",
+    };
+  }
+
+  if (
+    shopId === "brick" &&
+    state.storyFlags?.dementedEssenseShownToBrick &&
+    !state.storyFlags?.dementedEssenseDiscussedWithScott
+  ) {
+    return {
+      id: "",
+      speaker: "Brick",
+      role: "Innkeeper",
+      mood: "waiting for Scott's answer",
+      line:
+        "Brick: Scott needs to see that DementedEssense. If the wizard is twisting Matts through failed seals, the arena captain will know what signs to look for.",
+      note: "Objective: Talk to Scott at the arena about DementedEssense.",
+      actionLabel: "",
+    };
+  }
+
+  if (
+    shopId === "scott" &&
+    state.storyFlags?.dementedEssenseShownToBrick &&
+    !state.storyFlags?.dementedEssenseDiscussedWithScott
+  ) {
+    return {
+      id: "scott-essense-talk",
+      speaker: "Scott",
+      role: "Arena captain",
+      mood: "grim, alert, and no longer casual",
+      line:
+        "Scott: Brick sent you with this? The arena seals are built to teach restraint. This DementedEssense feels like restraint got ripped out and burned. If the wizard can do that on purpose, every Matt road needs watching.",
+      note: "Scott starts studying the DementedEssense for a trail back to the wizard.",
+      actionLabel: "Let Scott Study It",
+    };
+  }
+
+  return null;
+}
+
+function renderPostBrockStoryTalk(parent, shopId) {
+  const talk = getPostBrockStoryTalk(shopId);
+  if (!talk) {
+    return false;
+  }
+
+  const scene = document.createElement("section");
+  scene.className = "dialogue-scene";
+
+  const speakerCard = document.createElement("aside");
+  speakerCard.className = "dialogue-speaker";
+  const portrait = document.createElement("div");
+  portrait.className = "dialogue-portrait";
+  portrait.textContent = talk.speaker.slice(0, 1).toUpperCase();
+  const speakerName = document.createElement("strong");
+  speakerName.textContent = talk.speaker;
+  const role = document.createElement("span");
+  role.textContent = talk.role;
+  const mood = document.createElement("em");
+  mood.textContent = talk.mood;
+  speakerCard.append(portrait, speakerName, role, mood);
+
+  const conversation = document.createElement("div");
+  conversation.className = "dialogue-conversation";
+  const line = document.createElement("p");
+  line.className = "dialogue-line";
+  line.textContent = talk.line;
+  conversation.append(line);
+
+  if (talk.note) {
+    const note = document.createElement("p");
+    note.className = "dialogue-note";
+    note.textContent = talk.note;
+    conversation.append(note);
+  }
+
+  const choices = document.createElement("div");
+  choices.className = "dialogue-choices";
+  if (talk.id && talk.actionLabel) {
+    choices.append(makeShopButton(talk.actionLabel, "post-brock-story", talk.id));
+  }
+  choices.append(makeShopButton("Mission", "shop-tab", "mission"), makeShopButton("Trade", "shop-tab", "buy"));
+  conversation.append(choices);
+  scene.append(speakerCard, conversation);
+  parent.append(scene);
+  return true;
+}
+
+function handlePostBrockStoryAction(actionId) {
+  const nextFlags = { ...state.storyFlags };
+  let message = "";
+
+  if (actionId === "brock-wizard-talk") {
+    nextFlags.brockWizardTalkSeen = true;
+    message = "Brock remembers the wizard setting a trap.";
+  } else if (actionId === "brick-wizard-talk") {
+    nextFlags.brickWizardTalkSeen = true;
+    message = "Brick is watching for the wizard's next move.";
+  } else if (actionId === "brick-essense-talk") {
+    nextFlags.dementedEssenseShownToBrick = true;
+    message = "Brick sends you to Scott with the DementedEssense.";
+  } else if (actionId === "scott-essense-talk") {
+    nextFlags.dementedEssenseDiscussedWithScott = true;
+    message = "Scott starts studying the DementedEssense.";
+  } else {
+    return false;
+  }
+
+  state.storyFlags = normalizeStoryFlags(nextFlags);
+  saveEconomy();
+  updateCaughtHud(countCaughtMatts(), true);
+  setGameMessage(message, 6200);
+  renderShop();
+  return true;
+}
+
 function renderTalk(parent, shopId) {
   if (isIntroChainActive() && INTRO_NPC_IDS.includes(shopId)) {
     renderIntroTalk(parent, shopId);
     return;
   }
 
-  if (shopId === "brick" && isBrockMissionActive()) {
+  if (renderPostBrockStoryTalk(parent, shopId)) {
+    return;
+  }
+
+  if (shopId === "brick" && isBrockMissionActive() && getBrockMissionStatus() !== BROCK_MISSION_STATUS.RESCUED) {
     renderBrockMissionTalk(parent);
     return;
   }
@@ -6914,14 +7341,37 @@ function renderIntroMission(parent, shopId) {
 }
 
 function renderBrockMission(parent, shopId) {
-  appendShopTextCard(parent, BROCK_MISSION_TITLE, getBrockMissionObjectiveText());
+  const status = getBrockMissionStatus();
+  const objective = getBrockMissionObjectiveText();
+  appendShopTextCard(parent, BROCK_MISSION_TITLE, objective);
+
+  if (status === BROCK_MISSION_STATUS.RESCUED) {
+    if (!isPostBrockStoryActive()) {
+      appendShopTextCard(parent, "Brock Is Safe", "Brock is back at Brick's Inn. The cave feels quieter, but the wizard's trail is still open.");
+      return;
+    }
+
+    const guideId = getPostBrockStoryGuideId();
+    const guideName = NPC_DEFS[guideId]?.name || "your current guide";
+    if (shopId !== guideId) {
+      appendShopTextCard(parent, "Current Guide", `Talk to ${guideName} to continue the wizard aftermath.`);
+      return;
+    }
+
+    appendShopTextCard(
+      parent,
+      "Next Conversation",
+      objective || `${guideName} has more to say about the wizard.`,
+      makeShopButton("Talk", "shop-tab", "talk"),
+    );
+    return;
+  }
 
   if (shopId !== "brick") {
     appendShopTextCard(parent, "Current Guide", "Brick is waiting at the inn with the details about Brock.");
     return;
   }
 
-  const status = getBrockMissionStatus();
   appendShopTextCard(
     parent,
     "Brick's Lead",
@@ -7658,6 +8108,39 @@ function renderActiveOverlay(message = "") {
     renderPauseMenu(message);
   } else {
     renderShop(message);
+  }
+}
+
+function openStoryOverlay(titleText, detailText, message = "Close when ready.") {
+  if (!shopOverlay || !shopList) {
+    setGameMessage(detailText, 7200);
+    return;
+  }
+
+  closePauseMenu();
+  keys.clear();
+  touchInput.sprint = false;
+  resetTouchJoystick();
+  state.activeShopId = "";
+  state.shopTab = "story";
+  state.activeDialogueTopic = "";
+  document.body.classList.add("shop-open");
+  shopOverlay.hidden = false;
+  updateEconomyHud();
+
+  if (shopTitle) {
+    shopTitle.textContent = titleText;
+  }
+
+  if (shopTabs) {
+    shopTabs.innerHTML = "";
+  }
+
+  shopList.innerHTML = "";
+  appendShopTextCard(shopList, titleText, detailText);
+
+  if (shopMessage) {
+    shopMessage.textContent = message;
   }
 }
 
@@ -9582,6 +10065,11 @@ function sellInventoryItem(itemId) {
     return;
   }
 
+  if (sellValue <= 0) {
+    renderShop(`${item.name} cannot be sold.`);
+    return;
+  }
+
   removeItem(itemId);
   state.coins += sellValue;
   saveEconomy();
@@ -9772,6 +10260,7 @@ function updateClock(dt) {
   if (night !== wasNight) {
     state.lastNightState = night;
     spawnNpcs();
+    spawnScriptedWizardIfNeeded();
   }
 }
 
@@ -9832,6 +10321,7 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
   state.dev.activeNpcPathId = null;
   state.dev.activeWallId = null;
   state.dev.activeNodeId = null;
+  maybeRevealBrockRescueMapOnReturn(id, previousWorld);
 
   if (movePlayer) {
     const arrivalNode = getTransitionSpawnNode(id, fromWorldId);
@@ -9865,6 +10355,8 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
   if (state.ready) {
     spawnDogmatts();
     spawnNpcs();
+    spawnScriptedWizardIfNeeded();
+    spawnPendingDementedMattAmbushIfNeeded();
     updateCaughtHud(countCaughtMatts());
     maybeShowBrockMissionArrivalHint(id, previousWorld);
     syncCamera();
@@ -10105,6 +10597,257 @@ function chooseNpcPathAction(npc, path) {
   }
 
   scheduleNpcLongWait(npc);
+}
+
+function getWizardAmbushPath(world = getWorld()) {
+  const placedPath =
+    world.npcPaths.find(
+      (path) => path.npcId === WIZARD_NPC_ID && path.id === WIZARD_GRASS_CAVE_PATH_ID && path.points.length > 0,
+    ) || world.npcPaths.find((path) => path.npcId === WIZARD_NPC_ID && path.points.length > 0);
+
+  return placedPath || { id: WIZARD_GRASS_CAVE_PATH_ID, npcId: WIZARD_NPC_ID, points: WIZARD_GRASS_CAVE_DEFAULT_PATH };
+}
+
+function getWizardAmbushSpawnPoint(world = getWorld(), path = getWizardAmbushPath(world)) {
+  const placedWizard = world.npcs.find((npc) => npc.id === WIZARD_NPC_ID);
+  return placedWizard || path?.points?.[0] || NPC_DEFS[WIZARD_NPC_ID];
+}
+
+function isWizardAmbushActive() {
+  return (
+    state.currentWorld === BROCK_CAPTURED_WORLD_ID &&
+    isBrockRescued() &&
+    state.storyFlags?.wizardAmbushStarted &&
+    !state.storyFlags?.wizardAmbushComplete
+  );
+}
+
+function spawnScriptedWizardIfNeeded() {
+  if (!isWizardAmbushActive()) {
+    return false;
+  }
+
+  if (state.npcs.some((npc) => npc.id === WIZARD_NPC_ID && npc.script === WIZARD_AMBUSH_SCRIPT)) {
+    return true;
+  }
+
+  const world = getWorld();
+  const path = getWizardAmbushPath(world);
+  const spawnPoint = getWizardAmbushSpawnPoint(world, path);
+  const startIndex = path.points.length > 0 ? getClosestNpcPathPointIndex(spawnPoint, path) ?? 0 : 0;
+  const npc = createNpc(WIZARD_NPC_ID, spawnPoint.x, spawnPoint.y);
+  npc.script = WIZARD_AMBUSH_SCRIPT;
+  npc.scriptState = "walking";
+  npc.pathId = path.id;
+  npc.pathPointIndex = startIndex;
+  npc.targetPointIndex = Math.min(startIndex + 1, path.points.length - 1);
+  npc.waitTimer = 0;
+  npc.waitMode = "point";
+  state.npcs.push(npc);
+  spawnCaptureEffect(npc);
+  addScreenShake(3);
+  return true;
+}
+
+function startWizardAmbushAfterBrockRescue() {
+  if (state.currentWorld !== BROCK_CAPTURED_WORLD_ID || state.storyFlags?.wizardAmbushStarted) {
+    return;
+  }
+
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    wizardAmbushStarted: true,
+    wizardAmbushComplete: false,
+    wizardDementedMattPending: false,
+    wizardDementedMattsSpawned: false,
+  });
+  saveEconomy();
+  spawnScriptedWizardIfNeeded();
+}
+
+function finishWizardAmbush(wizard) {
+  if (!state.storyFlags?.wizardAmbushComplete) {
+    state.storyFlags = normalizeStoryFlags({
+      ...state.storyFlags,
+      wizardAmbushComplete: true,
+      wizardDementedMattPending: true,
+      wizardDementedMattsSpawned: false,
+    });
+    saveEconomy();
+    setGameMessage(WIZARD_AMBUSH_WARNING, 5200);
+    spawnCaptureEffect(wizard);
+    addScreenShake(7);
+  }
+
+  wizard.scriptState = "disappearing";
+  wizard.targetPointIndex = null;
+  wizard.scriptTimer = 0;
+  setAction(wizard, "disappear");
+}
+
+function createDementedMatt(index, origin) {
+  const config = DEMENTED_MATT;
+  const offset = DEMENTED_MATT_AMBUSH_OFFSETS[index % DEMENTED_MATT_AMBUSH_OFFSETS.length];
+  const x = clamp((origin?.x || state.player.x) + offset.x, 80, getMapWidth() - 80);
+  const y = clamp((origin?.y || state.player.y) + offset.y, 80, getMapHeight() - 80);
+  const level = 10 + index;
+  const matt = {
+    id: `${DEMENTED_MATT_TYPE}-ambush-${index + 1}`,
+    originalId: `${DEMENTED_MATT_TYPE}-ambush-${index + 1}`,
+    name: "Demented Matt",
+    type: DEMENTED_MATT_TYPE,
+    assetKey: DEMENTED_MATT_TYPE,
+    x,
+    y,
+    width: config.width,
+    height: config.height,
+    scale: 1.28,
+    action: "walking",
+    frameTimer: index * 0.06,
+    frameIndex: index % DEMENTED_MATT_RUNNING_FRAMES.length,
+    direction: x > state.player.x ? "left" : "right",
+    wanderAngle: 0,
+    wanderTimer: 0,
+    level,
+    xp: 0,
+    friendship: 0,
+    captureDifficulty: 4.2,
+    defeatHits: config.defeatHits,
+    captureChance: 0,
+    captureHitsRequired: 0,
+    damageScale: 1.28,
+    hitCount: 0,
+    hitCooldown: 0,
+    hitReactionTimer: 0,
+    attackCooldown: 0.2 + index * 0.22,
+    attackTimer: 0,
+    attackElapsed: 0,
+    attackApplied: false,
+    caught: false,
+    bloodlusted: true,
+    pathId: "",
+    pathPointIndex: 0,
+    pathDirection: 1,
+    spawnAreaId: "",
+    pathRoamMode: "bloodlust",
+    pathRoamTarget: null,
+    pathPauseTimer: 0,
+    pathPanicTimer: 0,
+  };
+
+  matt.captureChance = getWildMattCaptureChance(matt);
+  matt.captureHitsRequired = getWildMattCaptureHits(matt);
+  return matt;
+}
+
+function getDementedMattAmbushOrigin() {
+  const path = getWizardAmbushPath();
+  return path?.points?.[path.points.length - 1] || getCapturedBrockPosition() || state.player;
+}
+
+function spawnDementedMattAmbush(origin = getDementedMattAmbushOrigin()) {
+  if (
+    state.currentWorld !== BROCK_CAPTURED_WORLD_ID ||
+    !isBrockRescued() ||
+    state.storyFlags?.wizardDementedMattsSpawned
+  ) {
+    return false;
+  }
+
+  const capturedMatts = state.dogmatts.filter((matt) => matt.caught);
+  const dementedMatts = Array.from({ length: DEMENTED_MATT_AMBUSH_COUNT }, (_, index) =>
+    createDementedMatt(index, origin),
+  );
+  state.dogmatts = [...dementedMatts, ...capturedMatts];
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    wizardDementedMattPending: false,
+    wizardDementedMattsSpawned: true,
+  });
+  saveEconomy();
+
+  dementedMatts.forEach((matt) => spawnCaptureEffect(matt));
+  addScreenShake(10);
+  setGameMessage("Three demented Matts tear out of the dark.", 7600);
+  updateCaughtHud(countCaughtMatts());
+  return true;
+}
+
+function spawnPendingDementedMattAmbushIfNeeded() {
+  if (!state.storyFlags?.wizardDementedMattPending || state.storyFlags?.wizardDementedMattsSpawned) {
+    return false;
+  }
+
+  return spawnDementedMattAmbush();
+}
+
+function completeWizardDisappear(wizard) {
+  spawnDementedMattAmbush(wizard);
+  wizard.removeAfterScript = true;
+}
+
+function updateScriptedWizard(wizard, dt) {
+  const frames = getNpcFrames(wizard);
+  const frameDuration = wizard.action === "walking" ? 0.11 : 0.14;
+
+  if (wizard.scriptState === "disappearing") {
+    if (frames.length > 0) {
+      wizard.frameTimer += dt;
+      if (wizard.frameTimer >= frameDuration) {
+        wizard.frameTimer = 0;
+        if (wizard.frameIndex < frames.length - 1) {
+          wizard.frameIndex += 1;
+        } else {
+          completeWizardDisappear(wizard);
+        }
+      }
+    } else {
+      completeWizardDisappear(wizard);
+    }
+    return;
+  }
+
+  const path = findNpcPathById(wizard.pathId, getWorld()) || getWizardAmbushPath();
+  if (!path || path.points.length <= 1) {
+    finishWizardAmbush(wizard);
+    return;
+  }
+
+  normalizeNpcPathProgress(wizard, path);
+  if (!Number.isFinite(wizard.targetPointIndex)) {
+    wizard.targetPointIndex = Math.min(wizard.pathPointIndex + 1, path.points.length - 1);
+  }
+
+  const target = path.points[wizard.targetPointIndex];
+  if (!target || wizard.pathPointIndex >= path.points.length - 1) {
+    finishWizardAmbush(wizard);
+    return;
+  }
+
+  const dx = target.x - wizard.x;
+  const dy = target.y - wizard.y;
+  const distance = Math.hypot(dx, dy) || 1;
+
+  if (distance <= NPC.stopDistance) {
+    wizard.x = target.x;
+    wizard.y = target.y;
+    wizard.pathPointIndex = wizard.targetPointIndex;
+    if (wizard.pathPointIndex >= path.points.length - 1) {
+      finishWizardAmbush(wizard);
+      return;
+    }
+    wizard.targetPointIndex = wizard.pathPointIndex + 1;
+  } else {
+    const speed = Math.min(NPC.speed * dt, distance);
+    wizard.x = clamp(wizard.x + (dx / distance) * speed, 0, getMapWidth());
+    wizard.y = clamp(wizard.y + (dy / distance) * speed, 0, getMapHeight());
+    wizard.direction = dx < 0 ? "left" : "right";
+    setAction(wizard, "walking");
+  }
+
+  if (frames.length > 0) {
+    advanceAnimation(wizard, frames.length, frameDuration, dt);
+  }
 }
 
 function respawnWorldEnemies() {
@@ -11355,6 +12098,10 @@ function trySpawnUnlockedWorldBoss(capturedMatt) {
 }
 
 function canSpawnNpc(npcId) {
+  if (npcId === WIZARD_NPC_ID) {
+    return false;
+  }
+
   return npcId !== "brock" || isBrockRescued();
 }
 
@@ -12974,6 +13721,38 @@ function updateAwakenedBossMovement(matt, config, distance, dt) {
   return moved;
 }
 
+function isBloodlustedMatt(matt, config = getMattConfig(matt?.type)) {
+  return Boolean(matt?.bloodlusted || config.bloodlusted);
+}
+
+function updateBloodlustedMattMovement(matt, config, distance, dt) {
+  if (matt.caught || matt.attackTimer > 0) {
+    return false;
+  }
+
+  facePlayer(matt);
+
+  const stopDistance = Math.max(72, (config.attackRadius || 140) * 0.72);
+  if (distance <= stopDistance) {
+    setWildMattBaseAction(matt, "walking", dt);
+    return false;
+  }
+
+  const moveX = (state.player.x - matt.x) / distance;
+  const moveY = (state.player.y - matt.y) / distance;
+  const beforeX = matt.x;
+  const beforeY = matt.y;
+  moveWithWalls(
+    matt,
+    moveX * (config.chaseSpeed || config.wanderSpeed) * dt,
+    moveY * (config.chaseSpeed || config.wanderSpeed) * dt,
+    Math.max(32, config.width * 0.34),
+  );
+  matt.direction = matt.x < beforeX ? "left" : "right";
+  setWildMattBaseAction(matt, "walking", dt);
+  return Math.hypot(matt.x - beforeX, matt.y - beforeY) > 0.5;
+}
+
 function updateDormantBossRoam(matt, config, distance, dt) {
   if (!matt.boss || !matt.preBattleRoam || matt.awakened) {
     return false;
@@ -13076,6 +13855,8 @@ function updateWildDogmatt(dogmatt, dt) {
     moving = true;
   } else if (!dogmatt.caught && dogmatt.hitReactionTimer <= 0 && updateMattAttack(dogmatt, config, distance, dt)) {
     return;
+  } else if (!dogmatt.caught && isBloodlustedMatt(dogmatt, config)) {
+    moving = updateBloodlustedMattMovement(dogmatt, config, distance, dt);
   } else if (distance < config.fleeRadius) {
     const moveX = dx / distance;
     const moveY = dy / distance;
@@ -13611,7 +14392,7 @@ function getMattFrames(matt) {
   if (matt.caught && shouldCapturedMattUseWalkingLoop(matt) && matt.action === "caught" && frameSet.walking?.length) {
     return frameSet.walking;
   }
-  return frameSet[matt.action] || frameSet.attack || frameSet.idle || images.dogmatt.idle;
+  return frameSet[matt.action] || frameSet.attack || frameSet.idle || frameSet.walking || images.dogmatt.idle;
 }
 
 function advanceMattAnimation(matt, dt) {
@@ -13915,6 +14696,11 @@ function chooseNpcIdleAction(npc) {
 }
 
 function updateNpc(npc, dt) {
+  if (npc.script === WIZARD_AMBUSH_SCRIPT) {
+    updateScriptedWizard(npc, dt);
+    return;
+  }
+
   const world = getWorld();
   let path = npc.pathId ? findNpcPathById(npc.pathId, world) : null;
   let moving = false;
@@ -14026,6 +14812,8 @@ function updateNpcs(dt) {
   for (const npc of state.npcs) {
     updateNpc(npc, dt);
   }
+
+  state.npcs = state.npcs.filter((npc) => !npc.removeAfterScript);
 }
 
 function updateFriendshipWalking(dt) {
@@ -14057,6 +14845,7 @@ function update(dt) {
   updateClock(dt);
   updatePlayer(dt);
   updateAutomaticNodeTravel(dt);
+  maybeStartBrockRescueConversation();
   updateNpcs(dt);
   updatePrimeMysticGravityWell(dt);
   updateDogmatts(dt);
@@ -14064,6 +14853,31 @@ function update(dt) {
   updateParticles(dt);
   syncCamera();
   preloadNearbyTilesIfNeeded(2);
+}
+
+function isDementedMatt(matt) {
+  return matt?.type === DEMENTED_MATT_TYPE;
+}
+
+function defeatDementedMatt(matt) {
+  state.dogmatts = state.dogmatts.filter((candidate) => candidate !== matt && candidate.id !== matt.id);
+  addItem(DEMENTED_ESSENSE_ITEM_ID, 1);
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    dementedEssenseFound: true,
+  });
+
+  spawnCaptureEffect(matt);
+  playCaptureSound();
+  addScreenShake(10);
+  const progress = awardPlayerXp(Math.round(36 + getMattLevel(matt) * 7), "demented matt defeated");
+  saveEconomy();
+  updateEconomyHud();
+  updateCaughtHud(countCaughtMatts(), true);
+  setGameMessage(
+    `Demented Matt dropped DementedEssense. Bring it to Brick. Ivan XP +${progress.gained}${progress.leveled ? `, Lv ${progress.level}` : ""}.`,
+    8200,
+  );
 }
 
 function hitDogmatt(dogmatt) {
@@ -14075,7 +14889,7 @@ function hitDogmatt(dogmatt) {
     dogmatt.attackCooldown = Math.min(dogmatt.attackCooldown || 0, 0.22);
     dogmatt.bossMoveTimer = 0;
   }
-  dogmatt.pathPanicTimer = dogmatt.rooted ? 0 : Math.max(dogmatt.pathPanicTimer || 0, 2.2);
+  dogmatt.pathPanicTimer = dogmatt.rooted || isBloodlustedMatt(dogmatt) ? 0 : Math.max(dogmatt.pathPanicTimer || 0, 2.2);
   dogmatt.pathRoamTarget = null;
   dogmatt.hitCount += 1;
   dogmatt.frameIndex = 0;
@@ -14084,6 +14898,11 @@ function hitDogmatt(dogmatt) {
   addScreenShake(5);
 
   if (dogmatt.hitCount >= captureHitThreshold) {
+    if (isDementedMatt(dogmatt)) {
+      defeatDementedMatt(dogmatt);
+      return;
+    }
+
     if (state.capturedParty.length >= MATT_PARTY_LIMIT) {
       dogmatt.hitCount = captureHitThreshold - 1;
       setAction(dogmatt, getMattHitAction(dogmatt));
@@ -14499,7 +15318,9 @@ function drawDogmatt(dogmatt) {
     drawWorldBossHealthBar(dogmatt, screenX, screenY, config, scale);
   } else if (!dogmatt.caught && !dogmatt.arenaBattler) {
     const difficulty = Math.max(1, Number(dogmatt.captureDifficulty) || 1);
-    const label = dogmatt.boss ? `${dogmatt.name} Lv ${getMattLevel(dogmatt)}` : `Lv ${getMattLevel(dogmatt)}`;
+    const label = dogmatt.boss || dogmatt.name
+      ? `${dogmatt.name || MATT_LABELS[dogmatt.type] || "Matt"} Lv ${getMattLevel(dogmatt)}`
+      : `Lv ${getMattLevel(dogmatt)}`;
     ctx.save();
     ctx.font = "800 13px Inter, system-ui, sans-serif";
     ctx.textAlign = "center";
@@ -14513,15 +15334,17 @@ function drawDogmatt(dogmatt) {
 }
 
 function getNpcRenderScale(npc) {
+  const npcScale = Number(NPC_DEFS[npc.id]?.scale) || 1;
+
   if (state.currentWorld === "town_blacksmith" && npc.id === "tom") {
-    return 3;
+    return 3 * npcScale;
   }
 
   if (state.currentWorld === "town_arena_entrance" && ["tom", "scott"].includes(npc.id)) {
-    return 3;
+    return 3 * npcScale;
   }
 
-  return getInnActorScale();
+  return getInnActorScale() * npcScale;
 }
 
 function drawNpcShadow(npc) {
@@ -14676,7 +15499,14 @@ function drawCapturedBrockRescuePrompt(point, screenX, screenY, scale) {
     return;
   }
 
-  const label = isMobileCameraView() ? "Tap: Rescue Brock" : "E: Rescue Brock";
+  const rescueReady = hasSeenBrockRescueConversation();
+  const label = isMobileCameraView()
+    ? rescueReady
+      ? "Tap: Free Brock"
+      : "Tap: Talk to Brock"
+    : rescueReady
+      ? "E: Free Brock"
+      : "E: Talk to Brock";
   const width = 178;
   const height = 32;
   const x = Math.round(screenX - width / 2);
@@ -15963,6 +16793,8 @@ shopList?.addEventListener("click", (event) => {
   } else if (action === "talk-back") {
     state.activeDialogueTopic = "";
     renderShop();
+  } else if (action === "post-brock-story") {
+    handlePostBrockStoryAction(id);
   } else if (action === "shop-tab") {
     setShopTab(id);
   } else if (action === "complete-mission") {
@@ -16115,6 +16947,8 @@ async function startGameForProfile(profileId) {
     await assetsReady;
     spawnDogmatts();
     spawnNpcs();
+    spawnScriptedWizardIfNeeded();
+    spawnPendingDementedMattAmbushIfNeeded();
     syncCamera();
     updateCaughtHud(countCaughtMatts());
 
