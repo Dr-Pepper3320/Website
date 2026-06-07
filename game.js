@@ -3496,6 +3496,51 @@ function getNewGameIntroStorageKey() {
   return getProfileScopedStorageKey(NEW_GAME_INTRO_STORAGE_KEY);
 }
 
+function hasProfileScopedStorage(baseKey, profileId = state.profileId) {
+  if (!profileId) {
+    return false;
+  }
+
+  try {
+    return Boolean(localStorage.getItem(getScopedStorageKey(baseKey, profileId)));
+  } catch (error) {
+    console.warn(`Could not check ${baseKey}.`, error);
+    return false;
+  }
+}
+
+function hasProfileScopedGameProgress(profileId = state.profileId) {
+  return Boolean(
+    hasProfileScopedStorage(WORLD_STORAGE_KEY, profileId) ||
+      hasProfileScopedStorage(ECONOMY_STORAGE_KEY, profileId) ||
+      hasProfileScopedStorage(MATT_PROGRESS_STORAGE_KEY, profileId) ||
+      hasProfileScopedStorage(NEW_GAME_INTRO_STORAGE_KEY, profileId),
+  );
+}
+
+function hasLegacyGameProgress() {
+  try {
+    return Boolean(
+      localStorage.getItem(WORLD_STORAGE_KEY) ||
+        localStorage.getItem(ECONOMY_STORAGE_KEY) ||
+        localStorage.getItem(MATT_PROGRESS_STORAGE_KEY) ||
+        localStorage.getItem(NEW_GAME_INTRO_STORAGE_KEY),
+    );
+  } catch (error) {
+    console.warn("Could not check legacy profile progress.", error);
+    return false;
+  }
+}
+
+function shouldUseLegacyProfileStorage(profileId = state.profileId) {
+  if (!profileId || hasProfileScopedGameProgress(profileId)) {
+    return false;
+  }
+
+  const firstProfileId = state.profiles[0]?.id || "";
+  return state.profiles.length <= 1 && profileId === firstProfileId && hasLegacyGameProgress();
+}
+
 function readJsonStorageValue(storageKey) {
   try {
     const saved = localStorage.getItem(storageKey);
@@ -3614,7 +3659,7 @@ function formatProfileTime(timestamp) {
 
 function getProfileSummary(profile) {
   const isLiveProfile = profile?.id === state.profileId && state.ready;
-  const allowLegacy = profile?.id === state.profileId;
+  const allowLegacy = shouldUseLegacyProfileStorage(profile?.id);
   const worldData = isLiveProfile
     ? { currentWorld: state.currentWorld }
     : readProfileStorage(WORLD_STORAGE_KEY, profile?.id, allowLegacy);
@@ -3845,13 +3890,12 @@ function hideLauncher() {
   }
 }
 
-function hasProfileGameProgress() {
-  try {
-    return Boolean(localStorage.getItem(getEconomyStorageKey()) || localStorage.getItem(getMattProgressStorageKey()));
-  } catch (error) {
-    console.warn("Could not check profile progress.", error);
-    return false;
+function hasProfileGameProgress(profileId = state.profileId, { allowLegacy = shouldUseLegacyProfileStorage(profileId) } = {}) {
+  if (hasProfileScopedGameProgress(profileId)) {
+    return true;
   }
+
+  return Boolean(allowLegacy && hasLegacyGameProgress());
 }
 
 function shouldShowNewGameIntro() {
@@ -4696,9 +4740,9 @@ function normalizeWorldData(data) {
   return worlds;
 }
 
-function loadWorlds() {
+function loadWorlds({ allowLegacy = shouldUseLegacyProfileStorage() } = {}) {
   try {
-    const saved = localStorage.getItem(getWorldStorageKey()) || localStorage.getItem(WORLD_STORAGE_KEY);
+    const saved = localStorage.getItem(getWorldStorageKey()) || (allowLegacy ? localStorage.getItem(WORLD_STORAGE_KEY) : null);
     if (saved) {
       const data = JSON.parse(saved);
       if (data.currentWorld) {
@@ -5566,9 +5610,10 @@ function normalizeFriendshipCare(care) {
   return normalized;
 }
 
-function loadEconomy() {
+function loadEconomy({ allowLegacy = shouldUseLegacyProfileStorage() } = {}) {
   try {
-    const saved = localStorage.getItem(getEconomyStorageKey()) || localStorage.getItem(ECONOMY_STORAGE_KEY);
+    const saved =
+      localStorage.getItem(getEconomyStorageKey()) || (allowLegacy ? localStorage.getItem(ECONOMY_STORAGE_KEY) : null);
     if (saved) {
       const data = JSON.parse(saved);
       state.coins = Math.max(0, Math.floor(Number(data.coins) || 0));
@@ -6231,10 +6276,11 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
   };
 }
 
-function loadCapturedParty() {
+function loadCapturedParty({ allowLegacy = shouldUseLegacyProfileStorage() } = {}) {
   try {
     const saved =
-      localStorage.getItem(getMattProgressStorageKey()) || localStorage.getItem(MATT_PROGRESS_STORAGE_KEY);
+      localStorage.getItem(getMattProgressStorageKey()) ||
+      (allowLegacy ? localStorage.getItem(MATT_PROGRESS_STORAGE_KEY) : null);
     if (!saved) {
       return [];
     }
@@ -16890,18 +16936,22 @@ async function startGameForProfile(profileId) {
     loading.classList.remove("hidden");
   }
 
-  state.currentWorld = DEFAULT_WORLD_ID;
-  state.worlds = loadWorlds();
-  const isFreshSave = !hasProfileGameProgress();
+  const allowLegacy = shouldUseLegacyProfileStorage(profileId);
+  const isFreshSave = !hasProfileGameProgress(profileId, { allowLegacy });
   const showIntro = shouldShowNewGameIntro();
-  state.capturedParty = loadCapturedParty();
-  loadEconomy();
+  state.currentWorld = DEFAULT_WORLD_ID;
+  state.worlds = loadWorlds({ allowLegacy });
+  state.capturedParty = loadCapturedParty({ allowLegacy });
+  loadEconomy({ allowLegacy });
   if (isIntroChainActive() && getActiveIntroQuest().id === "intro_wake_brick") {
     state.capturedParty = [];
     state.captureStats = normalizeCaptureStats();
   }
-  if (isFreshSave && isIntroChainActive()) {
+  const startsInIntro = isFreshSave && isIntroChainActive();
+  if (startsInIntro) {
     state.currentWorld = INTRO_START_WORLD_ID;
+  } else if (isFreshSave) {
+    state.currentWorld = DEFAULT_WORLD_ID;
   }
   state.caughtDogmatts = -1;
   state.clockMinutes = CLOCK.startHour * 60;
@@ -16914,7 +16964,7 @@ async function startGameForProfile(profileId) {
   state.cameraFocus = null;
   resetArenaBattle(false);
 
-  const start = isFreshSave && isIntroChainActive()
+  const start = startsInIntro
     ? { ...INN_RECOVERY_POINT }
     : isFreshSave
       ? getNewGameStartPoint()
