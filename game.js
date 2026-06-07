@@ -9172,23 +9172,39 @@ function getArenaBattleCenter() {
 function createArenaMattActor(matt, x, y, side, caught = false) {
   const type = matt.mattType || matt.type;
   const config = getMattConfig(type);
+  const assetKey = matt.assetKey || "";
+  const tamed = Boolean(caught && matt.tamed);
+  const follower = Boolean(tamed && matt.follower);
+  const restingActor = {
+    ...matt,
+    type,
+    assetKey,
+    tamed,
+    follower,
+    caught,
+  };
+
   return {
     id: side === "opponent" ? `arena-${matt.id}-${type}` : `arena-player-${matt.partyId || matt.id}`,
     originalId: matt.originalId || matt.id,
     partyId: matt.partyId || "",
     sourceWorld: matt.sourceWorld || state.currentWorld,
     type,
+    assetKey,
     x,
     y,
     baseX: x,
     baseY: y,
     width: config.width,
     height: config.height,
-    action: "idle",
+    scale: Number(matt.scale) || 1,
+    action: caught ? getCapturedMattRestAction(restingActor) : "idle",
     frameTimer: 0,
     frameIndex: 0,
     direction: side === "player" ? "right" : "left",
     caught,
+    tamed,
+    follower,
     arenaBattler: true,
     arenaSide: side,
     arenaLungeTimer: 0,
@@ -14562,7 +14578,7 @@ function updateArenaBattler(matt, dt) {
   } else if (matt.arenaHitTimer > 0 && getMattFrames({ ...matt, action: "hit" })?.length) {
     setAction(matt, "hit");
   } else if (matt.caught) {
-    setAction(matt, "caught");
+    setAction(matt, getCapturedMattRestAction(matt));
   } else {
     setWildMattBaseAction(matt, "idle", dt);
   }
