@@ -12403,7 +12403,16 @@ function updatePlayer(dt) {
   const moveY = inputY / distance;
   const moving = inputX !== 0 || inputY !== 0;
   player.moving = moving;
-  const sprinting = moving && (keys.has("shift") || touchInput.sprint) && player.stamina > 0;
+  const wantsSprint = moving && (keys.has("shift") || touchInput.sprint);
+  const sprintRecoveryThreshold = maxStamina * 0.18;
+  const sprintStaminaCost = getPlayerSprintStaminaCost() * dt;
+  if (!wantsSprint || player.stamina >= sprintRecoveryThreshold) {
+    player.sprintExhausted = false;
+  }
+  if (wantsSprint && player.stamina <= sprintStaminaCost) {
+    player.sprintExhausted = true;
+  }
+  const sprinting = wantsSprint && !player.sprintExhausted && player.stamina > 0;
 
   if (moving) {
     player.speed = getPlayerWalkSpeed();
@@ -12414,7 +12423,11 @@ function updatePlayer(dt) {
     player.facingY = moveY;
 
     if (sprinting) {
-      player.stamina = Math.max(0, player.stamina - getPlayerSprintStaminaCost() * dt);
+      player.stamina = Math.max(0, player.stamina - sprintStaminaCost);
+      if (player.stamina <= 0) {
+        player.sprintExhausted = true;
+        setAction(player, "walking");
+      }
     }
 
     if (Math.abs(moveX) > Math.abs(moveY)) {
