@@ -6154,13 +6154,33 @@ function shouldCapturedMattUseWalkingLoop(matt) {
 }
 
 function shouldUseWildFollowerFrames(matt) {
-  return Boolean(matt?.tamed && matt.follower && (matt.caught || matt.partyId));
+  return Boolean(matt?.tamed && (matt.caught || matt.partyId));
+}
+
+function getMattFrameSet(matt) {
+  return images[matt.assetKey || matt.type] || images[matt.type] || {};
+}
+
+function getFollowerRestAction(matt) {
+  const frameSet = getMattFrameSet(matt);
+  if (frameSet.idle?.length > 0) {
+    return "idle";
+  }
+  if (frameSet.walking?.length > 0) {
+    return "walking";
+  }
+  if (frameSet.attack?.length > 0) {
+    return "attack";
+  }
+  if (frameSet.hit?.length > 0) {
+    return "hit";
+  }
+  return "caught";
 }
 
 function getCapturedMattRestAction(matt) {
   if (shouldUseWildFollowerFrames(matt)) {
-    const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || {};
-    return frameSet.idle?.length > 0 ? "idle" : getFollowerMoveAction(matt);
+    return getFollowerRestAction(matt);
   }
 
   return shouldCapturedMattUseWalkingLoop(matt) ? "walking" : "caught";
@@ -6203,12 +6223,13 @@ function syncCapturedMattRuntime(updated) {
       candidate.friendship = updated.friendship;
       candidate.assetKey = updated.assetKey || "";
       candidate.scale = Number(updated.scale) || 1;
-      if (candidate.caught && shouldUseWildFollowerFrames(candidate) && candidate.action === "caught") {
+      if (candidate.caught && shouldUseWildFollowerFrames(candidate)) {
+        candidate.caughtAnimationPaused = false;
         setAction(candidate, getCapturedMattRestAction(candidate));
       }
     } else if (updated.follower && candidate.caught) {
       candidate.follower = false;
-      if (!shouldCapturedMattUseWalkingLoop(candidate) && ["idle", "walking"].includes(candidate.action)) {
+      if (!shouldUseWildFollowerFrames(candidate) && !shouldCapturedMattUseWalkingLoop(candidate) && ["idle", "walking"].includes(candidate.action)) {
         setAction(candidate, "caught");
       }
     }
@@ -6249,12 +6270,14 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
   const friendship = clamp(Math.floor(Number(matt.friendship) || 0), 0, 100);
   const captureDifficulty = Math.max(1, Number(matt.captureDifficulty) || 1);
   const tamed = Boolean(matt.tamed);
+  const follower = tamed && Boolean(matt.follower);
   const visualMeta = getCapturedMattVisualMeta({ ...matt, originalId, sourceWorld });
   const visualName = sanitizeMattName(matt.name || visualMeta.name);
   const assetKey = visualMeta.assetKey;
+  const partyId = matt.partyId || `${sourceWorld}:${originalId}`;
 
   return {
-    partyId: matt.partyId || `${sourceWorld}:${originalId}`,
+    partyId,
     id: originalId,
     originalId,
     sourceWorld,
@@ -6263,10 +6286,10 @@ function normalizeCapturedPartyMember(matt, fallbackIndex = 0) {
     scale: visualMeta.scale,
     name: visualName,
     tamed,
-    follower: tamed && Boolean(matt.follower),
+    follower,
     x: Number.isFinite(matt.x) ? matt.x : state.player.x,
     y: Number.isFinite(matt.y) ? matt.y : state.player.y,
-    action: getCapturedMattTravelAction({ assetKey }),
+    action: getCapturedMattTravelAction({ type: matt.type, assetKey, tamed, follower, caught: true, partyId }),
     frameIndex: Number.isFinite(matt.frameIndex) ? matt.frameIndex : 0,
     direction: matt.direction || "right",
     level,
@@ -13975,13 +13998,13 @@ function updateWildDogmatt(dogmatt, dt) {
 }
 
 function getFollowerMoveAction(matt) {
-  const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || {};
-  return frameSet.walking?.length > 0 ? "walking" : "caught";
+  const frameSet = getMattFrameSet(matt);
+  return frameSet.walking?.length > 0 ? "walking" : getFollowerRestAction(matt);
 }
 
 function getFollowerAttackAction(matt) {
-  const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || {};
-  return frameSet.attack?.length > 0 ? "attack" : "caught";
+  const frameSet = getMattFrameSet(matt);
+  return frameSet.attack?.length > 0 ? "attack" : getFollowerMoveAction(matt);
 }
 
 function isFollowerCombatTarget(target, allowCalm = false) {
@@ -14460,9 +14483,10 @@ function updateCaughtDogmatt(dogmatt, dt, caughtIndex) {
 }
 
 function getMattFrames(matt) {
-  const frameSet = images[matt.assetKey || matt.type] || images[matt.type] || images.dogmatt;
-  if (shouldUseWildFollowerFrames(matt) && matt.action === "caught") {
-    return frameSet.idle || frameSet.walking || frameSet.attack || images.dogmatt.idle;
+  const frameSet = getMattFrameSet(matt) || images.dogmatt;
+  if (shouldUseWildFollowerFrames(matt)) {
+    const actionFrames = matt.action !== "caught" ? frameSet[matt.action] : null;
+    return actionFrames || frameSet.idle || frameSet.walking || frameSet.attack || frameSet.hit || images.dogmatt.idle;
   }
   if (matt.caught && shouldCapturedMattUseWalkingLoop(matt) && matt.action === "caught" && frameSet.walking?.length) {
     return frameSet.walking;
