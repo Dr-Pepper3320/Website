@@ -84,6 +84,12 @@ const MAIN_MAP = {
 };
 
 const DEFAULT_WORLD_ID = "mainworld";
+const NORTHERN_WILDS_WORLD_ID = "town_northern_wilds";
+const NORTHERN_WILDS_TOTAL_WAVES = 10;
+const NORTHERN_WILDS_BASE_WAVE_SIZE = 3;
+const NORTHERN_WILDS_MAX_WAVE_SIZE = 12;
+const NORTHERN_WILDS_WAVE_BREAK_SECONDS = 2.4;
+const NORTHERN_WILDS_START_DELAY_SECONDS = 1.2;
 const INN_RECOVERY_WORLD_ID = "town_inn";
 const INN_RECOVERY_POINT = { x: 2860, y: 2500 };
 const INN_RECOVERY_MESSAGE =
@@ -153,6 +159,13 @@ const WORLD_MAPS = {
     type: "image",
     image: "assets/maps/town/buildings/itemshop/my-project-page-1.jfif",
     fill: "#191915",
+  },
+  [NORTHERN_WILDS_WORLD_ID]: {
+    width: 7600,
+    height: 6000,
+    type: "image",
+    image: "assets/maps/town/northernwilds/northernwilds.jpg",
+    fill: "#121f18",
   },
   fireworld: {
     width: 2508,
@@ -436,6 +449,7 @@ const FOLLOWER_ASSIST = {
   bondFriendship: 1,
   bondXp: 7,
 };
+const PRIME_MATT_POWER_MULTIPLIER = 10;
 
 const FOLLOWER_COMMAND_LABELS = {
   follow: "Following",
@@ -459,6 +473,24 @@ const PRIME_MYSTIC_GRAVITY_WELL = {
   followerAttackRange: 116,
   followerAttackCooldown: 0.72,
 };
+const PRIME_MATT_ASSET_KEYS = new Set([
+  "primefirematt",
+  "primerockmatt",
+  "primewatermatt",
+  "primemysticmatt",
+  "primegrassmatt",
+]);
+const PRIME_MATT_BUILDING_WORLD_IDS = new Set([
+  "town_arena_entrance",
+  "town_arena",
+  "town_blacksmith",
+  "town_inn",
+  "town_inn_rooms",
+  "town_mattstore",
+  "town_itemshop",
+  "home",
+  "water_hut",
+]);
 
 const WORLD_MATT_TYPES = {
   mainworld: "dogmatt",
@@ -893,7 +925,7 @@ const WORLD_BOSS_MATTS = {
     assetKey: "primerockmatt",
     x: 3800,
     y: 3100,
-    scale: 4.35,
+    scale: 2.175,
     levelMin: 14,
     levelMax: 15,
     captureDifficulty: 4.5,
@@ -1072,6 +1104,10 @@ const DEMENTED_MATT_AMBUSH_OFFSETS = [
 ];
 const WIZARD_AMBUSH_WARNING =
   "The Wizard: You should have left him in the dark. Now run.";
+const NORTHERN_WILDS_BROCK_WARNING =
+  "Brock: Ivan, Brick needs you. There is an attack on the town. Demented Matts are pouring out near the northern wilds. Get back to Brick at the inn.";
+const NORTHERN_WILDS_BRICK_BRIEFING =
+  "Brick: Brock found you? Then it is as bad as it sounds. Demented Matts are hitting the northern wilds, just north of Ty's shop. Hold them there before they reach town.";
 const BROCK_DEFAULT_FREE_PATH = [
   { x: 2409.178386380459, y: 2466.3212435233163 },
   { x: 2860, y: 2120 },
@@ -2545,6 +2581,7 @@ const WORLD_IDS = [
   "town_inn_rooms",
   "town_mattstore",
   "town_itemshop",
+  NORTHERN_WILDS_WORLD_ID,
   "fireworld",
   "purplewaterworld",
   "water_tree",
@@ -2569,6 +2606,7 @@ const WORLD_LABELS = {
   town_inn_rooms: "Inn Rooms",
   town_mattstore: "Matt Store",
   town_itemshop: "Item Shop",
+  [NORTHERN_WILDS_WORLD_ID]: "Northern Wilds",
   fireworld: "Fireworld",
   purplewaterworld: "Water World",
   water_tree: "Water Tree",
@@ -2593,6 +2631,7 @@ const WORLD_TINTS = {
   town_inn_rooms: "rgba(255, 210, 126, 0.05)",
   town_mattstore: "rgba(150, 240, 200, 0.05)",
   town_itemshop: "rgba(255, 230, 150, 0.05)",
+  [NORTHERN_WILDS_WORLD_ID]: "rgba(95, 180, 92, 0.11)",
   fireworld: "rgba(224, 70, 38, 0.16)",
   purplewaterworld: "rgba(52, 170, 218, 0.14)",
   water_tree: "rgba(52, 170, 218, 0.12)",
@@ -3014,6 +3053,17 @@ const touchInput = {
   joystickMaxDistance: 50,
 };
 
+function createNorthernWildsDefenseState() {
+  return {
+    active: false,
+    wave: 0,
+    totalWaves: NORTHERN_WILDS_TOTAL_WAVES,
+    nextWaveTimer: 0,
+    started: false,
+    complete: false,
+  };
+}
+
 const state = {
   ready: false,
   lastTime: 0,
@@ -3033,6 +3083,7 @@ const state = {
   missions: {},
   intro: null,
   storyFlags: {},
+  northernWildsDefense: createNorthernWildsDefenseState(),
   captureStats: { byType: {} },
   playerProgress: { level: 1, xp: 0, skillPoints: 0, skills: {} },
   arenaStats: { wins: 0, losses: 0, streak: 0, bestStreak: 0, rankPoints: 0 },
@@ -3563,7 +3614,7 @@ function readProfileStorage(baseKey, profileId, allowLegacy = false) {
 
 function getProfilePartyFromData(data) {
   if (Array.isArray(data?.party)) {
-    return data.party.filter((matt) => matt?.type && MATT_CONFIGS[matt.type]);
+    return limitCapturedParty(data.party.filter((matt) => matt?.type && MATT_CONFIGS[matt.type]));
   }
 
   const party = [];
@@ -3581,7 +3632,7 @@ function getProfilePartyFromData(data) {
     });
   }
 
-  return party.slice(0, MATT_PARTY_LIMIT);
+  return limitCapturedParty(party);
 }
 
 function getCaptureTypeCounts(captureStats = {}, party = []) {
@@ -3696,7 +3747,7 @@ function getProfileSummary(profile) {
     xp: playerProgress.xp,
     coins: Math.max(0, Math.floor(Number(economyData?.coins) || (economyData ? 0 : STARTING_COINS))),
     skillPoints: playerProgress.skillPoints,
-    partyCount: party.length,
+    partyCount: getCapturedSlotCount(party),
     tamedCount: party.filter((matt) => matt?.tamed).length,
     captureTotal,
     captureTypeSummary: getCaptureTypeSummary(economyData?.captureStats, party),
@@ -3841,7 +3892,7 @@ function updateProfileList() {
     meta.append(
       makeProfilePill(`Lv ${summary.level}`, "level"),
       makeProfilePill(`${summary.coins}c`, "coins"),
-      makeProfilePill(`${summary.partyCount}/${MATT_PARTY_LIMIT} party`, "party"),
+      makeProfilePill(`${summary.partyCount}/${MATT_PARTY_LIMIT} captured`, "party"),
       makeProfilePill(summary.arenaRank, "arena"),
     );
 
@@ -4431,6 +4482,28 @@ function upsertNodeByTarget(world, id, x, y, target, radius = 82, extra = {}) {
   }
 }
 
+function ensureNodeByTarget(world, id, x, y, target, radius = 82, extra = {}) {
+  if (!world) {
+    return;
+  }
+
+  if (!Array.isArray(world.nodes)) {
+    world.nodes = [];
+  }
+
+  const existing = world.nodes.find((node) => node.id === id || node.target === target);
+  if (existing) {
+    existing.target = target;
+    existing.radius = Number.isFinite(existing.radius) ? existing.radius : radius;
+    if (!existing.name && extra.name) {
+      existing.name = extra.name;
+    }
+    return;
+  }
+
+  world.nodes.push({ id, x, y, radius, target, ...extra });
+}
+
 function removeNodesByTarget(world, target) {
   if (!world || !Array.isArray(world.nodes)) {
     return;
@@ -4453,6 +4526,24 @@ function applyCoreWorldFixups(worlds) {
   if (northernWildsNode) {
     northernWildsNode.locked = true;
   }
+  ensureNodeByTarget(
+    worlds.town,
+    "node-town-to-northern-wilds",
+    5200,
+    2860,
+    NORTHERN_WILDS_WORLD_ID,
+    120,
+    { name: "Northern Wilds" },
+  );
+  ensureNodeByTarget(
+    worlds[NORTHERN_WILDS_WORLD_ID],
+    "node-northern-wilds-to-town",
+    3800,
+    5480,
+    "town",
+    140,
+  );
+  ensureNorthernWildsSpawnArea(worlds[NORTHERN_WILDS_WORLD_ID]);
   upsertNodeByTarget(worlds.town_itemshop, "node-itemshop-to-town", 3800, 5480, "town", 120);
   if (worlds.town_itemshop) {
     ensureNpc(worlds.town_itemshop, "logan", 3800, 3180);
@@ -4542,6 +4633,28 @@ function applyCoreWorldFixups(worlds) {
   upsertNodeByTarget(worlds.grass_cave, "node-grass-cave-to-grassworld", 3800, 5480, "treeworld", 120);
 }
 
+function ensureNorthernWildsSpawnArea(world) {
+  if (!world) {
+    return;
+  }
+
+  if (!Array.isArray(world.spawnAreas)) {
+    world.spawnAreas = [];
+  }
+
+  if (world.spawnAreas.length > 0) {
+    return;
+  }
+
+  world.spawnAreas.push({
+    id: "spawn-northern-wilds-demented-matts",
+    x: 980,
+    y: 620,
+    width: 5640,
+    height: 920,
+  });
+}
+
 function ensureNpc(world, npcId, x, y) {
   if (!world.npcs.some((npc) => npc.id === npcId)) {
     world.npcs.push(createNpc(npcId, x, y));
@@ -4571,6 +4684,7 @@ function addDefaultTownStructure(worlds, sourceWorlds = null) {
   maybeNode("town", "node-town-to-inn", 3560, 4460, "town_inn", 110);
   maybeNode("town", "node-town-to-mattstore", 5200, 3840, "town_mattstore", 110);
   maybeNode("town", "node-mplkvcoq-ayqdbh", 5924.500370096225, 6578.830495928942, "town_itemshop", 82);
+  maybeNode("town", "node-town-to-northern-wilds", 5200, 2860, NORTHERN_WILDS_WORLD_ID, 120);
 
   maybeNode("town_arena_entrance", "node-arena-entry-to-town", 760, 3560, "town", 110);
   maybeNode("town_arena_entrance", "node-arena-entry-to-arena", 4750, 2030, "town_arena", 130);
@@ -4581,6 +4695,7 @@ function addDefaultTownStructure(worlds, sourceWorlds = null) {
   maybeNode("town_inn_rooms", "node-rooms-to-inn", 2800, 3620, "town_inn", 120);
   maybeNode("town_mattstore", "node-mattstore-to-town", 1339, 2140, "town", 95);
   maybeNode("town_itemshop", "node-itemshop-to-town", 3800, 5480, "town", 120);
+  maybeNode(NORTHERN_WILDS_WORLD_ID, "node-northern-wilds-to-town", 3800, 5480, "town", 140);
 
   maybeNpc("town_arena_entrance", "scott", 2820, 2200);
   maybeNpc("town_mattstore", "ty", 1360, 1160);
@@ -4596,6 +4711,7 @@ const DEFAULT_NODE_IDS = new Set([
   "node-town-to-inn",
   "node-town-to-mattstore",
   "node-mplkvcoq-ayqdbh",
+  "node-town-to-northern-wilds",
   "node-arena-entry-to-town",
   "node-arena-entry-to-arena",
   "node-arena-to-entry",
@@ -4605,6 +4721,7 @@ const DEFAULT_NODE_IDS = new Set([
   "node-rooms-to-inn",
   "node-mattstore-to-town",
   "node-itemshop-to-town",
+  "node-northern-wilds-to-town",
 ]);
 
 function removeDuplicateDefaultNodes(worlds) {
@@ -4888,10 +5005,21 @@ function normalizeStoryFlags(flags) {
   const status = BROCK_MISSION_STATUSES.has(flags?.brockMissionStatus)
     ? flags.brockMissionStatus
     : BROCK_MISSION_STATUS.LOCKED;
+  const brockRescued = Boolean(flags?.brockRescued);
+  const dementedEssenseDiscussedWithScott = Boolean(flags?.dementedEssenseDiscussedWithScott);
+  const northernWildsBrockWarningSeen = Boolean(flags?.northernWildsBrockWarningSeen);
+  const northernWildsBrickBriefingSeen = Boolean(flags?.northernWildsBrickBriefingSeen);
+  const northernWildsDefenseComplete = Boolean(flags?.northernWildsDefenseComplete);
+  const northernWildsAttackPending = Boolean(flags?.northernWildsAttackPending) ||
+    (brockRescued &&
+      dementedEssenseDiscussedWithScott &&
+      !northernWildsBrockWarningSeen &&
+      !northernWildsBrickBriefingSeen &&
+      !northernWildsDefenseComplete);
   return {
-    brockRescued: Boolean(flags?.brockRescued),
-    brockRescueConversationSeen: Boolean(flags?.brockRescueConversationSeen || flags?.brockRescued),
-    brockMissionStatus: Boolean(flags?.brockRescued) ? BROCK_MISSION_STATUS.RESCUED : status,
+    brockRescued,
+    brockRescueConversationSeen: Boolean(flags?.brockRescueConversationSeen || brockRescued),
+    brockMissionStatus: brockRescued ? BROCK_MISSION_STATUS.RESCUED : status,
     brockRescueMapPending: Boolean(flags?.brockRescueMapPending),
     brockRescueMapRevealed: Boolean(flags?.brockRescueMapRevealed),
     wizardAmbushStarted: Boolean(flags?.wizardAmbushStarted),
@@ -4902,7 +5030,13 @@ function normalizeStoryFlags(flags) {
     brickWizardTalkSeen: Boolean(flags?.brickWizardTalkSeen),
     dementedEssenseFound: Boolean(flags?.dementedEssenseFound),
     dementedEssenseShownToBrick: Boolean(flags?.dementedEssenseShownToBrick),
-    dementedEssenseDiscussedWithScott: Boolean(flags?.dementedEssenseDiscussedWithScott),
+    dementedEssenseDiscussedWithScott,
+    northernWildsAttackPending,
+    northernWildsBrockWarningSeen,
+    northernWildsBrickBriefingSeen,
+    northernWildsUnlocked: Boolean(flags?.northernWildsUnlocked || northernWildsBrickBriefingSeen || northernWildsDefenseComplete),
+    northernWildsDefenseStarted: Boolean(flags?.northernWildsDefenseStarted),
+    northernWildsDefenseComplete,
   };
 }
 
@@ -4968,6 +5102,12 @@ function setBrockRescued(rescued = true) {
     nextFlags.dementedEssenseFound = false;
     nextFlags.dementedEssenseShownToBrick = false;
     nextFlags.dementedEssenseDiscussedWithScott = false;
+    nextFlags.northernWildsAttackPending = false;
+    nextFlags.northernWildsBrockWarningSeen = false;
+    nextFlags.northernWildsBrickBriefingSeen = false;
+    nextFlags.northernWildsUnlocked = false;
+    nextFlags.northernWildsDefenseStarted = false;
+    nextFlags.northernWildsDefenseComplete = false;
   }
 
   state.storyFlags = normalizeStoryFlags({
@@ -5010,7 +5150,9 @@ function isPostBrockStoryActive() {
     !state.storyFlags?.brockWizardTalkSeen ||
       !state.storyFlags?.brickWizardTalkSeen ||
       hasDementedEssenseForBrick() ||
-      (state.storyFlags?.dementedEssenseShownToBrick && !state.storyFlags?.dementedEssenseDiscussedWithScott),
+      (state.storyFlags?.dementedEssenseShownToBrick && !state.storyFlags?.dementedEssenseDiscussedWithScott) ||
+      state.storyFlags?.northernWildsAttackPending ||
+      (state.storyFlags?.northernWildsUnlocked && !state.storyFlags?.northernWildsDefenseComplete),
   );
 }
 
@@ -5021,6 +5163,9 @@ function getPostBrockStoryGuideId() {
 
   if (state.storyFlags?.dementedEssenseShownToBrick && !state.storyFlags?.dementedEssenseDiscussedWithScott) {
     return "scott";
+  }
+  if (state.storyFlags?.northernWildsBrockWarningSeen && !state.storyFlags?.northernWildsBrickBriefingSeen) {
+    return "brick";
   }
   if (hasDementedEssenseForBrick()) {
     return "brick";
@@ -5054,6 +5199,19 @@ function getBrockMissionObjectiveText() {
   }
 
   if (status === BROCK_MISSION_STATUS.RESCUED) {
+    if (isNorthernWildsDefenseActive()) {
+      const defense = state.northernWildsDefense;
+      return `Objective: Defend the Northern Wilds. Wave ${defense.wave}/${defense.totalWaves}.`;
+    }
+    if (state.storyFlags?.northernWildsAttackPending && !state.storyFlags?.northernWildsBrockWarningSeen) {
+      return "Objective: Listen to Brock's warning.";
+    }
+    if (state.storyFlags?.northernWildsBrockWarningSeen && !state.storyFlags?.northernWildsBrickBriefingSeen) {
+      return "Objective: Return to Brick at the inn. The town is under attack.";
+    }
+    if (state.storyFlags?.northernWildsUnlocked && !state.storyFlags?.northernWildsDefenseComplete) {
+      return "Objective: Go to the Northern Wilds north of Ty's shop and defend the town.";
+    }
     const guideId = getPostBrockStoryGuideId();
     if (guideId === "brick" && hasDementedEssenseForBrick()) {
       return "Objective: Bring DementedEssense to Brick at the inn.";
@@ -5142,6 +5300,48 @@ function maybeStartBrockRescueConversation() {
 
   showBrockRescueConversation();
   return true;
+}
+
+function shouldShowNorthernWildsBrockWarning({ allowRepeat = false } = {}) {
+  return Boolean(
+    isBrockRescued() &&
+      state.storyFlags?.dementedEssenseDiscussedWithScott &&
+      !state.storyFlags?.northernWildsBrickBriefingSeen &&
+      !state.storyFlags?.northernWildsDefenseComplete &&
+      (allowRepeat || (state.storyFlags?.northernWildsAttackPending && !state.storyFlags?.northernWildsBrockWarningSeen)),
+  );
+}
+
+function showNorthernWildsBrockWarning(options = {}) {
+  if (!shouldShowNorthernWildsBrockWarning(options)) {
+    return false;
+  }
+
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    northernWildsAttackPending: true,
+    northernWildsBrockWarningSeen: true,
+  });
+  saveEconomy();
+  openStoryOverlay("Brock", NORTHERN_WILDS_BROCK_WARNING, "Return to Brick at the inn.");
+  setGameMessage("Brock says the town is under attack. Return to Brick.", 7600);
+  updateCaughtHud(countCaughtMatts(), true);
+  return true;
+}
+
+function maybeShowNorthernWildsBrockWarning() {
+  if (
+    state.dev.enabled ||
+    isIntroOpen() ||
+    isPauseMenuOpen() ||
+    isShopOpen() ||
+    state.arena.active ||
+    isBossIntroPlaying()
+  ) {
+    return false;
+  }
+
+  return showNorthernWildsBrockWarning();
 }
 
 function tryRescueNearbyBrock() {
@@ -5235,7 +5435,7 @@ function getIntroRequirementCount(requirement, quest = getActiveIntroQuest()) {
 }
 
 function getIntroHeldRequirementCount(requirement) {
-  return state.capturedParty.filter((matt) => matt.type === requirement.type).length;
+  return getCapturedSlotCount(state.capturedParty, requirement.type);
 }
 
 function isIntroQuestReady(quest = getActiveIntroQuest()) {
@@ -5254,7 +5454,7 @@ function canTurnInIntroMatt(quest = getActiveIntroQuest()) {
     quest?.requirements?.some(
       (requirement) =>
         getIntroRequirementCount(requirement, quest) < requirement.count &&
-        state.capturedParty.some((matt) => matt.type === requirement.type),
+        getTurnInEligibleMatts(requirement.type).length > 0,
     ),
   );
 }
@@ -5363,7 +5563,8 @@ function getIntroQuestRewardText(quest) {
 }
 
 function addRewardMattToParty(reward) {
-  if (!reward || !MATT_CONFIGS[reward.type] || state.capturedParty.length >= MATT_PARTY_LIMIT) {
+  const tamed = Boolean(reward?.tamed);
+  if (!reward || !MATT_CONFIGS[reward.type] || (!tamed && !hasCapturedSlotCapacity())) {
     return null;
   }
 
@@ -5379,7 +5580,7 @@ function addRewardMattToParty(reward) {
       y: state.player.y,
       direction: state.player.direction === "left" ? "left" : "right",
       friendship: reward.friendship || 0,
-      tamed: Boolean(reward.tamed),
+      tamed,
       follower: Boolean(reward.follower),
     },
     state.capturedParty.length,
@@ -5454,14 +5655,14 @@ function turnInOneIntroMatt(quest = getActiveIntroQuest()) {
 
   const requirement = quest.requirements.find((candidate) => {
     return getIntroRequirementCount(candidate, quest) < candidate.count &&
-      state.capturedParty.some((matt) => matt.type === candidate.type);
+      getTurnInEligibleMatts(candidate.type).length > 0;
   });
 
   if (!requirement) {
     return null;
   }
 
-  const matt = state.capturedParty.find((candidate) => candidate.type === requirement.type);
+  const matt = getTurnInEligibleMatts(requirement.type)[0];
   if (!matt) {
     return null;
   }
@@ -5997,8 +6198,12 @@ function rollWildMattLevel(profile, random = Math.random) {
 }
 
 function getWildMattCaptureHits(matt) {
+  if (matt?.oneWhipKill) {
+    return 1;
+  }
+
   if (Number.isFinite(matt?.defeatHits)) {
-    return clamp(Math.round(matt.defeatHits), 2, 12);
+    return clamp(Math.round(matt.defeatHits), 1, 12);
   }
 
   const level = getMattLevel(matt);
@@ -6026,9 +6231,13 @@ function getWildMattCaptureChance(matt) {
 }
 
 function getCaptureHitThreshold(matt = null) {
+  if (matt?.oneWhipKill) {
+    return 1;
+  }
+
   let threshold = matt ? getWildMattCaptureHits(matt) : 4;
   if (Number.isFinite(matt?.defeatHits)) {
-    return Math.max(2, threshold);
+    return Math.max(matt?.oneWhipKill ? 1 : 2, threshold);
   }
   if (hasItem("matt_snack")) {
     threshold -= 1;
@@ -6075,9 +6284,14 @@ function getWildMattAttackDamage(matt, config = getMattConfig(matt?.type)) {
 
   const level = getMattLevel(matt);
   const difficulty = Math.max(1, Number(matt?.captureDifficulty) || 1);
-  const scale = Math.max(0.4, Number(matt?.damageScale) || 1);
+  const minScale = matt?.northernWildsWave ? 0.08 : 0.4;
+  const scale = Math.max(minScale, Number(matt?.damageScale) || 1);
   const bossStudy = matt?.boss ? getSkillBonus("prime_study", 0.05) : 0;
-  return Math.max(1, Math.round(base * scale * (1 + (level - 1) * 0.045 + (difficulty - 1) * 0.055) * (1 - bossStudy)));
+  const primeMultiplier = matt?.boss ? getPrimeMattPowerMultiplier(matt) : 1;
+  return Math.max(
+    1,
+    Math.round(base * scale * primeMultiplier * (1 + (level - 1) * 0.045 + (difficulty - 1) * 0.055) * (1 - bossStudy)),
+  );
 }
 
 function getMattSellValue(type, matt = null) {
@@ -6130,13 +6344,41 @@ function getCapturedBossVisualMeta(matt) {
   };
 }
 
+function isPrimeMatt(matt) {
+  const assetKey = matt?.assetKey || getCapturedBossVisualMeta(matt)?.assetKey || "";
+  return PRIME_MATT_ASSET_KEYS.has(assetKey);
+}
+
+function getPrimeMattPowerMultiplier(matt) {
+  return isPrimeMatt(matt) ? PRIME_MATT_POWER_MULTIPLIER : 1;
+}
+
+function isPrimeMattBuildingWorld(worldId = state.currentWorld) {
+  return PRIME_MATT_BUILDING_WORLD_IDS.has(worldId);
+}
+
+function shouldPrimeMattWaitOutside(matt, worldId = state.currentWorld) {
+  return isPrimeMatt(matt) && isPrimeMattBuildingWorld(worldId);
+}
+
+function getFollowerDistanceScale(matt) {
+  return isPrimeMatt(matt) ? 2 : 1;
+}
+
+function getFollowerStopDistance(matt, config = DOGMATT) {
+  return config.followStopDistance * getFollowerDistanceScale(matt);
+}
+
 function getCapturedMattVisualMeta(matt) {
   const bossVisual = getCapturedBossVisualMeta(matt);
   const requestedAssetKey = matt?.assetKey || bossVisual?.assetKey || "";
   const assetKey = requestedAssetKey && ASSETS[requestedAssetKey] ? requestedAssetKey : "";
   const directScale = Number(matt?.scale);
   const bossScale = Number(bossVisual?.scale);
-  const scale = Number.isFinite(directScale) && directScale > 0
+  const forceBossScale = bossVisual?.assetKey === "primerockmatt";
+  const scale = forceBossScale && Number.isFinite(bossScale) && bossScale > 0
+    ? bossScale
+    : Number.isFinite(directScale) && directScale > 0
     ? directScale
     : Number.isFinite(bossScale) && bossScale > 0
       ? bossScale
@@ -6208,6 +6450,38 @@ function normalizeFollowerSelection(party) {
   });
 }
 
+function isCapturedSlotMatt(matt) {
+  return Boolean(matt && !matt.tamed);
+}
+
+function getCapturedSlotCount(party = state.capturedParty, type = "") {
+  return party.filter((matt) => isCapturedSlotMatt(matt) && (!type || matt.type === type)).length;
+}
+
+function hasCapturedSlotCapacity(party = state.capturedParty) {
+  return getCapturedSlotCount(party) < MATT_PARTY_LIMIT;
+}
+
+function getTurnInEligibleMatts(type = "") {
+  return state.capturedParty.filter((matt) => isCapturedSlotMatt(matt) && (!type || matt.type === type));
+}
+
+function limitCapturedParty(party = []) {
+  let capturedSlots = 0;
+  return normalizeFollowerSelection(party.filter(Boolean)).filter((matt) => {
+    if (!isCapturedSlotMatt(matt)) {
+      return true;
+    }
+
+    if (capturedSlots < MATT_PARTY_LIMIT) {
+      capturedSlots += 1;
+      return true;
+    }
+
+    return false;
+  });
+}
+
 function syncCapturedMattRuntime(updated) {
   if (!updated || !Array.isArray(state.dogmatts)) {
     return;
@@ -6249,7 +6523,7 @@ function updateCapturedMattById(partyId, updater) {
 
     return normalizeCapturedPartyMember({ ...matt, ...updater(matt) }, index);
   });
-  state.capturedParty = normalizeFollowerSelection(nextParty.filter(Boolean)).slice(0, MATT_PARTY_LIMIT);
+  state.capturedParty = limitCapturedParty(nextParty);
   const updated = state.capturedParty.find((matt) => matt.partyId === partyId);
   state.capturedParty.forEach(syncCapturedMattRuntime);
   saveCapturedParty();
@@ -6341,7 +6615,7 @@ function loadCapturedParty({ allowLegacy = shouldUseLegacyProfileStorage() } = {
       });
     }
 
-    return normalizeFollowerSelection(party.slice(0, MATT_PARTY_LIMIT));
+    return limitCapturedParty(party);
   } catch (error) {
     console.warn("Could not load captured Matt party.", error);
     return [];
@@ -6387,18 +6661,18 @@ function syncCapturedPartyFromActiveMatts() {
 
     if (index >= 0) {
       state.capturedParty[index] = serialized;
-    } else if (state.capturedParty.length < MATT_PARTY_LIMIT) {
+    } else if (!isCapturedSlotMatt(serialized) || hasCapturedSlotCapacity()) {
       state.capturedParty.push(serialized);
     }
   });
 
-  state.capturedParty = state.capturedParty.slice(0, MATT_PARTY_LIMIT);
+  state.capturedParty = limitCapturedParty(state.capturedParty);
 }
 
 function saveCapturedParty() {
   try {
     syncCapturedPartyFromActiveMatts();
-    state.capturedParty = normalizeFollowerSelection(state.capturedParty).slice(0, MATT_PARTY_LIMIT);
+    state.capturedParty = limitCapturedParty(state.capturedParty);
     state.capturedParty.forEach(syncCapturedMattRuntime);
     localStorage.setItem(
       getMattProgressStorageKey(),
@@ -6412,7 +6686,7 @@ function saveCapturedParty() {
 
 function hydrateCapturedMatt(saved, caughtIndex) {
   const config = getMattConfig(saved.type);
-  const target = getFollowTarget(caughtIndex, config);
+  const target = getFollowTarget(caughtIndex, config, saved);
 
   return {
     id: saved.partyId,
@@ -6462,7 +6736,8 @@ function attachCapturedParty(wildMatts) {
     (matt) => !capturedKeys.has(`${state.currentWorld}:${matt.id}`),
   );
   const party = state.capturedParty
-    .slice(0, MATT_PARTY_LIMIT)
+    .slice()
+    .filter((matt) => !shouldPrimeMattWaitOutside(matt, state.currentWorld))
     .map((matt, index) => hydrateCapturedMatt(matt, index));
 
   return [...uncaughtWildMatts, ...party];
@@ -6884,7 +7159,7 @@ function appendItemRow(parent, itemId, mode) {
       itemId,
       state.coins < price ||
         (item.unique && count > 0) ||
-        (item.mattType && state.capturedParty.length >= MATT_PARTY_LIMIT),
+        (item.mattType && !hasCapturedSlotCapacity()),
     );
   } else if (mode === "sell") {
     action = makeShopButton("Sell", "sell-item", itemId, count <= 0 || sellValue <= 0);
@@ -7130,6 +7405,39 @@ function getPostBrockStoryTalk(shopId) {
     };
   }
 
+  if (
+    shopId === "brick" &&
+    state.storyFlags?.northernWildsBrockWarningSeen &&
+    !state.storyFlags?.northernWildsBrickBriefingSeen
+  ) {
+    return {
+      id: "brick-northern-wilds-briefing",
+      speaker: "Brick",
+      role: "Innkeeper",
+      mood: "urgent and already moving",
+      line: NORTHERN_WILDS_BRICK_BRIEFING,
+      note: "Objective: Go to the Northern Wilds north of Ty's shop and defend the town.",
+      actionLabel: "Head North",
+    };
+  }
+
+  if (
+    shopId === "brick" &&
+    state.storyFlags?.northernWildsUnlocked &&
+    !state.storyFlags?.northernWildsDefenseComplete
+  ) {
+    return {
+      id: "",
+      speaker: "Brick",
+      role: "Innkeeper",
+      mood: "holding the inn together",
+      line:
+        "Brick: North of Ty's shop. Keep them in the wilds and harvest every bit of DementedEssense they drop. We need to know how many the wizard can twist.",
+      note: "Objective: Defend the Northern Wilds.",
+      actionLabel: "",
+    };
+  }
+
   return null;
 }
 
@@ -7184,6 +7492,7 @@ function renderPostBrockStoryTalk(parent, shopId) {
 function handlePostBrockStoryAction(actionId) {
   const nextFlags = { ...state.storyFlags };
   let message = "";
+  let showBrockWarningAfter = false;
 
   if (actionId === "brock-wizard-talk") {
     nextFlags.brockWizardTalkSeen = true;
@@ -7196,7 +7505,13 @@ function handlePostBrockStoryAction(actionId) {
     message = "Brick sends you to Scott with the DementedEssense.";
   } else if (actionId === "scott-essense-talk") {
     nextFlags.dementedEssenseDiscussedWithScott = true;
+    nextFlags.northernWildsAttackPending = true;
     message = "Scott starts studying the DementedEssense.";
+    showBrockWarningAfter = true;
+  } else if (actionId === "brick-northern-wilds-briefing") {
+    nextFlags.northernWildsBrickBriefingSeen = true;
+    nextFlags.northernWildsUnlocked = true;
+    message = "Brick sends you to the Northern Wilds.";
   } else {
     return false;
   }
@@ -7205,6 +7520,11 @@ function handlePostBrockStoryAction(actionId) {
   saveEconomy();
   updateCaughtHud(countCaughtMatts(), true);
   setGameMessage(message, 6200);
+  if (showBrockWarningAfter) {
+    closeShop();
+    showNorthernWildsBrockWarning();
+    return true;
+  }
   renderShop();
   return true;
 }
@@ -7318,6 +7638,10 @@ function getCapturedMattTypeCount(type) {
   return state.capturedParty.filter((matt) => matt.type === type).length;
 }
 
+function getMissionCapturedMattTypeCount(type) {
+  return getCapturedSlotCount(state.capturedParty, type);
+}
+
 function getCapturedMattTotal(type) {
   const tracked = Math.max(0, Math.floor(Number(state.captureStats?.byType?.[type]) || 0));
   return Math.max(tracked, getCapturedMattTypeCount(type));
@@ -7342,7 +7666,7 @@ function canCompleteMission(mission) {
   return Boolean(
     mission &&
       !isMissionComplete(mission) &&
-      mission.requirements.every((requirement) => getCapturedMattTypeCount(requirement.type) >= requirement.count),
+      mission.requirements.every((requirement) => getMissionCapturedMattTypeCount(requirement.type) >= requirement.count),
   );
 }
 
@@ -7477,7 +7801,7 @@ function renderMission(parent, shopId) {
 
   appendShopTextCard(parent, mission.title, mission.briefing);
   mission.requirements.forEach((requirement) => {
-    const count = getCapturedMattTypeCount(requirement.type);
+    const count = getMissionCapturedMattTypeCount(requirement.type);
     appendShopTextCard(
       parent,
       MATT_LABELS[requirement.type] || "Matt",
@@ -7855,7 +8179,7 @@ function setFollowerCommandMode(mode, options = {}) {
     state.followerCommand.stayPoint = null;
     if (follower) {
       follower.returnBoostTimer = 2.5;
-      const target = getFollowTarget(0, getMattConfig(follower.type));
+      const target = getFollowTarget(0, getMattConfig(follower.type), follower);
       if (Math.hypot(target.x - follower.x, target.y - follower.y) > 2200) {
         follower.x = clamp(target.x + randomBetween(-60, 60), 0, getMapWidth());
         follower.y = clamp(target.y + randomBetween(-60, 60), 0, getMapHeight());
@@ -8319,6 +8643,7 @@ function getPartyOverview() {
 
   return {
     total: party.length,
+    capturedSlots: getCapturedSlotCount(party),
     tamed: party.filter((matt) => matt?.tamed).length,
     follower,
     strongest,
@@ -8353,7 +8678,7 @@ function renderPauseCharacter(parent) {
   const profileGrid = document.createElement("div");
   profileGrid.className = "menu-stat-grid";
   appendMenuStat(profileGrid, "World", getWorldLabel(profileSummary.currentWorld), profileSummary.arenaRank);
-  appendMenuStat(profileGrid, "Party", `${profileSummary.partyCount}/${MATT_PARTY_LIMIT}`, `${profileSummary.tamedCount} tamed`);
+  appendMenuStat(profileGrid, "Captured", `${profileSummary.partyCount}/${MATT_PARTY_LIMIT}`, `${profileSummary.tamedCount} tamed`);
   appendMenuStat(profileGrid, "Captured", String(profileSummary.captureTotal), profileSummary.captureTypeSummary || "Start hunting");
   appendMenuStat(profileGrid, "Pack", String(profileSummary.inventoryStacks), `${profileSummary.inventoryTypes} item types`);
   profile.append(profileGrid);
@@ -8374,7 +8699,7 @@ function renderPauseCharacter(parent) {
   appendMenuCard(
     grid,
     "Protection",
-    `${Math.round(getArmorDamageReduction() * 100)}% damage reduction | Max party ${MATT_PARTY_LIMIT}`,
+    `${Math.round(getArmorDamageReduction() * 100)}% damage reduction | Max captured slots ${MATT_PARTY_LIMIT}`,
     "compact",
   );
 
@@ -8734,7 +9059,7 @@ function renderPauseJournal(parent) {
 function getMissionProgressText(mission) {
   return mission.requirements
     .map((requirement) => {
-      const count = Math.min(getCapturedMattTypeCount(requirement.type), requirement.count);
+      const count = Math.min(getMissionCapturedMattTypeCount(requirement.type), requirement.count);
       return `${MATT_LABELS[requirement.type] || "Matt"} ${count}/${requirement.count}`;
     })
     .join(", ");
@@ -8794,7 +9119,7 @@ function renderPauseParty(parent) {
   const overviewCard = appendMenuCard(
     grid,
     "Party Overview",
-    `${overview.total}/${MATT_PARTY_LIMIT} slots filled | ${overview.tamed} ready followers`,
+    `${overview.capturedSlots}/${MATT_PARTY_LIMIT} captured slots | ${overview.tamed} followers | ${overview.total} total Matts`,
     "full compact profile-card",
   );
   const overviewStats = document.createElement("div");
@@ -9570,6 +9895,7 @@ function resolveArenaAbility(side, ability) {
       damage = Math.round(damage * 1.45);
     }
 
+    damage = Math.round(damage * getPrimeMattPowerMultiplier(attacker));
     damage = Math.max(4, damage);
   }
 
@@ -10077,7 +10403,7 @@ function leaveArena() {
 }
 
 function addPurchasedMattToParty(type) {
-  if (!MATT_CONFIGS[type] || state.capturedParty.length >= MATT_PARTY_LIMIT) {
+  if (!MATT_CONFIGS[type] || !hasCapturedSlotCapacity()) {
     return false;
   }
 
@@ -10126,8 +10452,8 @@ function buyShopItem(itemId) {
     return;
   }
 
-  if (item.mattType && state.capturedParty.length >= MATT_PARTY_LIMIT) {
-    renderShop(`Party full: ${MATT_PARTY_LIMIT} Matts max.`);
+  if (item.mattType && !hasCapturedSlotCapacity()) {
+    renderShop(`Captured slots full: ${MATT_PARTY_LIMIT} untamed Matts max.`);
     return;
   }
 
@@ -10271,6 +10597,18 @@ function getWorldLabel(id) {
   return WORLD_LABELS[id] || id;
 }
 
+function getDefaultDevNodeTarget(worldId = state.currentWorld) {
+  if (worldId === DEFAULT_WORLD_ID) {
+    return "town";
+  }
+
+  if (worldId === NORTHERN_WILDS_WORLD_ID || worldId.startsWith("town_")) {
+    return "town";
+  }
+
+  return DEFAULT_WORLD_ID;
+}
+
 function isWaystoneNode(node) {
   return node?.kind === WAYSTONE_NODE_KIND || node?.type === WAYSTONE_NODE_KIND;
 }
@@ -10385,6 +10723,18 @@ function maybeShowBrockMissionArrivalHint(worldId, previousWorldId = "") {
   }
 }
 
+function maybeShowNorthernWildsBrockWarningOnInnArrival(worldId, previousWorldId = "") {
+  if (
+    previousWorldId !== worldId &&
+    worldId === BROCK_FREE_PATH_WORLD_ID &&
+    !state.dev.enabled
+  ) {
+    return showNorthernWildsBrockWarning({ allowRepeat: true });
+  }
+
+  return false;
+}
+
 function setWorld(id, movePlayer = true, fromWorldId = "") {
   if (!WORLD_IDS.includes(id)) {
     return;
@@ -10430,8 +10780,8 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
     devWorld.value = id;
   }
 
-  if (devNodeTarget && id !== DEFAULT_WORLD_ID) {
-    devNodeTarget.value = DEFAULT_WORLD_ID;
+  if (devNodeTarget) {
+    devNodeTarget.value = getDefaultDevNodeTarget(id);
   }
 
   updateWorldLabel();
@@ -10442,8 +10792,10 @@ function setWorld(id, movePlayer = true, fromWorldId = "") {
     spawnNpcs();
     spawnScriptedWizardIfNeeded();
     spawnPendingDementedMattAmbushIfNeeded();
+    updateNorthernWildsDefense(0);
     updateCaughtHud(countCaughtMatts());
     maybeShowBrockMissionArrivalHint(id, previousWorld);
+    maybeShowNorthernWildsBrockWarningOnInnArrival(id, previousWorld);
     syncCamera();
     preloadNearbyTiles(2);
     draw();
@@ -10866,6 +11218,198 @@ function spawnPendingDementedMattAmbushIfNeeded() {
   return spawnDementedMattAmbush();
 }
 
+function isNorthernWildsDefenseActive() {
+  return Boolean(state.northernWildsDefense?.active && state.currentWorld === NORTHERN_WILDS_WORLD_ID);
+}
+
+function canStartNorthernWildsDefense() {
+  return Boolean(
+    state.currentWorld === NORTHERN_WILDS_WORLD_ID &&
+      !state.dev.enabled &&
+      isBrockRescued() &&
+      state.storyFlags?.northernWildsUnlocked &&
+      !state.storyFlags?.northernWildsDefenseComplete,
+  );
+}
+
+function clearNorthernWildsWaveMatts() {
+  state.dogmatts = state.dogmatts.filter((matt) => !matt.northernWildsWave);
+}
+
+function startNorthernWildsDefense() {
+  if (!canStartNorthernWildsDefense() || isNorthernWildsDefenseActive()) {
+    return false;
+  }
+
+  clearNorthernWildsWaveMatts();
+  state.northernWildsDefense = createNorthernWildsDefenseState();
+  state.northernWildsDefense.active = true;
+  state.northernWildsDefense.nextWaveTimer = NORTHERN_WILDS_START_DELAY_SECONDS;
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    northernWildsDefenseStarted: true,
+  });
+  saveEconomy();
+  updateCaughtHud(countCaughtMatts(), true);
+  setGameMessage("Northern Wilds defense started. Ten waves are coming. Use your whip.", 7600);
+  return true;
+}
+
+function getNorthernWildsSpawnPoint(index, total) {
+  const spawnAreas = Array.isArray(getWorld().spawnAreas) ? getWorld().spawnAreas : [];
+  if (spawnAreas.length > 0) {
+    const area = spawnAreas[index % spawnAreas.length];
+    const point = randomPointInArea(area, Math.random);
+    return {
+      x: clamp(point.x, 80, getMapWidth() - 80),
+      y: clamp(point.y, 80, getMapHeight() - 80),
+    };
+  }
+
+  const spacing = getMapWidth() / Math.max(2, total + 1);
+  return {
+    x: clamp(spacing * (index + 1) + randomBetween(-180, 180), 120, getMapWidth() - 120),
+    y: clamp(randomBetween(180, 760), 120, getMapHeight() - 120),
+  };
+}
+
+function createNorthernWildsDementedMatt(wave, index, total) {
+  const config = DEMENTED_MATT;
+  const point = getNorthernWildsSpawnPoint(index, total);
+  const matt = {
+    id: `${DEMENTED_MATT_TYPE}-northern-${wave}-${index}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    originalId: `${DEMENTED_MATT_TYPE}-northern-${wave}-${index}`,
+    name: "Demented Matt",
+    type: DEMENTED_MATT_TYPE,
+    assetKey: DEMENTED_MATT_TYPE,
+    x: point.x,
+    y: point.y,
+    width: config.width,
+    height: config.height,
+    scale: 1.08,
+    action: "walking",
+    frameTimer: index * 0.05,
+    frameIndex: index % Math.max(1, DEMENTED_MATT_RUNNING_FRAMES.length),
+    direction: point.x > state.player.x ? "left" : "right",
+    wanderAngle: 0,
+    wanderTimer: 0,
+    level: 1,
+    xp: 0,
+    friendship: 0,
+    captureDifficulty: 1,
+    defeatHits: 1,
+    oneWhipKill: true,
+    captureChance: 0,
+    captureHitsRequired: 1,
+    damageScale: 0.12,
+    hitCount: 0,
+    hitCooldown: 0,
+    hitReactionTimer: 0,
+    attackCooldown: 1.2 + index * 0.08,
+    attackCooldownOverride: 2.6,
+    attackTimer: 0,
+    attackElapsed: 0,
+    attackApplied: false,
+    caught: false,
+    bloodlusted: true,
+    northernWildsWave: true,
+    northernWildsWaveNumber: wave,
+    chaseSpeed: 210 + Math.min(80, wave * 6),
+    pathId: "",
+    pathPointIndex: 0,
+    pathDirection: 1,
+    spawnAreaId: "",
+    pathRoamMode: "bloodlust",
+    pathRoamTarget: null,
+    pathPauseTimer: 0,
+    pathPanicTimer: 0,
+  };
+  return matt;
+}
+
+function spawnNorthernWildsWave() {
+  const defense = state.northernWildsDefense;
+  if (!defense?.active || defense.wave >= defense.totalWaves) {
+    return false;
+  }
+
+  defense.wave += 1;
+  defense.started = true;
+  defense.nextWaveTimer = 0;
+  const count = Math.min(
+    NORTHERN_WILDS_MAX_WAVE_SIZE,
+    NORTHERN_WILDS_BASE_WAVE_SIZE + defense.wave - 1,
+  );
+  const waveMatts = Array.from({ length: count }, (_, index) =>
+    createNorthernWildsDementedMatt(defense.wave, index, count),
+  );
+  state.dogmatts = [...waveMatts, ...state.dogmatts.filter((matt) => !matt.northernWildsWave)];
+  waveMatts.forEach((matt) => spawnCaptureEffect(matt));
+  addScreenShake(5);
+  setGameMessage(`Northern Wilds wave ${defense.wave}/${defense.totalWaves}. ${count} demented Matts incoming.`, 6200);
+  updateCaughtHud(countCaughtMatts(), true);
+  return true;
+}
+
+function completeNorthernWildsDefense() {
+  const defense = state.northernWildsDefense;
+  if (!defense?.active || defense.complete) {
+    return false;
+  }
+
+  clearNorthernWildsWaveMatts();
+  defense.active = false;
+  defense.complete = true;
+  state.storyFlags = normalizeStoryFlags({
+    ...state.storyFlags,
+    northernWildsAttackPending: false,
+    northernWildsUnlocked: true,
+    northernWildsDefenseStarted: true,
+    northernWildsDefenseComplete: true,
+  });
+  saveEconomy();
+  updateEconomyHud();
+  updateCaughtHud(countCaughtMatts(), true);
+  addScreenShake(9);
+  setGameMessage("The final wave breaks. The Northern Wilds are holding, and every DementedEssense was harvested.", 9000);
+  return true;
+}
+
+function updateNorthernWildsDefense(dt) {
+  if (!state.northernWildsDefense) {
+    state.northernWildsDefense = createNorthernWildsDefenseState();
+  }
+
+  if (!state.northernWildsDefense.active) {
+    startNorthernWildsDefense();
+    return;
+  }
+
+  if (state.currentWorld !== NORTHERN_WILDS_WORLD_ID || state.dev.enabled) {
+    clearNorthernWildsWaveMatts();
+    state.northernWildsDefense.active = false;
+    return;
+  }
+
+  const liveWaveMatts = state.dogmatts.filter((matt) => matt.northernWildsWave).length;
+  if (liveWaveMatts > 0) {
+    return;
+  }
+
+  if (state.northernWildsDefense.started && state.northernWildsDefense.wave >= state.northernWildsDefense.totalWaves) {
+    completeNorthernWildsDefense();
+    return;
+  }
+
+  state.northernWildsDefense.nextWaveTimer = Math.max(
+    0,
+    (state.northernWildsDefense.nextWaveTimer || NORTHERN_WILDS_WAVE_BREAK_SECONDS) - dt,
+  );
+  if (state.northernWildsDefense.nextWaveTimer <= 0) {
+    spawnNorthernWildsWave();
+  }
+}
+
 function completeWizardDisappear(wizard) {
   spawnDementedMattAmbush(wizard);
   wizard.removeAfterScript = true;
@@ -11049,7 +11593,7 @@ function initDevPanel() {
     }
 
     if (devNodeTarget) {
-      devNodeTarget.value = state.currentWorld === DEFAULT_WORLD_ID ? "town" : DEFAULT_WORLD_ID;
+      devNodeTarget.value = getDefaultDevNodeTarget();
     }
 
     updateWorldLabel();
@@ -11073,7 +11617,7 @@ function initDevPanel() {
     devNodeTarget.innerHTML = WORLD_IDS.map(
       (id) => `<option value="${id}">${getWorldLabel(id)}</option>`,
     ).join("");
-    devNodeTarget.value = state.currentWorld === DEFAULT_WORLD_ID ? "town" : DEFAULT_WORLD_ID;
+    devNodeTarget.value = getDefaultDevNodeTarget();
   }
 
   devNodeName?.addEventListener("input", () => {
@@ -11188,6 +11732,10 @@ function setDevTool(tool) {
             ? " Type a node name, choose its target, then click the map."
             : tool === "waystone"
               ? ` Type a name if you want one, then click the map. ${getWaystoneCountStatus()}`
+              : tool === "spawn"
+                ? state.currentWorld === NORTHERN_WILDS_WORLD_ID
+                  ? " Drag an area where demented Matt waves should spawn."
+                  : " Drag an area where wild Matts should spawn."
               : "";
   setDevStatus(`${getWorldLabel(state.currentWorld)}: ${tool} tool selected.${extra}`);
 }
@@ -11606,7 +12154,7 @@ function handleDevPointerUp(event) {
   const world = getWorld();
 
   world.spawnAreas.push(rect);
-  setDevStatus("Spawn area added.");
+  setDevStatus(state.currentWorld === NORTHERN_WILDS_WORLD_ID ? "Demented Matt wave spawn area added." : "Spawn area added.");
 
   saveWorlds();
   event.preventDefault();
@@ -11835,12 +12383,13 @@ function getTrailPoint(distanceBack) {
   return trail[trail.length - 1];
 }
 
-function getFollowTarget(caughtIndex, config = DOGMATT) {
+function getFollowTarget(caughtIndex, config = DOGMATT, matt = null) {
   const row = Math.floor(caughtIndex / 3);
   const lane = (caughtIndex % 3) - 1;
-  const trailPoint = getTrailPoint(115 + row * config.followBackSpacing);
+  const distanceScale = getFollowerDistanceScale(matt);
+  const trailPoint = getTrailPoint((115 + row * config.followBackSpacing) * distanceScale);
   const sideWave = state.player.moving ? Math.sin(state.time * 2.4 + caughtIndex * 1.7) * 8 : 0;
-  const sideOffset = lane * config.followSideSpacing + sideWave;
+  const sideOffset = lane * config.followSideSpacing * distanceScale + sideWave;
   const perpX = -trailPoint.facingY;
   const perpY = trailPoint.facingX;
 
@@ -13567,7 +14116,10 @@ function startMattAttack(matt, config) {
   matt.attackElapsed = 0;
   matt.attackApplied = false;
   const pressureCooldownScale = matt.boss ? 1 - getBossPressure(matt) * 0.16 : 1;
-  matt.attackCooldown = (attackConfig.attackCooldown || 1.8) * pressureCooldownScale;
+  const baseCooldown = Number.isFinite(matt.attackCooldownOverride)
+    ? matt.attackCooldownOverride
+    : attackConfig.attackCooldown || 1.8;
+  matt.attackCooldown = baseCooldown * pressureCooldownScale;
   matt.frameIndex = 0;
   matt.frameTimer = 0;
   matt.primeWindupParticleTimer = 0;
@@ -13840,10 +14392,13 @@ function updateBloodlustedMattMovement(matt, config, distance, dt) {
   const moveY = (state.player.y - matt.y) / distance;
   const beforeX = matt.x;
   const beforeY = matt.y;
+  const chaseSpeed = Number.isFinite(matt.chaseSpeed)
+    ? matt.chaseSpeed
+    : config.chaseSpeed || config.wanderSpeed;
   moveWithWalls(
     matt,
-    moveX * (config.chaseSpeed || config.wanderSpeed) * dt,
-    moveY * (config.chaseSpeed || config.wanderSpeed) * dt,
+    moveX * chaseSpeed * dt,
+    moveY * chaseSpeed * dt,
     Math.max(32, config.width * 0.34),
   );
   matt.direction = matt.x < beforeX ? "left" : "right";
@@ -14020,7 +14575,15 @@ function isFollowerCombatTarget(target, allowCalm = false) {
 }
 
 function getFollowerCombatTarget(follower) {
-  if (!follower?.tamed || !follower.follower || state.arena.active || isIntroOpen() || isShopOpen() || isPauseMenuOpen()) {
+  if (
+    !follower?.tamed ||
+    !follower.follower ||
+    state.arena.active ||
+    isIntroOpen() ||
+    isShopOpen() ||
+    isPauseMenuOpen() ||
+    isNorthernWildsDefenseActive()
+  ) {
     return null;
   }
 
@@ -14163,8 +14726,9 @@ function rewardFollowerAssistBond(follower) {
 function followerStrikeTarget(follower, target) {
   const captureHitThreshold = getCaptureHitThreshold(target);
   const previousHits = Math.max(0, Math.floor(Number(target.hitCount) || 0));
+  const hitPressure = getPrimeMattPowerMultiplier(follower);
   const progressed = previousHits < captureHitThreshold - 1;
-  target.hitCount = Math.min(captureHitThreshold - 1, previousHits + 1);
+  target.hitCount = Math.min(captureHitThreshold - 1, previousHits + hitPressure);
   target.hitCooldown = Math.max(target.hitCooldown || 0, 0.18);
   target.hitReactionTimer = Math.max(target.hitReactionTimer || 0, target.boss ? 0.24 : 0.34);
   if (target.boss) {
@@ -14456,13 +15020,13 @@ function updateCaughtDogmatt(dogmatt, dt, caughtIndex) {
   }
 
   dogmatt.returnBoostTimer = Math.max(0, (dogmatt.returnBoostTimer || 0) - dt);
-  const target = getFollowTarget(caughtIndex, config);
+  const target = getFollowTarget(caughtIndex, config, dogmatt);
   const dx = target.x - dogmatt.x;
   const dy = target.y - dogmatt.y;
   const distance = Math.hypot(dx, dy) || 1;
   let moved = false;
 
-  if (distance > config.followStopDistance) {
+  if (distance > getFollowerStopDistance(dogmatt, config)) {
     const catchup = Math.min(620, distance * 2.6);
     const returnBoost = dogmatt.returnBoostTimer > 0 ? 520 : 0;
     const speed = Math.min((config.followSpeed + catchup + returnBoost) * dt, distance);
@@ -14628,7 +15192,7 @@ function updateDogmatts(dt) {
 }
 
 function countCaughtMatts() {
-  return state.capturedParty.length;
+  return getCapturedSlotCount();
 }
 
 function updateCaughtHud(caughtCount, force = false) {
@@ -14945,8 +15509,10 @@ function update(dt) {
   updatePlayer(dt);
   updateAutomaticNodeTravel(dt);
   maybeStartBrockRescueConversation();
+  maybeShowNorthernWildsBrockWarning();
   updateNpcs(dt);
   updatePrimeMysticGravityWell(dt);
+  updateNorthernWildsDefense(dt);
   updateDogmatts(dt);
   updateFriendshipWalking(dt);
   updateParticles(dt);
@@ -14973,6 +15539,16 @@ function defeatDementedMatt(matt) {
   saveEconomy();
   updateEconomyHud();
   updateCaughtHud(countCaughtMatts(), true);
+  if (matt.northernWildsWave) {
+    const defense = state.northernWildsDefense;
+    const remaining = state.dogmatts.filter((candidate) => candidate.northernWildsWave).length;
+    setGameMessage(
+      `DementedEssense harvested. Wave ${defense?.wave || matt.northernWildsWaveNumber}/${defense?.totalWaves || NORTHERN_WILDS_TOTAL_WAVES}. ${remaining} left.`,
+      4200,
+    );
+    return;
+  }
+
   setGameMessage(
     `Demented Matt dropped DementedEssense. Bring it to Brick. Ivan XP +${progress.gained}${progress.leveled ? `, Lv ${progress.level}` : ""}.`,
     8200,
@@ -15002,11 +15578,11 @@ function hitDogmatt(dogmatt) {
       return;
     }
 
-    if (state.capturedParty.length >= MATT_PARTY_LIMIT) {
+    if (!hasCapturedSlotCapacity()) {
       dogmatt.hitCount = captureHitThreshold - 1;
       setAction(dogmatt, getMattHitAction(dogmatt));
       playHitSound(dogmatt.hitCount);
-      setDevStatus(`Party full: ${MATT_PARTY_LIMIT} Matts max.`);
+      setDevStatus(`Captured slots full: ${MATT_PARTY_LIMIT} untamed Matts max.`);
       return;
     }
 
@@ -15051,7 +15627,7 @@ function hitDogmatt(dogmatt) {
     recordCapturedMattType(dogmatt.type);
     recordIntroCapture(dogmatt.type);
     state.capturedParty.push(serializeCapturedMatt(dogmatt));
-    state.capturedParty = state.capturedParty.slice(0, MATT_PARTY_LIMIT);
+    state.capturedParty = limitCapturedParty(state.capturedParty);
     if (dogmatt.boss) {
       clearPrimeMysticGravityWell();
       resumeAmbientMusicFromPrimeGrassMatt();
@@ -15202,7 +15778,7 @@ function drawFutureMonsterMarkers() {
 }
 
 function getInnActorScale() {
-  return ["town_inn", "town_inn_rooms", "town_mattstore"].includes(state.currentWorld) ? 2 : 1;
+  return ["town_inn", "town_inn_rooms", "town_mattstore", "town_itemshop"].includes(state.currentWorld) ? 2 : 1;
 }
 
 function getPlayerRenderScale() {
@@ -15214,7 +15790,7 @@ function getPlayerRenderScale() {
 }
 
 function getMattRenderScale(dogmatt) {
-  const worldScale = state.currentWorld === "town_arena_entrance" ? 2 : getInnActorScale();
+  const worldScale = ["town_arena_entrance", "town_blacksmith"].includes(state.currentWorld) ? 2 : getInnActorScale();
   return worldScale * (Number(dogmatt.scale) || 1);
 }
 
@@ -15966,6 +16542,16 @@ function tryEnterNode(node = getNearbyNode((candidate) => !isWaystoneNode(candid
 
   if (!canEnterWorldDuringIntro(node.target)) {
     setGameMessage(getIntroWorldLockedMessage(node.target), 5200);
+    state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.9);
+    return false;
+  }
+
+  if (
+    node.target === NORTHERN_WILDS_WORLD_ID &&
+    !state.dev.enabled &&
+    !state.storyFlags?.northernWildsUnlocked
+  ) {
+    setGameMessage("Brick has not sent you to the Northern Wilds yet.");
     state.nodeTravelCooldown = Math.max(state.nodeTravelCooldown || 0, 0.9);
     return false;
   }
@@ -17011,6 +17597,7 @@ async function startGameForProfile(profileId) {
   state.lastNightState = isNightTime();
   state.dogmatts = [];
   state.npcs = [];
+  state.northernWildsDefense = createNorthernWildsDefenseState();
   state.particles = [];
   state.screenShake = 0;
   state.primeMysticGravityWell = null;
@@ -17052,6 +17639,7 @@ async function startGameForProfile(profileId) {
     spawnNpcs();
     spawnScriptedWizardIfNeeded();
     spawnPendingDementedMattAmbushIfNeeded();
+    updateNorthernWildsDefense(0);
     syncCamera();
     updateCaughtHud(countCaughtMatts());
 
